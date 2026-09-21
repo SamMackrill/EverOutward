@@ -168,10 +168,12 @@ try {
   await page.getByRole("dialog").waitFor();
   await page.getByLabel("Close dialog").click();
   await page.getByRole("button", { name: "Our timeline", exact: true }).click();
-  const card = page.locator(".visit-card").filter({
-    has: page.locator('img[src="https://carousel.test/landscape.jpg"]'),
-  });
-  assert.ok((await card.count()) >= 1);
+  assert.deepEqual(
+    await page
+      .locator(".visit-card img")
+      .evaluateAll((images) => images.map((img) => img.getAttribute("src"))),
+    Array(3).fill("https://carousel.test/portrait.jpg"),
+  );
   await page.emulateMedia({ reducedMotion: "reduce", colorScheme: "dark" });
   await page.goto(`${origin}/#visit/wheel`);
   await page.getByRole("button", { name: "Play slideshow" }).waitFor();
@@ -256,7 +258,7 @@ try {
   assert.equal(await interval.inputValue(), "3");
   assert.deepEqual(errors, []);
   console.log(
-    "PASS: portrait fit, cover-first carousel, first-photo timeline, autoplay, pause/play, arrows, mouse/trackpad/touch, mobile, reduced motion, missing photos; 1–20s intervals, refresh/visit persistence, select keyboard behaviour and denied-storage fallback.",
+    "PASS: portrait fit, cover-first carousel and timeline, autoplay, pause/play, arrows, mouse/trackpad/touch, mobile, reduced motion, missing photos; 1–20s intervals, refresh/visit persistence, select keyboard behaviour and denied-storage fallback.",
   );
 } finally {
   await browser.close();

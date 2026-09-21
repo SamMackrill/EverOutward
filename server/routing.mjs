@@ -9,44 +9,23 @@ export async function refreshDrivingRoutes({
   places,
   fetcher = fetch,
   wait = delay,
+  force = false,
+  onProgress = () => {},
 }) {
   const home = store.get("settings", "home");
   if (!home)
     throw new Error("Set your home before calculating driving distances.");
-  const visited = new Set(store.list("visits").map((v) => v.placeId));
-  const candidates = places
-    .filter((p) => !visited.has(p.id))
-    .sort((a, b) => haversine(home, a) - haversine(home, b));
-  const age = Date.now() - 7 * 86400000;
+  const candidates = [...places].sort(
+    (a, b) => haversine(home, a) - haversine(home, b),
+  );
   const available = () =>
-    store
-      .list("routes")
-      .filter(
-        (r) =>
-          r.homeVersion === home.version &&
-          (!r.source?.startsWith("OSRM") || Date.parse(r.checkedAt) > age),
-      );
-  const attempted = new Set();
-  let calculated = 0,
-    unavailable = 0;
-  for (let batch = 0; batch < 4; batch++) {
-    const routes = available(),
-      progress = outward(places, store.list("visits"), home, routes);
-    if (progress.complete) break;
-    const known = new Set(routes.map((r) => r.placeId));
-    const cutoff =
-      progress.ranked.length === 5
-        ? progress.ranked[4].metres + 2000
-        : Infinity;
-    const next = candidates
-      .filter(
-        (p) =>
-          !known.has(p.id) &&
-          !attempted.has(p.id) &&
-          haversine(home, p) <= cutoff,
-      )
-      .slice(0, 25);
-    if (!next.length) break;
+    store.list("routes").filter((r) => r.homeVersion === home.version);
+  const known = new Set(available().map((r) => r.placeId));
+  const pending = candidates.filter((p) => force || !known.has(p.id));
+  const unavailablePlaces = [];
+  let calculated = 0;
+  for (let offset = 0; offset < pending.length; offset += 25) {
+    const next = pending.slice(offset, offset + 25);
     await wait(Math.max(0, 1100 - (Date.now() - lastRequest)));
     lastRequest = Date.now();
     const coords = [home, ...next].map((p) => `${p.lng},${p.lat}`).join(";");
@@ -63,7 +42,7 @@ export async function refreshDrivingRoutes({
     const data = await response.json();
     if (!response.ok || data.code !== "Ok")
       throw new Error(
-        "The free routing service is unavailable. Previously saved distances are unchanged; try again later.",
+        "The routing service is unavailable. Distances already saved are kept; run the calculation again to finish the remaining places.",
       );
     if (!data.sources?.[0] || data.sources[0].distance > 1000)
       throw new Error(
@@ -74,17 +53,26 @@ export async function refreshDrivingRoutes({
         "Home changed while routes were being calculated. Please retry.",
       );
     next.forEach((p, index) => {
-      attempted.add(p.id);
       const metres = data.distances?.[0]?.[index + 1],
         seconds = data.durations?.[0]?.[index + 1],
         destination = data.destinations?.[index + 1];
       if (
         !Number.isFinite(metres) ||
+        metres < 0 ||
         !Number.isFinite(seconds) ||
+        seconds < 0 ||
         !destination ||
+        !Number.isFinite(destination.distance) ||
         destination.distance > 1000
       ) {
-        unavailable++;
+        unavailablePlaces.push({
+          placeId: p.id,
+          name: p.name,
+          reason:
+            destination?.distance > 1000
+              ? "Catalogue point is more than 1 km from a routable road; check the visitor entrance."
+              : "No car route returned; check road access and the visitor entrance.",
+        });
         return;
       }
       store.put("routes", p.id, {
@@ -98,10 +86,24 @@ export async function refreshDrivingRoutes({
       });
       calculated++;
     });
+    onProgress({
+      processed: Math.min(offset + next.length, pending.length),
+      requested: pending.length,
+      calculated,
+      unavailable: unavailablePlaces.length,
+    });
   }
+  const placeIds = new Set(places.map((p) => p.id));
+  const saved = available().filter((r) => placeIds.has(r.placeId)).length;
   return {
     calculated,
-    unavailable,
+    saved,
+    total: places.length,
+    remaining: places.length - saved,
+    catalogueComplete: saved === places.length,
+    homeVersion: home.version,
+    unavailable: unavailablePlaces.length,
+    unavailablePlaces,
     ...outward(places, store.list("visits"), home, available()),
   };
 }

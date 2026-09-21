@@ -11,7 +11,6 @@ import {
   outward,
   publicRange,
 } from "../server/domain.mjs";
-import { refreshDrivingRoutes } from "../server/routing.mjs";
 import {
   journalSnapshot,
   requireJournal,
@@ -33,7 +32,6 @@ await exec(process.execPath, ["node_modules/vite/bin/vite.js", "build"], {
   maxBuffer: 1024 * 1024,
 });
 const catalogue = JSON.parse(await readFile("public/data/places.json", "utf8"));
-await refreshDrivingRoutes({ store: db, places: catalogue.places });
 const snapshot = journalSnapshot(db);
 const visits = sortVisits(snapshot.visits.filter((v) => v.published)).map(
   publicVisit,

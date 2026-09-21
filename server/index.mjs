@@ -11,7 +11,8 @@ let initialHome = null;
 try {
   initialHome = JSON.parse(readFileSync(".local/initial-home.json", "utf8"));
 } catch {}
-const app = createApp({ store, places, initialHome });
+// Access to this local server grants editing access without a password.
+const app = createApp({ store, places, initialHome, localOwner: true });
 app.use(express.static(resolve("dist")));
 app.get("/{*path}", (req, res) => res.sendFile(resolve("dist/index.html")));
 const port = Number(process.env.PORT || 3001);

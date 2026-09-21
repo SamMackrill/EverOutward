@@ -10,7 +10,7 @@ const places = Array.from({ length: 7 }, (_, i) => ({
   lat: 52 + (i + 1) / 100,
   lng: 0,
 }));
-test("route batching, distance/time storage, visit exclusion and cached reuse", async () => {
+test("distances include visited places and are saved for reuse", async () => {
   const store = createStore(":memory:");
   store.put("settings", "home", home);
   store.put("visits", "v", { placeId: "0" });
@@ -18,15 +18,15 @@ test("route batching, distance/time storage, visit exclusion and cached reuse", 
   const fetcher = async (url) => {
     calls++;
     assert.ok(url.includes("sources=0&annotations=distance,duration"));
-    assert.equal(url.includes("0,52.01;"), false);
+    assert.equal(url.includes("0,52.01;"), true);
     return {
       ok: true,
       json: async () => ({
         code: "Ok",
         sources: [{ distance: 12 }],
-        destinations: Array.from({ length: 7 }, () => ({ distance: 10 })),
-        distances: [[0, 9000, 8000, 7000, 6000, 5000, 10000]],
-        durations: [[0, 900, 800, 700, 600, 500, 1000]],
+        destinations: Array.from({ length: 8 }, () => ({ distance: 10 })),
+        distances: [[0, 11000, 9000, 8000, 7000, 6000, 5000, 10000]],
+        durations: [[0, 1100, 900, 800, 700, 600, 500, 1000]],
       }),
     };
   };
@@ -37,13 +37,20 @@ test("route batching, distance/time storage, visit exclusion and cached reuse", 
       fetcher,
       wait: async () => {},
     });
-    assert.equal(result.calculated, 6);
+    assert.equal(result.calculated, 7);
+    assert.equal(result.saved, 7);
+    assert.equal(result.catalogueComplete, true);
     assert.deepEqual(
       result.ranked.map((p) => p.id),
       ["5", "4", "3", "2", "1"],
     );
     assert.equal(result.ranked[0].seconds, 500);
     assert.equal(result.complete, true);
+    for (const route of store.list("routes"))
+      store.put("routes", route.placeId, {
+        ...route,
+        checkedAt: "2020-01-01T00:00:00Z",
+      });
     await refreshDrivingRoutes({
       store,
       places,
@@ -52,6 +59,7 @@ test("route batching, distance/time storage, visit exclusion and cached reuse", 
     });
     assert.equal(calls, 1);
     assert.equal(store.get("routes", "5").homeVersion, "home-1");
+    assert.equal(store.get("routes", "0").metres, 11000);
   } finally {
     store.close();
   }
@@ -93,7 +101,124 @@ test("unroutable and excessively snapped destinations are never invented", async
     });
     assert.equal(result.calculated, 0);
     assert.equal(result.unavailable, 2);
+    assert.equal(result.remaining, 2);
+    assert.equal(result.catalogueComplete, false);
+    assert.match(result.unavailablePlaces[0].reason, /visitor entrance/);
     assert.equal(result.complete, false);
+    assert.equal(store.list("routes").length, 0);
+  } finally {
+    store.close();
+  }
+});
+
+function tableResponse(url) {
+  const count = new URL(url).pathname.split("/").at(-1).split(";").length;
+  return {
+    ok: true,
+    json: async () => ({
+      code: "Ok",
+      sources: [{ distance: 0 }],
+      destinations: Array.from({ length: count }, () => ({ distance: 0 })),
+      distances: [Array.from({ length: count }, (_, i) => i * 1000)],
+      durations: [Array.from({ length: count }, (_, i) => i * 100)],
+    }),
+  };
+}
+
+test("one run covers the whole catalogue beyond the next five and four batches", async () => {
+  const store = createStore(":memory:");
+  store.put("settings", "home", home);
+  const catalogue = Array.from({ length: 128 }, (_, i) => ({
+    id: String(i),
+    lat: 52 + i / 100,
+    lng: 0,
+  }));
+  let calls = 0;
+  const options = {
+    store,
+    places: catalogue,
+    wait: async () => {},
+    fetcher: async (url) => {
+      calls++;
+      return tableResponse(url);
+    },
+  };
+  try {
+    const result = await refreshDrivingRoutes(options);
+    assert.equal(result.saved, 128);
+    assert.equal(result.remaining, 0);
+    assert.equal(result.catalogueComplete, true);
+    assert.equal(calls, 6);
+    await refreshDrivingRoutes(options);
+    assert.equal(calls, 6);
+    const forced = await refreshDrivingRoutes({ ...options, force: true });
+    assert.equal(forced.calculated, 128);
+    assert.equal(calls, 12);
+    store.put("settings", "home", { ...home, lat: 53, version: "home-2" });
+    const moved = await refreshDrivingRoutes(options);
+    assert.equal(moved.calculated, 128);
+    assert.ok(store.list("routes").every((r) => r.homeVersion === "home-2"));
+  } finally {
+    store.close();
+  }
+});
+
+test("an interrupted full calculation keeps its batches and resumes only missing places", async () => {
+  const store = createStore(":memory:");
+  store.put("settings", "home", home);
+  const catalogue = Array.from({ length: 30 }, (_, i) => ({
+    id: String(i),
+    lat: 52 + i / 100,
+    lng: 0,
+  }));
+  let calls = 0;
+  try {
+    await assert.rejects(
+      refreshDrivingRoutes({
+        store,
+        places: catalogue,
+        wait: async () => {},
+        fetcher: async (url) => {
+          if (++calls === 2)
+            return { ok: false, json: async () => ({ code: "Error" }) };
+          return tableResponse(url);
+        },
+      }),
+      /already saved are kept/,
+    );
+    const firstBatch = store.list("routes");
+    assert.equal(firstBatch.length, 25);
+    const result = await refreshDrivingRoutes({
+      store,
+      places: catalogue,
+      wait: async () => {},
+      fetcher: async (url) => tableResponse(url),
+    });
+    assert.equal(result.calculated, 5);
+    assert.equal(result.saved, 30);
+    for (const route of firstBatch)
+      assert.deepEqual(store.get("routes", route.placeId), route);
+  } finally {
+    store.close();
+  }
+});
+
+test("a home change during calculation cannot save distances for the new home", async () => {
+  const store = createStore(":memory:");
+  store.put("settings", "home", home);
+  try {
+    await assert.rejects(
+      refreshDrivingRoutes({
+        store,
+        places,
+        wait: async () => {},
+        fetcher: async (url) => {
+          store.put("settings", "home", { ...home, lat: 53, version: "moved" });
+          return tableResponse(url);
+        },
+      }),
+      /Home changed/,
+    );
     assert.equal(store.list("routes").length, 0);
   } finally {
     store.close();

@@ -8,7 +8,12 @@ import { createApp } from "../server/app.mjs";
 import { createStore } from "../server/store.mjs";
 const catalogue = JSON.parse(await readFile("public/data/places.json", "utf8"));
 const store = createStore(":memory:");
-const app = createApp({ store, places: catalogue.places, enableCloud: false });
+const app = createApp({
+  store,
+  places: catalogue.places,
+  enableCloud: false,
+  localOwner: true,
+});
 app.use(express.static(resolve("dist")));
 const server = app.listen(0, "127.0.0.1");
 await new Promise((r) => server.once("listening", r));
@@ -38,11 +43,13 @@ async function dropImage(locator) {
 }
 try {
   await page.goto(origin);
-  await page.getByRole("button", { name: "Owner sign-in" }).click();
-  await page.getByLabel("Owner password").fill("photo-test-password");
-  await page
-    .getByRole("button", { name: "Create owner password", exact: true })
-    .click();
+  await page.getByRole("button", { name: "Workspace", exact: true }).waitFor();
+  assert.equal(
+    await page.getByRole("button", { name: "Owner sign-in" }).count(),
+    0,
+  );
+  assert.equal(await page.getByRole("button", { name: "Sign out" }).count(), 0);
+  assert.equal((await page.context().cookies()).length, 0);
   await page
     .getByRole("button", { name: "Record a visit", exact: true })
     .click();
@@ -144,12 +151,8 @@ try {
     .waitFor();
   assert.ok(await page.locator("dialog").evaluate((el) => el.scrollTop > 0));
   await page.getByRole("button", { name: "Cancel", exact: true }).click();
-  await page.evaluate(() =>
-    fetch("/api/logout", { method: "POST", headers: { "X-EverOutward": "1" } }),
-  );
+  await page.context().clearCookies();
   await page.goto(`${origin}/?addPhotos=${visit.id}#visit/${visit.id}`);
-  await page.getByLabel("Owner password").fill("photo-test-password");
-  await page.getByRole("button", { name: "Sign in", exact: true }).click();
   await page
     .getByRole("heading", { name: "Photo links", exact: true })
     .waitFor();
@@ -303,7 +306,7 @@ try {
   assert.equal(ownerLink.hash, `#visit/${visit.id}`);
   assert.equal(ownerLink.origin, "http://127.0.0.1:3001");
   console.log(
-    "PASS: drop Google link, unavailable preview fallback, drop display photo onto link, select cover, drop standalone image, save/reopen, gallery and timeline render, provider link preserved, mobile layout.",
+    "PASS: local editing and photo deep links without login or cookies, drop Google link, unavailable preview fallback, drop display photo onto link, select cover, drop standalone image, save/reopen, gallery and timeline render, provider link preserved, mobile layout.",
   );
 } finally {
   await browser.close();

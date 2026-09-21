@@ -57,6 +57,77 @@ test("history date order and stable same-day ties", () => {
   );
   assert.equal(visits[0].id, "a");
 });
+for (const passwordConfigured of [false, true]) {
+  test(`local editing needs no login (existing password: ${passwordConfigured})`, async (t) => {
+    const store = createStore(":memory:");
+    if (passwordConfigured)
+      store.put("settings", "owner", {
+        salt: "existing",
+        hash: "00".repeat(64),
+      });
+    const app = createApp({
+      store,
+      places,
+      initialHome: home,
+      enableCloud: false,
+      localOwner: true,
+    });
+    const server = app.listen(0, "127.0.0.1");
+    await new Promise((r) => server.once("listening", r));
+    t.after(() => {
+      server.close();
+      store.close();
+    });
+    const base = `http://127.0.0.1:${server.address().port}`;
+    const session = await fetch(base + "/api/session");
+    assert.deepEqual(await session.json(), {
+      local: true,
+      localOwner: true,
+      owner: true,
+      passwordConfigured,
+    });
+    assert.equal(session.headers.get("set-cookie"), null);
+    const headers = {
+      "Content-Type": "application/json",
+      "X-EverOutward": "1",
+      Origin: "http://127.0.0.1:5173",
+    };
+    const created = await fetch(base + "/api/visits", {
+      method: "POST",
+      headers,
+      body: JSON.stringify({
+        placeId: "a",
+        date: "2026-09-01",
+        title: "Draft without login",
+        summary: "",
+        notes: "Private notes",
+        photos: [],
+        rating: null,
+        coverId: null,
+        published: false,
+      }),
+    });
+    assert.equal(created.status, 201);
+    const state = await (await fetch(base + "/api/state")).json();
+    assert.deepEqual(state.home, home);
+    assert.equal(state.visits[0].title, "Draft without login");
+    assert.equal(state.visits[0].notes, "Private notes");
+    for (const invalidHeaders of [
+      { ...headers, Origin: "https://attacker.invalid" },
+      { "Content-Type": "application/json", Origin: headers.Origin },
+    ]) {
+      const blocked = await fetch(base + "/api/home", {
+        method: "PUT",
+        headers: invalidHeaders,
+        body: JSON.stringify({ ...home, label: "Unwanted change" }),
+      });
+      assert.equal(blocked.status, 403);
+    }
+    assert.deepEqual(store.get("settings", "home"), home);
+    assert.equal(!!store.get("settings", "owner"), passwordConfigured);
+  });
+}
+
 test("owner access, draft privacy, validation, comments, conflicts and route invalidation", async (t) => {
   const store = createStore(":memory:");
   const app = createApp({
@@ -233,6 +304,12 @@ test("owner access, draft privacy, validation, comments, conflicts and route inv
     200,
   );
   await call("/api/routes", "PUT", { routes });
+  assert.equal((await call("/api/state")).data.routes.length, 3);
+  await call("/api/home", "PUT", {
+    label: "Renamed base",
+    lat: home.lat,
+    lng: home.lng,
+  });
   assert.equal((await call("/api/state")).data.routes.length, 3);
   await call("/api/home", "PUT", { label: "Another base", lat: 53, lng: -1 });
   assert.equal((await call("/api/state")).data.routes.length, 0);

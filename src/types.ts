@@ -60,6 +60,7 @@ export type Comment = {
   createdAt: string;
 };
 export type Session = {
+  localOwner?: boolean;
   local: boolean;
   owner: boolean;
   passwordConfigured: boolean;

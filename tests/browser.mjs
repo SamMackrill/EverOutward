@@ -180,9 +180,7 @@ try {
   await page.getByRole("button", { name: "Our timeline", exact: true }).click();
   await page.getByLabel("Search visit history", { exact: true }).fill("");
   await page.getByRole("button", { name: "Map", exact: true }).click();
-  await page
-    .getByRole("combobox", { name: "Colour theme" })
-    .selectOption("dark");
+  await page.getByRole("radio", { name: "Dark theme", exact: true }).check();
   await page.reload();
   assert.equal(await page.locator("html").getAttribute("data-theme"), "dark");
   await page.getByRole("button", { name: "Our timeline", exact: true }).click();
@@ -195,9 +193,81 @@ try {
     false,
   );
   await page.screenshot({ path: join(screenshots, "timeline-mobile.png") });
+  await page.getByRole("button", { name: "Workspace", exact: true }).click();
+  const driving = page.locator(".settings-section").filter({
+    has: page.getByRole("heading", { name: "Driving distances", exact: true }),
+  });
+  assert.equal(await driving.locator('input[type="file"]').count(), 0);
+  let finishCalculation;
+  const calculation = new Promise((resolve) => {
+    finishCalculation = resolve;
+  });
+  await page.route("**/api/routes/refresh", async (route) => {
+    await calculation;
+    for (const [index, place] of catalogue.places.entries())
+      store.put("routes", place.id, {
+        placeId: place.id,
+        metres: 1000 + index * 1000,
+        seconds: 100 + index * 100,
+        homeVersion: home.version,
+        checkedAt: new Date().toISOString(),
+        source: "Browser fixture",
+      });
+    await route.fulfill({
+      json: {
+        saved: catalogue.places.length,
+        total: catalogue.places.length,
+        remaining: 0,
+      },
+    });
+  });
+  await driving
+    .getByRole("button", { name: "Calculate all distances", exact: true })
+    .click();
+  await driving
+    .getByRole("button", { name: "Calculating all distances…", exact: true })
+    .waitFor();
+  assert.equal(
+    await page
+      .getByRole("button", { name: "Save home", exact: true })
+      .isDisabled(),
+    true,
+  );
+  assert.equal(
+    await page
+      .getByRole("button", { name: "Publish journal to here.now", exact: true })
+      .isDisabled(),
+    true,
+  );
+  finishCalculation();
+  await driving
+    .getByRole("button", { name: "All distances saved", exact: true })
+    .waitFor();
+  await page.reload();
+  await driving
+    .getByRole("button", { name: "All distances saved", exact: true })
+    .waitFor();
+  assert.equal(
+    await driving
+      .getByRole("button", { name: "All distances saved", exact: true })
+      .isDisabled(),
+    true,
+  );
+  assert.ok(
+    (await driving.innerText()).includes(
+      `${catalogue.places.length} of ${catalogue.places.length}`,
+    ),
+  );
+  await driving.screenshot({
+    path: join(screenshots, "driving-distances-mobile.png"),
+  });
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await driving.screenshot({
+    path: join(screenshots, "driving-distances.png"),
+  });
   assert.deepEqual(errors, []);
   console.log(
-    "PASS: bundled map, blocked-tile fallback, 45-entry infinite history, back position, visit/photo guest comments, owner signup, draft save, theme persistence, mobile overflow, no browser exceptions.",
+    "PASS: bundled map, blocked-tile fallback, 45-entry infinite history, back position, visit/photo guest comments, owner signup, draft save, theme persistence, mobile overflow, all-distance calculation busy state and saved totals after reload, no browser exceptions.",
   );
 } finally {
   await browser.close();

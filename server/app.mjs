@@ -109,6 +109,7 @@ export function createApp({
   places,
   initialHome = null,
   enableCloud = true,
+  localOwner = false,
 }) {
   const app = express(),
     sessions = new Map(),
@@ -144,7 +145,7 @@ export function createApp({
       .find((s) => s.startsWith("eo_session="))
       ?.slice(11);
     const session = sessions.get(cookie);
-    req.owner = !!session && session.expires > Date.now();
+    req.owner = localOwner || (!!session && session.expires > Date.now());
     next();
   });
   const owner = (req, res, next) =>
@@ -169,6 +170,7 @@ export function createApp({
   app.get("/api/session", (req, res) =>
     res.json({
       local: true,
+      localOwner,
       owner: req.owner,
       passwordConfigured: !!store.get("settings", "owner"),
     }),
@@ -317,7 +319,14 @@ export function createApp({
         lng: z.number().min(-9).max(3),
       })
       .parse(req.body);
-    const home = { ...data, version: randomUUID() };
+    const previous = store.get("settings", "home");
+    const home = {
+      ...data,
+      version:
+        previous?.lat === data.lat && previous?.lng === data.lng
+          ? previous.version
+          : randomUUID(),
+    };
     store.put("settings", "home", home);
     bump();
     res.json({ home });

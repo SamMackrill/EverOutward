@@ -29,13 +29,15 @@ import {
   Trash2,
   Pencil,
   Download,
-  Upload,
   LoaderCircle,
   Compass,
   Globe,
   Home as HomeIcon,
   ImagePlus,
   Users,
+  Monitor,
+  Sun,
+  Moon,
 } from "lucide-react";
 import MapView from "./MapView";
 import { enrichCatalogue } from "./catalogue";
@@ -73,7 +75,9 @@ const date = (value: string) =>
     month: "long",
     year: "numeric",
   });
-const timelinePhoto = (v: Visit) => v.photos.find((p) => photoSource(p));
+const timelinePhoto = (v: Visit) =>
+  v.photos.find((p) => p.id === v.coverId && photoSource(p)) ||
+  v.photos.find((p) => photoSource(p));
 const official = (p: Place) =>
   p.officialUrl ||
   `https://www.nationaltrust.org.uk/search?query=${encodeURIComponent(p.name)}`;
@@ -582,16 +586,33 @@ export default function App() {
           )}
         </nav>
         <div className="header-actions">
-          <select
+          <div
+            className="theme-picker"
+            role="radiogroup"
             aria-label="Colour theme"
-            value={themeChoice}
-            onChange={(e) => setThemeChoice(e.target.value)}
           >
-            <option value="system">System</option>
-            <option value="light">Light</option>
-            <option value="dark">Dark</option>
-          </select>
+            {[
+              { value: "system", label: "System theme", Icon: Monitor },
+              { value: "light", label: "Light theme", Icon: Sun },
+              { value: "dark", label: "Dark theme", Icon: Moon },
+            ].map(({ value, label, Icon }) => (
+              <label className="theme-option" key={value} title={label}>
+                <input
+                  type="radio"
+                  name="colour-theme"
+                  value={value}
+                  aria-label={label}
+                  checked={themeChoice === value}
+                  onChange={() => setThemeChoice(value)}
+                />
+                <span>
+                  <Icon size={17} aria-hidden="true" />
+                </span>
+              </label>
+            ))}
+          </div>
           {session.local &&
+            !session.localOwner &&
             (session.owner ? (
               <button
                 className="icon-button"
@@ -2217,6 +2238,7 @@ function Workspace({
     [postcode, setPostcode] = useState(""),
     [error, setError] = useState(""),
     [busy, setBusy] = useState(false),
+    [calculating, setCalculating] = useState(false),
     [site, setSite] = useState<{
       siteUrl: string | null;
       publishedAt: string | null;
@@ -2281,7 +2303,11 @@ function Workspace({
                 body: JSON.stringify(location),
               });
               await onRefresh();
-              notify("Home updated. Saved routes must be checked again.");
+              notify(
+                home?.lat === location.lat && home?.lng === location.lng
+                  ? "Home saved. Your driving distances are unchanged."
+                  : "Home updated. Calculate all driving distances for your new starting point below.",
+              );
             } catch (e) {
               setError((e as Error).message);
             }
@@ -2349,8 +2375,8 @@ function Workspace({
               />
             </label>
           </div>
-          <button className="button primary">
-            Save home &amp; reset route reference
+          <button className="button primary" disabled={busy || calculating}>
+            Save home
           </button>
         </form>
       </section>
@@ -2358,82 +2384,67 @@ function Workspace({
         <div>
           <h3>Driving distances</h3>
           <p>
-            Free OSRM driving estimates determine the next five. Waze opens
-            directions for the chosen destination. Calculations send your
-            starting coordinates to FOSSGIS and are cached locally for seven
-            days. Publishing refreshes the routes needed for the next five. You
-            can also save or import your own distances.
+            Calculate the driving distance and time to every place in one go.
+            They’re saved on this computer and reused for your next five places.
+            You only need to calculate them again if you move your starting
+            point.
           </p>
           <p className="small muted">
-            {routes.length} saved routes for this home · {places.length}{" "}
-            catalogue places
+            {routes.length} of {places.length} places have a saved driving
+            distance
+            {home ? " from this home." : ". Set your starting point first."}
           </p>
-          <a
-            className="text-button"
-            href="https://developers.google.com/waze/deeplinks"
-            target="_blank"
-            rel="noreferrer"
-          >
-            Waze integration details <ArrowUpRight size={15} />
-          </a>
         </div>
         <div className="form-stack">
           <button
             className="button primary"
-            disabled={busy}
+            disabled={
+              busy || calculating || !home || routes.length >= places.length
+            }
             onClick={async () => {
-              setBusy(true);
+              setCalculating(true);
               setError("");
               try {
-                const result = await api.request<{ calculated: number }>(
-                  "/api/routes/refresh",
-                  { method: "POST" },
-                );
+                const result = await api.request<{
+                  saved: number;
+                  total: number;
+                  remaining: number;
+                }>("/api/routes/refresh", { method: "POST" });
                 await onRefresh();
                 notify(
-                  `Driving estimates ready · ${result.calculated} routes updated.`,
+                  result.remaining
+                    ? `${result.saved} of ${result.total} distances saved. ${result.remaining} places need a road-access check; see the README for agent instructions.`
+                    : `All ${result.total} driving distances are saved.`,
                 );
               } catch (e) {
                 setError((e as Error).message);
+                await onRefresh();
               } finally {
-                setBusy(false);
+                setCalculating(false);
               }
             }}
           >
-            <RouteIcon size={17} />
-            Calculate free driving distances
+            {calculating ? (
+              <LoaderCircle className="spin" size={17} />
+            ) : (
+              <RouteIcon size={17} />
+            )}
+            {calculating
+              ? "Calculating all distances…"
+              : routes.length >= places.length
+                ? "All distances saved"
+                : "Calculate all distances"}
           </button>
-          <code className="code-block">
-            {'[{"placeId":"catalogue-id","metres":12000,"seconds":900}]'}
-          </code>
-          <label className="file-label">
-            <Upload size={18} />
-            Import route JSON
-            <input
-              type="file"
-              accept="application/json,.json"
-              onChange={async (e) => {
-                try {
-                  const file = e.target.files?.[0];
-                  if (!file) return;
-                  const rows = JSON.parse(await file.text());
-                  await api.request("/api/routes", {
-                    method: "PUT",
-                    body: JSON.stringify({ routes: rows }),
-                  });
-                  await onRefresh();
-                  notify(`${rows.length} driving routes saved.`);
-                } catch (e) {
-                  setError((e as Error).message);
-                }
-                e.target.value = "";
-              }}
-            />
-          </label>
-          <a className="text-button" href="/data/places.json" download>
-            <Download size={16} />
-            Download catalogue IDs
-          </a>
+          <p className="small muted" role="status">
+            {calculating
+              ? "This may take a minute or two. Each batch is saved as it finishes."
+              : "Saved distances don’t expire. If a calculation is interrupted, run it again to finish the remaining places."}
+          </p>
+          <p className="small muted">
+            Free estimates from OSRM / FOSSGIS. Calculating sends your starting
+            point to the routing service. Waze still opens directions for each
+            trip.
+          </p>
         </div>
       </section>
       <section className="settings-section">
@@ -2458,7 +2469,11 @@ function Workspace({
           )}
         </div>
         <div className="form-stack">
-          <button className="button primary" onClick={publish} disabled={busy}>
+          <button
+            className="button primary"
+            onClick={publish}
+            disabled={busy || calculating}
+          >
             {busy ? (
               <LoaderCircle className="spin" size={18} />
             ) : (
