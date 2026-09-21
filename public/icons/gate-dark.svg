@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-labelledby="title">
+<title id="title">A dark-haired woman and a taller blonde man kissing as they pass through a kissing gate</title>
+<circle cx="256" cy="256" r="248" fill="#20352a"/>
+<circle cx="256" cy="256" r="232" fill="none" stroke="#94d5aa" stroke-width="5"/>
+<path d="M73 370 Q256 420 439 370" fill="none" stroke="#a6ba90" stroke-width="13" stroke-linecap="round"/>
+<g fill="none" stroke="#647e51" stroke-width="17" stroke-linejoin="round" stroke-linecap="round">
+<path d="M99 366V248 M99 268L165 237 M99 322L165 291 M413 366V248 M413 268L349 237 M413 322L349 291"/>
+<path d="M160 354V226 M347 354V226 M163 244L287 273V366L163 337Z M169 285L280 311 M171 333L280 276"/>
+</g>
+<g stroke-linecap="round" stroke-linejoin="round">
+<path d="M286 291L310 383 M312 289L334 378" stroke="#31493c" stroke-width="22"/>
+<path d="M284 199Q312 188 325 225L332 296Q306 314 276 295L268 242Z" fill="#94d5aa"/>
+<path d="M303 215Q280 240 254 246" fill="none" stroke="#94d5aa" stroke-width="24"/>
+<path d="M263 246L245 241" stroke="#edb997" stroke-width="14"/>
+<path d="M295 207L282 180" stroke="#edb997" stroke-width="22"/>
+<path d="M301 143Q276 131 263 157L259 175L247 184L261 192Q288 199 301 173Z" fill="#edb997"/>
+<path d="M261 159Q249 138 270 125Q293 113 307 138L310 166L296 171L287 147Z" fill="#e3bc53"/>
+<path d="M271 177L265 178" stroke="#64493a" stroke-width="3"/>
+<path d="M251 187L257 188" stroke="#ad675c" stroke-width="4"/>
+<path d="M209 306L190 382 M232 306L220 386" stroke="#304e45" stroke-width="20"/>
+<path d="M208 224Q191 229 185 260L181 313Q211 331 244 313L243 263L233 227Z" fill="#ba8d4e"/>
+<path d="M211 232Q244 226 269 212" fill="none" stroke="#ba8d4e" stroke-width="20"/>
+<path d="M266 213L278 204" stroke="#efc2a1" stroke-width="13"/>
+<path d="M219 230L225 212" stroke="#efc2a1" stroke-width="19"/>
+<path d="M208 184Q218 165 235 176L247 189L255 192L246 204Q236 225 216 211Z" fill="#efc2a1"/>
+<path d="M211 178Q193 181 194 206L184 235Q216 248 224 216L216 195L235 183Q224 164 211 178Z" fill="#302a29"/>
+<path d="M239 194L242 195" stroke="#64493a" stroke-width="3"/>
+<path d="M249 194L254 192" stroke="#ad675c" stroke-width="4"/>
+<path d="M180 386H199 M211 389H231 M301 388H320 M331 383H348" stroke="#263d31" stroke-width="12"/>
+</g>
+<path d="M341 132C325 110 351 98 360 116C371 100 394 115 377 133L359 149Z" fill="#94d5aa"/>
+</svg>

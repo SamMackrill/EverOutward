@@ -1,0 +1,12 @@
+node_modules/
+dist/
+.env
+.env.*
+!.env.example
+.local/
+.herenow/state.json
+playwright-report/
+test-results/
+*.log
+
+*.tsbuildinfo

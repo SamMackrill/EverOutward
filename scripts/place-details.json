@@ -1,0 +1,73 @@
+{
+  "badc0717-2378-439c-8738-d067f0d0eb7b": {
+    "officialUrl": "https://www.nationaltrust.org.uk/visit/cambridgeshire/anglesey-abbey-gardens-and-lode-mill",
+    "description": "A country house, extensive gardens and a historic watermill in Lode, with seasonal planting and walks through the grounds."
+  },
+  "b8ff4df3-9fd1-4d9e-a8e8-41f6f0aa4240": {
+    "officialUrl": "https://www.nationaltrust.org.uk/visit/cambridgeshire/wimpole-estate",
+    "description": "Explore the country house, gardens, parkland and farm on this Cambridgeshire estate."
+  },
+  "117cf903-f044-4ad6-919d-988f877e6899": {
+    "officialUrl": "https://www.nationaltrust.org.uk/visit/cambridgeshire/wicken-fen-national-nature-reserve",
+    "description": "A historic fenland nature reserve with reedbeds, wetland wildlife and walking routes through a distinctive Cambridgeshire landscape."
+  },
+  "5a127ba2-d68f-4d07-91f2-cc3ba5432478": {
+    "officialUrl": "https://www.nationaltrust.org.uk/visit/cambridgeshire/houghton-mill-and-waterclose-meadows",
+    "description": "An eighteenth-century watermill beside the River Great Ouse, with riverside meadows and walks towards St Ives and the Hemingfords."
+  },
+  "207a7c87-e721-49cf-a5a9-f9d14cb7c821": {
+    "officialUrl": "https://www.nationaltrust.org.uk/visit/cambridgeshire/ramsey-abbey-gatehouse",
+    "description": "A carved medieval gatehouse, surviving from Ramsey’s once-great Benedictine abbey. Explore its history on a special open day.",
+    "hours": "Access is on selected open days; check the official calendar before travelling.",
+    "image": "/photos/ramsey.jpg",
+    "imageAuthor": "Thorvaldsson",
+    "imageSource": "https://commons.wikimedia.org/wiki/File:Ramsey_Abbey_Gatehouse_Front.JPG",
+    "imageLicence": "CC BY 3.0",
+    "imageLicenceUrl": "https://creativecommons.org/licenses/by/3.0",
+    "imageAlt": "A carved medieval gatehouse, surviving from Ramsey’s once-great Benedictine abbey"
+  },
+  "b6a246c4-80f6-46a3-bcd2-209baaa2ab25": {
+    "officialUrl": "https://www.nationaltrust.org.uk/visit/essex-bedfordshire-hertfordshire/willington-dovecote-and-stables",
+    "description": "A remarkable Tudor dovecote and stone stables beside the village church, with peaceful grounds and centuries of history.",
+    "hours": "Buildings open on selected afternoons; check official opening times.",
+    "image": "/photos/willington.jpg",
+    "imageAuthor": "Jason Ballard",
+    "imageSource": "https://commons.wikimedia.org/wiki/File:Tudor_Dovecote_at_Willington.jpg",
+    "imageLicence": "CC BY 2.0",
+    "imageLicenceUrl": "https://creativecommons.org/licenses/by/2.0",
+    "imageAlt": "A remarkable Tudor dovecote and stone stables beside the village church, with peaceful grounds and centuries of history"
+  },
+  "38ebb453-71c8-461d-b52c-a273b445ffaa": {
+    "officialUrl": "https://www.nationaltrust.org.uk/visit/essex-bedfordshire-hertfordshire/hatfield-forest",
+    "description": "An ancient royal hunting forest of veteran trees, woodland pasture and lakeside paths. A place for a long walk beneath the trees.",
+    "hours": "Check current access, parking and seasonal arrangements on the official site.",
+    "image": "/photos/hatfield.jpg",
+    "imageAuthor": "Martin John Bishop",
+    "imageSource": "https://commons.wikimedia.org/wiki/File:Hornbeam_Pollards,_Hatfield_Forest,_Hatfield_Broad_Oak,_Essex.jpg",
+    "imageLicence": "CC BY-SA 2.0",
+    "imageLicenceUrl": "https://creativecommons.org/licenses/by-sa/2.0",
+    "imageAlt": "An ancient royal hunting forest of veteran trees, woodland pasture and lakeside paths"
+  },
+  "040cf210-be0d-4bf2-9abc-b68024463715": {
+    "officialUrl": "https://www.nationaltrust.org.uk/visit/suffolk/ickworth-estate",
+    "description": "An Italianate house with a striking rotunda, formal gardens and rolling Suffolk parkland, with miles of paths to explore.",
+    "hours": "House, gardens and parkland have different opening times; check the official calendar.",
+    "image": "/photos/ickworth.jpg",
+    "imageAuthor": "Squeezyboy",
+    "imageSource": "https://commons.wikimedia.org/wiki/File:Ickworth_House.jpg",
+    "imageLicence": "CC BY 2.0",
+    "imageLicenceUrl": "https://creativecommons.org/licenses/by/2.0",
+    "imageAlt": "An Italianate house with a striking rotunda, formal gardens and rolling Suffolk parkland, with miles of paths to explore"
+  },
+  "5ca23d31-f786-44a1-ba43-e6405d729b71": {
+    "officialUrl": "https://www.nationaltrust.org.uk/visit/suffolk/theatre-royal-bury-st-edmunds",
+    "description": "A Regency theatre in the heart of Bury St Edmunds. Discover the historic auditorium on a tour or return for a performance.",
+    "hours": "Check the theatre’s current guided-tour and performance schedule.",
+    "image": "/photos/theatre-royal.jpg",
+    "imageAuthor": "Matt Brown",
+    "imageSource": "https://commons.wikimedia.org/wiki/File:Theatre_Royal,_Bury_St_Edmunds_2024-07-23.jpg",
+    "imageLicence": "CC BY 2.0",
+    "imageLicenceUrl": "https://creativecommons.org/licenses/by/2.0",
+    "imageAlt": "A Regency theatre in the heart of Bury St Edmunds"
+  }
+}
