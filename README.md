@@ -82,7 +82,7 @@ For an exceptional destination, use the review workflow above; **Save Waze dista
 {"homeId":"ID from npm run homes:list","homeVersion":"version from npm run homes:list","routes":[{"placeId":"ID from public/data/places.json","metres":12000,"seconds":900}]}
 ```
 
-The current five destinations have locally hosted Wikimedia Commons photographs with individual source, photographer and licence links. Descriptions and access notes link to the National Trust's official pages. Source metadata is maintained in `scripts/place-details.json`. Remaining catalogue destinations still need this enrichment as the journey expands.
+The current next five for all four homes have locally hosted photographs from Wikimedia Commons and Geograph, with individual source, photographer and licence links. Descriptions and access notes link to the National Trust's official pages. Source metadata is maintained in `scripts/place-details.json`. When the next five change or another home is added, review photo coverage for every home. Add a licensed image under `src/assets/destinations/` and its `/photos/FILENAME.jpg`, alt text and credit fields under the stable place ID in `scripts/place-details.json`; the app automatically bundles and fingerprints these images. Remaining catalogue destinations still need this enrichment as the journey expands.
 
 ## Publish and pin
 

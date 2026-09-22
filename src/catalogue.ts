@@ -1,21 +1,18 @@
 import details from "../scripts/place-details.json";
-import ramsey from "./assets/destinations/ramsey.jpg";
-import willington from "./assets/destinations/willington.jpg";
-import hatfield from "./assets/destinations/hatfield.jpg";
-import ickworth from "./assets/destinations/ickworth.jpg";
-import theatre from "./assets/destinations/theatre-royal.jpg";
 import type { Place } from "./types";
 import { boatAccess } from "../server/access-rules.mjs";
 
 // Bundle reviewed details and fingerprinted photographs with each app release.
 // A cached catalogue must not replace newly supplied photos with empty fields.
-const photos: Record<string, string> = {
-  "/photos/ramsey.jpg": ramsey,
-  "/photos/willington.jpg": willington,
-  "/photos/hatfield.jpg": hatfield,
-  "/photos/ickworth.jpg": ickworth,
-  "/photos/theatre-royal.jpg": theatre,
-};
+const photos: Record<string, string> = Object.fromEntries(
+  Object.entries(
+    import.meta.glob<string>("./assets/destinations/*.jpg", {
+      eager: true,
+      query: "?url",
+      import: "default",
+    }),
+  ).map(([path, url]) => [`/photos/${path.split("/").at(-1)}`, url]),
+);
 export function enrichCatalogue(places: Place[]): Place[] {
   return places.map((place) => {
     const current = {
