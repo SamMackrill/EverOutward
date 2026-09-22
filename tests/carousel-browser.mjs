@@ -201,7 +201,7 @@ try {
     );
   }
   await page.goto(`${origin}/#visit/empty`);
-  await page.locator(".visit-detail h2").waitFor();
+  await page.locator(".visit-detail h1").waitFor();
   assert.equal(await page.locator(".visit-carousel").count(), 0);
   // Guests see no empty gallery; only the owner is invited to add photos.
   assert.equal(await page.locator(".photo-gallery").count(), 0);

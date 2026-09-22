@@ -121,14 +121,23 @@ try {
         ?.selectedOptions[0]?.textContent === "Family base",
   );
   await page.getByRole("button", { name: "Map", exact: true }).click();
-  await page
-    .getByRole("button", { name: "Show all home locations", exact: true })
-    .click();
+  await page.getByRole("button", { name: "All homes", exact: true }).click();
   await page.locator(".home-map-label").first().waitFor();
   await page.waitForFunction(
     () => document.querySelectorAll(".home-map-label").length === 2,
   );
   assert.equal(await page.locator(".home-map-label").count(), 2);
+  // Map labels carry only the home name; status detail moves to the title.
+  assert.deepEqual(
+    (await page.locator(".home-map-label").allInnerTexts()).sort(),
+    ["CB3 0LL", "Family base"],
+  );
+  assert.equal(await page.locator(".home-map-label .current-dot").count(), 1);
+  assert.equal(await page.locator(".rank-marker").count(), 5);
+  assert.deepEqual(
+    (await page.locator(".rank-marker .rank-pin b").allInnerTexts()).sort(),
+    ["1", "2", "3", "4", "5"],
+  );
   assert.equal(await page.locator(".current-home-circle").count(), 1);
   assert.equal(await page.locator(".other-home-circle").count(), 1);
   assert.equal(
@@ -340,7 +349,7 @@ try {
     .waitFor();
   assert.deepEqual(errors, []);
   console.log(
-    "PASS: add/edit/switch/remove homes, unsaved home edits guarded, independent styled circles, non-current trip origin, archived-origin editing, mobile and public history.",
+    "PASS: add/edit/switch/remove homes, name-only home labels and numbered rank pins, unsaved home edits guarded, independent styled circles, non-current trip origin, archived-origin editing, mobile and public history.",
   );
 } finally {
   await browser.close();

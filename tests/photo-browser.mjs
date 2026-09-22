@@ -332,7 +332,7 @@ try {
     "https://photos.google.com/share/test?key=example",
   );
   await page.goto(`${origin}/?publicTest=1#visit/${visit.id}`);
-  await page.locator(".visit-detail h2").waitFor();
+  await page.locator(".visit-detail h1").waitFor();
   assert.equal(await page.locator(".photo-gallery").count(), 0);
   console.log(
     "PASS: local editing and photo deep links without login or cookies, story prompt opens the notes field, guests see a photo count and album link instead of Add photos, drop Google link, unavailable preview fallback, drop display photo onto link, select cover, drop standalone image, save/reopen, gallery and timeline render, provider link preserved, mobile layout.",

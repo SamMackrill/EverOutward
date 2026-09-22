@@ -98,7 +98,7 @@ export default function VisitDetail({
             ? ` · ${visit.publicationStatus || (visit.published ? "Ready to publish" : "Only on this computer")}`
             : ""}
         </p>
-        <h2>{visit.title || place?.name}</h2>
+        <h1 className="view-title">{visit.title || place?.name}</h1>
         <p className="location-line">
           <MapPin size={16} />
           {place?.name}
