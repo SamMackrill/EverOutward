@@ -1,4 +1,7 @@
 export type Place = {
+  boatRequired?: boolean;
+  entrance?: { lat: number; lng: number; version: string };
+  accessNote?: string;
   id: string;
   name: string;
   region: string;
@@ -57,11 +60,12 @@ export type Home = {
   archivedAt?: string | null;
 };
 export type HomeJourney = {
+  reviewedRoutes?: Route[];
   id: string;
   label: string;
   colour: string;
   range: VisitRange;
-  queue: { placeId: string; metres: number; seconds: number }[];
+  queue: Route[];
   complete: boolean;
   pendingCount: number;
   saved?: number;
@@ -75,13 +79,16 @@ export type VisitRange = {
   approximate: boolean;
 };
 export type Route = {
+  walkingMetres?: number;
+  walkingSeconds?: number;
+  walkingNote?: string;
   homeId?: string;
   placeId: string;
   metres: number;
   seconds: number;
-  homeVersion: string;
-  checkedAt: string;
-  source: string;
+  homeVersion?: string;
+  checkedAt?: string;
+  source?: string;
 };
 export type Comment = {
   id: string;

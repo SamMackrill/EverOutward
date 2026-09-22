@@ -317,6 +317,12 @@ export default function MapView({
         ? `${(r.metres / 1609.344).toFixed(1)} mi by road`
         : "Road distance unavailable";
       node.append(heading, route);
+      if (p.boatRequired) {
+        const boat = document.createElement("small");
+        boat.className = "boat-notice";
+        boat.textContent = "⛴ Boat trip required";
+        node.append(boat);
+      }
       if (history.length) {
         const list = document.createElement("ul");
         list.className = "map-visit-list";

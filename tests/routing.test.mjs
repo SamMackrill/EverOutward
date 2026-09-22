@@ -2,7 +2,14 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { createStore } from "../server/store.mjs";
 import { refreshDrivingRoutes } from "../server/routing.mjs";
-import { currentHome, homeRoutes, routeKey } from "../server/homes.mjs";
+import {
+  currentHome,
+  homeRoutes,
+  routeKey,
+  publicJournal,
+} from "../server/homes.mjs";
+import { boatAccess } from "../server/access-rules.mjs";
+import { applyPlaceCorrections } from "../server/distance-review.mjs";
 import { outward } from "../server/domain.mjs";
 
 const home = { lat: 52, lng: 0, version: "home-1" };
@@ -87,7 +94,7 @@ test("distant unknown places cannot change the next five; nearby unknowns remain
     false,
   );
 });
-test("unroutable and excessively snapped destinations are never invented", async () => {
+test("long walks resolve with separate estimates; missing driving routes stay unresolved", async () => {
   const store = createStore(":memory:");
   store.put("settings", "home", home);
   try {
@@ -106,13 +113,63 @@ test("unroutable and excessively snapped destinations are never invented", async
         }),
       }),
     });
-    assert.equal(result.calculated, 0);
-    assert.equal(result.unavailable, 2);
-    assert.equal(result.remaining, 2);
+    assert.equal(result.calculated, 1);
+    assert.equal(result.unavailable, 1);
+    assert.equal(result.remaining, 1);
     assert.equal(result.catalogueComplete, false);
     assert.match(result.unavailablePlaces[0].reason, /visitor entrance/);
     assert.equal(result.complete, false);
-    assert.equal(store.list("routes").length, 0);
+    const [route] = store.list("routes");
+    assert.equal(route.metres, 12000);
+    assert.equal(route.seconds, 900);
+    assert.equal(route.walkingMetres, 1800);
+    assert.equal(route.walkingSeconds, 1620);
+    assert.match(route.walkingNote, /straight-line.*4 km\/h/);
+    assert.equal(route.reviewed, true);
+    const journal = publicJournal(
+      places.slice(0, 2),
+      [],
+      [currentHome(store)],
+      [route],
+      currentHome(store).id,
+    );
+    assert.equal(journal.queue[0].walkingMetres, 1800);
+    assert.equal(journal.homes[0].reviewedRoutes[0].walkingSeconds, 1620);
+  } finally {
+    store.close();
+  }
+});
+
+test("known boat crossings are flagged and never turned into walking estimates", async () => {
+  const store = createStore(":memory:");
+  store.put("settings", "home", home);
+  const catalogue = Object.keys(boatAccess).map((id, i) => ({
+    id,
+    name: `Island ${i}`,
+    lat: 52 + i * 0.01,
+    lng: 0,
+  }));
+  try {
+    const corrected = applyPlaceCorrections(catalogue);
+    assert(corrected.every((p) => p.boatRequired));
+    const result = await refreshDrivingRoutes({
+      store,
+      places: corrected,
+      wait: async () => {},
+      fetcher: async () => ({
+        ok: true,
+        json: async () => ({
+          code: "Ok",
+          sources: [{ distance: 0 }],
+          destinations: Array.from({ length: 4 }, () => ({ distance: 2000 })),
+          distances: [[0, 10000, 20000, 30000]],
+          durations: [[0, 1000, 2000, 3000]],
+        }),
+      }),
+    });
+    assert.equal(result.saved, 0);
+    assert.equal(result.unavailable, 3);
+    assert(result.unavailablePlaces.every((p) => /boat/i.test(p.reason)));
   } finally {
     store.close();
   }

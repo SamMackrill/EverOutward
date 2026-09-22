@@ -3,6 +3,8 @@ import { existsSync } from "node:fs";
 import { createStore } from "../server/store.mjs";
 import { refreshDrivingRoutes } from "../server/routing.mjs";
 import { currentHome, liveHomes, migrateHomes } from "../server/homes.mjs";
+import { applyPlaceCorrections } from "../server/distance-review.mjs";
+import { createPublishJobs } from "../server/publish-jobs.mjs";
 const args = process.argv.slice(2);
 let homeId,
   all = false,
@@ -22,6 +24,7 @@ const databasePath = ".local/everoutward.sqlite";
 if (!existsSync(databasePath))
   throw new Error("Set up your home in Workspace first.");
 const store = createStore(databasePath);
+const routesBefore = JSON.stringify(store.list("routes"));
 try {
   migrateHomes(store);
   const homes = all
@@ -40,7 +43,7 @@ try {
     console.log("Calculating from " + home.label + " (" + home.id + ").");
     const result = await refreshDrivingRoutes({
       store,
-      places,
+      places: applyPlaceCorrections(places, store.list("placeCorrections")),
       homeId: home.id,
       force,
       onProgress: ({ processed, requested, calculated, unavailable }) =>
@@ -76,5 +79,11 @@ try {
     );
   }
 } finally {
+  if (JSON.stringify(store.list("routes")) !== routesBefore) {
+    const job = createPublishJobs({ store }).enqueue();
+    console.log(
+      "Updated distances saved; website publish queued (" + job.id + ").",
+    );
+  }
   store.close();
 }

@@ -11,6 +11,10 @@ import { createStore } from "../server/store.mjs";
 import { migrateHomes, publicJournal } from "../server/homes.mjs";
 import { sortVisits } from "../server/domain.mjs";
 import {
+  applyPlaceCorrections,
+  publicPlaceOverrides,
+} from "../server/distance-review.mjs";
+import {
   journalSnapshot,
   requireJournal,
   assertJournalUnchanged,
@@ -39,15 +43,24 @@ export async function publishWebsite(progress = () => {}) {
     await readFile("public/data/places.json", "utf8"),
   );
   const snapshot = journalSnapshot(db);
-  const journal = publicJournal(
+  const correctedPlaces = applyPlaceCorrections(
     catalogue.places,
+    snapshot.placeCorrections,
+  );
+  const journal = publicJournal(
+    correctedPlaces,
     sortVisits(snapshot.visits),
     snapshot.homes,
     snapshot.routes,
     snapshot.activeHomeId,
   );
   const visits = journal.visits;
+  journal.placeOverrides = publicPlaceOverrides(snapshot.placeCorrections);
   db.close();
+  await writeFile(
+    "dist/data/places.json",
+    JSON.stringify({ ...catalogue, places: correctedPlaces }),
+  );
   await writeFile(
     "dist/data/history.json",
     JSON.stringify({ ...journal, publishedAt: new Date().toISOString() }),

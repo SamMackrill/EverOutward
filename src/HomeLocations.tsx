@@ -42,14 +42,16 @@ function Dialog({
   );
 }
 
-function LocationPin({
+export function LocationPin({
   lat,
   lng,
   onChange,
+  entrance = false,
 }: {
   lat: number;
   lng: number;
   onChange: (lat: number, lng: number) => void;
+  entrance?: boolean;
 }) {
   const div = useRef<HTMLDivElement>(null),
     map = useRef<L.Map | null>(null),
@@ -70,7 +72,7 @@ function LocationPin({
       draggable: true,
       icon: L.divIcon({
         className: "home-picker-pin",
-        html: "<span>⌂</span>",
+        html: entrance ? "<span>●</span>" : "<span>⌂</span>",
         iconSize: [28, 28],
         iconAnchor: [14, 14],
       }),
@@ -97,7 +99,7 @@ function LocationPin({
     <div
       ref={div}
       className="home-location-picker"
-      aria-label="Choose home position: click the map or drag its pin. Latitude and longitude fields are available below."
+      aria-label={`Choose ${entrance ? "visitor entrance" : "home position"}: click the map or drag its pin. Latitude and longitude fields are available below.`}
     />
   );
 }
@@ -297,6 +299,7 @@ export default function HomeLocations({
   onRefresh,
   notify,
   onBusy,
+  onReview,
 }: {
   homes: Home[];
   currentId: string | null;
@@ -304,6 +307,7 @@ export default function HomeLocations({
   onRefresh: () => Promise<void>;
   notify: (message: string) => void;
   onBusy: (busy: boolean) => void;
+  onReview?: (homeId: string, placeId: string) => void;
 }) {
   const [editor, setEditor] = useState<Home | "new" | null>(null),
     [removing, setRemoving] = useState<Home | null>(null),
@@ -463,7 +467,15 @@ export default function HomeLocations({
                   <ul>
                     {journey.unavailablePlaces.map((p) => (
                       <li key={p.placeId}>
-                        {p.name}: {p.reason}
+                        {p.name}: {p.reason}{" "}
+                        {onReview && (
+                          <button
+                            className="text-button"
+                            onClick={() => onReview(home.id, p.placeId)}
+                          >
+                            Review {p.name}
+                          </button>
+                        )}
                       </li>
                     ))}
                   </ul>

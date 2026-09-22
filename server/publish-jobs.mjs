@@ -44,12 +44,17 @@ export function createPublishJobs({
       });
     return job;
   };
-  const start = () => {
+  const start = (queueIfRunning = false) => {
     let created = false;
     status();
     const job = store.transaction(() => {
       const existing = store.get("settings", "publishJob");
-      if (existing?.status === "running") return existing;
+      if (existing?.status === "running") {
+        if (queueIfRunning)
+          store.put("settings", "publishRequested", { value: true });
+        return existing;
+      }
+      store.delete("settings", "publishRequested");
       const job = {
         id: randomUUID(),
         status: "running",
@@ -99,7 +104,7 @@ export function createPublishJobs({
     }
     return status();
   };
-  return { start, status };
+  return { start: () => start(), enqueue: () => start(true), status };
 }
 
 export async function runPublishJob(store, id, publish) {

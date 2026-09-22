@@ -41,6 +41,8 @@ import {
 } from "lucide-react";
 import MapView from "./MapView";
 import HomeLocations from "./HomeLocations";
+import DistanceReview from "./DistanceReview";
+import BoatNotice from "./BoatNotice";
 import { enrichCatalogue } from "./catalogue";
 import VisitPhotoEditor, { PhotoLibraries } from "./VisitPhotoEditor";
 import PhotoDropZone from "./PhotoDropZone";
@@ -71,6 +73,30 @@ const duration = (seconds: number) =>
   seconds >= 3600
     ? `${Math.floor(seconds / 3600)}h ${Math.round((seconds % 3600) / 60)}m`
     : `${Math.round(seconds / 60)} min`;
+function WalkingEstimate({
+  route,
+  detail = false,
+}: {
+  route?: Route;
+  detail?: boolean;
+}) {
+  if (!route?.walkingMetres || !route.walkingSeconds) return null;
+  return (
+    <p className="small walking-estimate">
+      + approx. {miles(route.walkingMetres)} mi walk ·{" "}
+      {duration(route.walkingSeconds)} one way
+      {detail && (
+        <>
+          <br />
+          Approx. {miles(route.metres + route.walkingMetres)} mi and{" "}
+          {duration(route.seconds + route.walkingSeconds)} including the drive.
+          <br />
+          <span className="muted">{route.walkingNote}</span>
+        </>
+      )}
+    </p>
+  );
+}
 const date = (value: string) =>
   new Date(value + "T12:00:00").toLocaleDateString("en-GB", {
     day: "numeric",
@@ -256,6 +282,8 @@ function DestinationCard({
           {place.description ||
             `Discover this National Trust place in ${place.region}.`}
         </p>
+        <WalkingEstimate route={place} />
+        <BoatNotice place={place} />
       </div>
       <PhotoCredit place={place} />
       {index === 0 && (
@@ -279,7 +307,10 @@ function DestinationCard({
 }
 
 export default function App() {
-  const [places, setPlaces] = useState<Place[]>([]),
+  const [cataloguePlaces, setPlaces] = useState<Place[]>([]),
+    [placeOverrides, setPlaceOverrides] = useState<
+      (Partial<Place> & { id: string })[]
+    >([]),
     [visits, setVisits] = useState<Visit[]>([]),
     [home, setHome] = useState<Home | null>(null),
     [publicRange, setPublicRange] = useState<VisitRange | null>(null),
@@ -292,9 +323,13 @@ export default function App() {
       owner: false,
       passwordConfigured: true,
     });
-  const [publicQueue, setPublicQueue] = useState<
-      { placeId: string; metres: number; seconds: number }[]
-    >([]),
+  const places = useMemo(() => {
+    const corrections = new globalThis.Map(
+      placeOverrides.map((p) => [p.id, p]),
+    );
+    return cataloguePlaces.map((p) => ({ ...p, ...corrections.get(p.id) }));
+  }, [cataloguePlaces, placeOverrides]);
+  const [publicQueue, setPublicQueue] = useState<Route[]>([]),
     [publicComplete, setPublicComplete] = useState(false),
     [publicPending, setPublicPending] = useState(0);
   const [loading, setLoading] = useState(true),
@@ -348,6 +383,7 @@ export default function App() {
     setSession(s);
     const d = await api.state();
     setVisits(d.visits);
+    setPlaceOverrides(d.placeOverrides || []);
     setHome(d.home);
     setHomes(d.homes || []);
     setHomeJourneys(d.homeJourneys || []);
@@ -431,10 +467,20 @@ export default function App() {
   };
   const routes = useMemo(
     () =>
-      allRoutes.filter(
-        (r) => r.homeId === home?.id && r.homeVersion === home?.version,
-      ),
-    [allRoutes, home],
+      session.owner
+        ? allRoutes.filter(
+            (r) => r.homeId === home?.id && r.homeVersion === home?.version,
+          )
+        : [
+            ...new globalThis.Map(
+              [
+                ...publicQueue,
+                ...(homeJourneys.find((h) => h.id === activeHomeId)
+                  ?.reviewedRoutes || []),
+              ].map((r) => [r.placeId, r]),
+            ).values(),
+          ],
+    [allRoutes, home, session.owner, homeJourneys, activeHomeId, publicQueue],
   );
   async function chooseHome(id: string) {
     try {
@@ -794,16 +840,7 @@ export default function App() {
               <MapView
                 places={filtered}
                 visits={visits}
-                routes={
-                  session.owner
-                    ? routes
-                    : publicQueue.map((r) => ({
-                        ...r,
-                        homeVersion: "",
-                        checkedAt: "",
-                        source: "OSRM / FOSSGIS",
-                      }))
-                }
+                routes={routes}
                 visited={visited}
                 nextId={progress.complete ? progress.ranked[0]?.id : undefined}
                 nextIds={progress.ranked.map((p: Place) => p.id)}
@@ -1015,6 +1052,7 @@ export default function App() {
                           </h3>
                           {v.title && <p className="small muted">{p?.name}</p>}
                           <Stars value={v.rating} />
+                          <BoatNotice place={p} />
                           <p className="visit-origin">
                             <HomeIcon size={13} />
                             Started from{" "}
@@ -1351,6 +1389,7 @@ export default function App() {
               </>
             )}
             <p className="eyebrow">{selected.region}</p>
+            <BoatNotice place={selected} />
             <p>
               {selected.description ||
                 `Explore this National Trust place in ${selected.region}. Check the official visitor information for facilities, access and seasonal arrangements.`}
@@ -1365,17 +1404,19 @@ export default function App() {
                 </small>
               </span>
             </div>
-            {home && (
+            {(home || routes.some((r) => r.placeId === selected.id)) && (
               <div className="info-row">
                 <RouteIcon size={18} />
                 <span>
                   {routes.find((r) => r.placeId === selected.id)
                     ? `${miles(routes.find((r) => r.placeId === selected.id)!.metres)} mi by road · ${duration(routes.find((r) => r.placeId === selected.id)!.seconds)}`
                     : "Driving distance and time not saved yet"}
-                  <small>
-                    {miles(haversine(home, selected))} mi geographic distance
-                    from home
-                  </small>
+                  {home && (
+                    <small>
+                      {miles(haversine(home, selected))} mi geographic distance
+                      from home
+                    </small>
+                  )}
                 </span>
               </div>
             )}
@@ -1397,10 +1438,18 @@ export default function App() {
                 Official visitor information <ArrowUpRight size={16} />
               </a>
             </div>
+            <WalkingEstimate
+              route={routes.find((r) => r.placeId === selected.id)}
+              detail
+            />
             <p className="small muted">
-              The catalogue map point may differ from the visitor entrance.
-              Check the destination in Waze before travelling.
+              {selected.entrance
+                ? "Directions use the reviewed visitor entrance."
+                : "The catalogue map point may differ from the visitor entrance. Check the destination in Waze before travelling."}
             </p>
+            {selected.accessNote && (
+              <p className="small">{selected.accessNote}</p>
+            )}
             {session.owner && (
               <div className="button-row">
                 <button
@@ -1518,7 +1567,7 @@ export default function App() {
             });
             await reload();
             setRoutePlace(null);
-            setToast("Driving distance saved.");
+            setToast("Driving distance saved. Publishing has been queued.");
           }}
         />
       )}
@@ -2009,6 +2058,7 @@ function VisitDetail({
           {place?.name}
           <Stars value={visit.rating} />
         </p>
+        <BoatNotice place={place} />
         {!!visit.attendees?.length && (
           <section
             className="visit-attendees"
@@ -2407,6 +2457,11 @@ function Workspace({
       included: boolean;
     } | null>(null),
     [calculating, setCalculating] = useState(false),
+    [reviewSelection, setReviewSelection] = useState<{
+      homeId: string;
+      placeId: string;
+      serial: number;
+    } | null>(null),
     [site, setSite] = useState<{
       siteUrl: string | null;
       publishedAt: string | null;
@@ -2482,6 +2537,16 @@ function Workspace({
         onRefresh={onRefresh}
         notify={notify}
         onBusy={setCalculating}
+        onReview={(homeId, placeId) =>
+          setReviewSelection({ homeId, placeId, serial: Date.now() })
+        }
+      />
+      <DistanceReview
+        homes={homes}
+        currentId={home?.id || null}
+        places={places}
+        selection={reviewSelection}
+        onRefresh={onRefresh}
       />
       <section className="settings-section">
         <div>

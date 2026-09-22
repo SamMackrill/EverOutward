@@ -1,4 +1,6 @@
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
+import { applyPlaceCorrections } from "../server/distance-review.mjs";
+import { routeMatchesPlace } from "../server/domain.mjs";
 import { createStore } from "../server/store.mjs";
 import {
   currentHome,
@@ -11,6 +13,10 @@ if (!existsSync(".local/everoutward.sqlite"))
 const store = createStore(".local/everoutward.sqlite");
 try {
   migrateHomes(store);
+  const places = applyPlaceCorrections(
+    JSON.parse(readFileSync("public/data/places.json", "utf8")).places,
+    store.list("placeCorrections"),
+  );
   console.log(
     JSON.stringify(
       liveHomes(store).map((h) => ({
@@ -18,7 +24,9 @@ try {
         name: h.label,
         current: currentHome(store)?.id === h.id,
         version: h.version,
-        savedDistances: homeRoutes(store, h).length,
+        savedDistances: homeRoutes(store, h).filter((r) =>
+          places.some((p) => p.id === r.placeId && routeMatchesPlace(r, p)),
+        ).length,
       })),
       null,
       2,

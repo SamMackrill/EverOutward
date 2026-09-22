@@ -8,14 +8,25 @@ export function haversine(a, b) {
   return 6371008.8 * 2 * Math.atan2(Math.sqrt(h), Math.sqrt(1 - h));
 }
 
+export function routeMatchesPlace(route, place) {
+  return (
+    !route.reviewRequired &&
+    (route.destinationVersion || "catalogue") ===
+      (place?.entrance?.version || "catalogue")
+  );
+}
+export const isReviewedRoute = (route) =>
+  !!route?.reviewed || /^Owner-(entered|verified)/.test(route?.source || "");
 export function outward(places, visits, home, routes = []) {
+  const byId = new Map(places.map((p) => [p.id, p]));
   const visited = new Set(visits.map((v) => v.placeId));
   const routeMap = new Map(
     routes
       .filter(
         (r) =>
           r.homeVersion === home?.version &&
-          (!home?.id || r.homeId === home.id),
+          (!home?.id || r.homeId === home.id) &&
+          routeMatchesPlace(r, byId.get(r.placeId)),
       )
       .map((r) => [r.placeId, r]),
   );
@@ -29,7 +40,8 @@ export function outward(places, visits, home, routes = []) {
   // lower bound is longer. Allow 1 km of road snapping at each endpoint.
   const cutoff = ranked.length >= 5 ? ranked[4].metres : Infinity;
   const blockingPendingCount = home
-    ? pending.filter((p) => haversine(home, p) - 2000 <= cutoff).length
+    ? pending.filter((p) => haversine(home, p.entrance || p) - 2000 <= cutoff)
+        .length
     : pending.length;
   const complete = !!home && !blockingPendingCount;
   // Circle certainty is separate from certainty about the full next-five order.
@@ -40,7 +52,7 @@ export function outward(places, visits, home, routes = []) {
       ? [
           ranked[0],
           ...pending.filter(
-            (p) => haversine(home, p) - 2000 <= ranked[0].metres,
+            (p) => haversine(home, p.entrance || p) - 2000 <= ranked[0].metres,
           ),
         ]
       : [];
@@ -68,7 +80,8 @@ export function outward(places, visits, home, routes = []) {
           (r) =>
             r.homeVersion === home?.version &&
             (!home?.id || r.homeId === home.id) &&
-            visited.has(r.placeId),
+            visited.has(r.placeId) &&
+            routeMatchesPlace(r, byId.get(r.placeId)),
         )
         .map((r) => r.metres),
     ),
@@ -170,5 +183,6 @@ export function publicVisit(visit, homes = []) {
   };
 }
 export function wazeLink(place) {
-  return `https://waze.com/ul?ll=${place.lat},${place.lng}&navigate=yes&utm_source=everoutward`;
+  const destination = place.entrance || place;
+  return `https://waze.com/ul?ll=${destination.lat},${destination.lng}&navigate=yes&utm_source=everoutward`;
 }

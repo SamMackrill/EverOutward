@@ -1,6 +1,12 @@
 import { randomUUID } from "node:crypto";
 import { dirname, join } from "node:path";
-import { outward, publicRange, publicVisit } from "./domain.mjs";
+import {
+  outward,
+  publicRange,
+  publicVisit,
+  routeMatchesPlace,
+  isReviewedRoute,
+} from "./domain.mjs";
 
 export const routeKey = (home, placeId) =>
   JSON.stringify([home.id, home.version, placeId]);
@@ -85,7 +91,7 @@ export function homeJourneys(
         (r) =>
           r.homeId === home.id &&
           r.homeVersion === home.version &&
-          places.some((p) => p.id === r.placeId),
+          places.some((p) => p.id === r.placeId && routeMatchesPlace(r, p)),
       );
       const journey = outward(places, visits, home, saved);
       return {
@@ -100,13 +106,48 @@ export function homeJourneys(
               confirmed: journey.rangeComplete,
               approximate: false,
             },
-        queue: journey.ranked.map(({ id, metres, seconds }) => ({
-          placeId: id,
-          metres,
-          seconds,
-        })),
+        queue: journey.ranked.map(
+          ({
+            id,
+            metres,
+            seconds,
+            walkingMetres,
+            walkingSeconds,
+            walkingNote,
+          }) => ({
+            placeId: id,
+            metres,
+            seconds,
+            walkingMetres,
+            walkingSeconds,
+            walkingNote,
+          }),
+        ),
         complete: journey.complete,
         pendingCount: journey.blockingPendingCount,
+        reviewedRoutes: saved
+          .filter(isReviewedRoute)
+          .map(
+            ({
+              placeId,
+              metres,
+              seconds,
+              source,
+              checkedAt,
+              walkingMetres,
+              walkingSeconds,
+              walkingNote,
+            }) => ({
+              placeId,
+              metres,
+              seconds,
+              source,
+              checkedAt,
+              walkingMetres,
+              walkingSeconds,
+              walkingNote,
+            }),
+          ),
         ...(approximate
           ? {}
           : {

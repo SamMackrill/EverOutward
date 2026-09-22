@@ -6,10 +6,23 @@ import {
   scryptSync,
   timingSafeEqual,
 } from "node:crypto";
-import { publicVisit, sortVisits, outward, publicRange } from "./domain.mjs";
+import {
+  publicVisit,
+  sortVisits,
+  outward,
+  publicRange,
+  routeMatchesPlace,
+} from "./domain.mjs";
 import { cloudRecords, cloudRequest, siteState } from "./herenow.mjs";
 import { createPublishJobs } from "./publish-jobs.mjs";
 import { visitPublicationStatus } from "./publish-journal.mjs";
+import {
+  applyPlaceCorrections,
+  publicPlaceOverrides,
+  distanceReviewRows,
+  reviewRevision,
+  saveReviewedRoute,
+} from "./distance-review.mjs";
 import { refreshDrivingRoutes } from "./routing.mjs";
 import {
   currentHome,
@@ -123,11 +136,16 @@ export function createApp({
   enableCloud = true,
   localOwner = false,
   publisher,
+  autoPublish = enableCloud,
+  routeFetcher = fetch,
 }) {
   const app = express(),
     sessions = new Map(),
     limits = new Map();
   const placeIds = new Set(places.map((p) => p.id));
+  const cataloguePlaces = places;
+  const correctedPlaces = () =>
+    applyPlaceCorrections(cataloguePlaces, store.list("placeCorrections"));
   if (
     !store.get("settings", "homesSchema") &&
     !store.get("settings", "home") &&
@@ -136,6 +154,12 @@ export function createApp({
     store.put("settings", "home", initialHome);
   migrateHomes(store);
   const publishJobs = publisher || createPublishJobs({ store });
+  const publishCorrection = () =>
+    autoPublish
+      ? publishJobs.enqueue
+        ? publishJobs.enqueue()
+        : publishJobs.start()
+      : null;
   app.disable("x-powered-by");
   app.use(express.json({ limit: "10mb" }));
   app.use("/api", (req, res, next) => {
@@ -247,6 +271,7 @@ export function createApp({
     }
   });
   app.get("/api/state", (req, res) => {
+    const places = correctedPlaces();
     const visits = sortVisits(store.list("visits"));
     const home = currentHome(store);
     const homes = liveHomes(store);
@@ -262,6 +287,7 @@ export function createApp({
     if (!req.owner)
       return res.json({
         ...shared,
+        placeOverrides: publicPlaceOverrides(store.list("placeCorrections")),
         home: null,
         routes: [],
         homes: [],
@@ -269,6 +295,7 @@ export function createApp({
       });
     res.json({
       ...shared,
+      placeOverrides: publicPlaceOverrides(store.list("placeCorrections")),
       visits: visits.map((visit) => ({
         ...visit,
         startingHomeLabel: publicVisit(visit, allHomes).startingHomeLabel,
@@ -281,8 +308,10 @@ export function createApp({
       home,
       homes,
       activeHomeId: home?.id || null,
-      routes: routes.filter((r) =>
-        homes.some((h) => h.id === r.homeId && h.version === r.homeVersion),
+      routes: routes.filter(
+        (r) =>
+          homes.some((h) => h.id === r.homeId && h.version === r.homeVersion) &&
+          places.some((p) => p.id === r.placeId && routeMatchesPlace(r, p)),
       ),
       homeJourneys: homeJourneys(
         places,
@@ -536,15 +565,16 @@ export function createApp({
       .parse(req.body.routes);
     if (rows.some((r) => !placeIds.has(r.placeId)))
       throw new Error("The route file contains an unknown place ID.");
-    for (const r of rows)
-      store.put("routes", routeKey(home, r.placeId), {
-        homeId: home.id,
-        ...r,
-        homeVersion: home.version,
-        source: "Owner-entered Waze route",
-        checkedAt: new Date().toISOString(),
-      });
-    res.json({ imported: rows.length });
+    store.transaction(() => {
+      for (const r of rows)
+        saveReviewedRoute(
+          store,
+          home,
+          correctedPlaces().find((p) => p.id === r.placeId),
+          { ...r, source: "Owner-entered Waze route" },
+        );
+    });
+    res.json({ imported: rows.length, job: publishCorrection() });
   });
   app.get("/api/comments/:visitId", async (req, res) => {
     const visit = store.get("visits", req.params.visitId);
@@ -653,6 +683,10 @@ export function createApp({
       activeHomeId: currentHome(store)?.id || null,
       routeReports: store.list("routeReports"),
       legacyRoutes: store.list("legacyRoutes"),
+      placeCorrections: store.list("placeCorrections"),
+      routeReviews: store.list("routeReviews"),
+      routeHistory: store.list("routeHistory"),
+      placeCorrectionHistory: store.list("placeCorrectionHistory"),
       routes: store.list("routes"),
     });
   });
@@ -664,6 +698,163 @@ export function createApp({
     });
   });
   let routing = false;
+  app.get("/api/distance-review", owner, (req, res) => {
+    const home = requireHome(req.query.homeId || currentHome(store)?.id);
+    res.json({
+      home,
+      rows: distanceReviewRows(store, home, correctedPlaces()),
+    });
+  });
+  const reviewSchema = z.object({
+    homeId: z.string(),
+    homeVersion: z.string(),
+    revision: z.string(),
+    action: z.enum(["manual", "retry", "entrance", "flag"]),
+    metres: z.number().finite().positive().max(10000000).optional(),
+    seconds: z.number().finite().positive().max(1000000).optional(),
+    source: z.string().trim().min(1).max(180).optional(),
+    note: z.string().trim().max(2000).default(""),
+    reason: z.string().trim().min(1).max(600).optional(),
+    entrance: z
+      .object({
+        lat: z.number().finite().min(49).max(61),
+        lng: z.number().finite().min(-9).max(3),
+      })
+      .optional(),
+    publicNote: z.string().trim().max(600).default(""),
+    sourceUrl: url.optional(),
+  });
+  app.post("/api/distance-review/:placeId", owner, async (req, res) => {
+    const data = reviewSchema.parse(req.body),
+      home = requireHome(data.homeId);
+    if (routing)
+      throw new Error("Wait for the current distance calculation to finish.");
+    const place = correctedPlaces().find((p) => p.id === req.params.placeId);
+    if (!place) throw new Error("Choose a catalogue place.");
+    const check = () => {
+      if (
+        requireHome(home.id).version !== data.homeVersion ||
+        reviewRevision(
+          store,
+          home,
+          correctedPlaces().find((p) => p.id === place.id),
+        ) !== data.revision
+      )
+        throw Object.assign(
+          new Error(
+            "This home, route or entrance changed. Reopen its review before saving.",
+          ),
+          { status: 409 },
+        );
+    };
+    const outcomes = [];
+    if (data.action === "manual") {
+      if (!data.metres || !data.seconds || !data.source)
+        throw new Error("Enter the verified distance, travel time and source.");
+      store.transaction(() => {
+        check();
+        saveReviewedRoute(store, home, place, data);
+      });
+    } else if (data.action === "flag") {
+      if (!data.reason) throw new Error("Describe what needs checking.");
+      store.transaction(() => {
+        check();
+        const key = routeKey(home, place.id),
+          route = store.get("routes", key);
+        if (route) store.put("routes", key, { ...route, reviewRequired: true });
+        store.put("routeReviews", key, {
+          homeId: home.id,
+          homeVersion: home.version,
+          placeId: place.id,
+          open: true,
+          reason: data.reason,
+          note: data.note,
+          updatedAt: new Date().toISOString(),
+        });
+      });
+    } else {
+      if (data.action === "entrance") {
+        if (!data.entrance || !data.sourceUrl)
+          throw new Error(
+            "Set the visitor entrance and provide the page used to verify it.",
+          );
+        store.transaction(() => {
+          check();
+          const old = store.get("placeCorrections", place.id);
+          if (old) store.put("placeCorrectionHistory", randomUUID(), old);
+          store.put("placeCorrections", place.id, {
+            placeId: place.id,
+            version: randomUUID(),
+            entrance: data.entrance,
+            publicNote: data.publicNote,
+            sourceUrl: data.sourceUrl,
+            reviewNote: data.note,
+            reviewedAt: new Date().toISOString(),
+          });
+          for (const h of liveHomes(store))
+            store.put("routeReviews", routeKey(h, place.id), {
+              homeId: h.id,
+              homeVersion: h.version,
+              placeId: place.id,
+              open: true,
+              reason:
+                "The visitor entrance changed. This home needs a fresh route.",
+              note: data.note,
+              updatedAt: new Date().toISOString(),
+            });
+        });
+      } else
+        store.transaction(() => {
+          check();
+          const key = routeKey(home, place.id),
+            old = store.get("routeReviews", key);
+          store.put("routeReviews", key, {
+            ...old,
+            homeId: home.id,
+            homeVersion: home.version,
+            placeId: place.id,
+            open: !!old?.open,
+            note: data.note,
+            updatedAt: new Date().toISOString(),
+          });
+        });
+      routing = true;
+      try {
+        for (const h of data.action === "entrance"
+          ? liveHomes(store)
+          : [home]) {
+          try {
+            const result = await refreshDrivingRoutes({
+              store,
+              places: correctedPlaces(),
+              homeId: h.id,
+              onlyPlaceIds: [place.id],
+              force: true,
+              reviewed: true,
+              fetcher: routeFetcher,
+            });
+            const failed = result.unavailablePlaces.find(
+              (p) => p.placeId === place.id,
+            );
+            outcomes.push({
+              home: h.label,
+              resolved: !failed,
+              error: failed?.reason,
+            });
+          } catch (error) {
+            outcomes.push({
+              home: h.label,
+              resolved: false,
+              error: error.message,
+            });
+          }
+        }
+      } finally {
+        routing = false;
+      }
+    }
+    res.json({ outcomes, job: publishCorrection() });
+  });
   app.get("/api/publish", owner, (req, res) =>
     res.json({ job: publishJobs.status() }),
   );
@@ -676,14 +867,24 @@ export function createApp({
           error: "A route calculation or publish is already running.",
         });
       routing = true;
+      const routesBefore = JSON.stringify(store.list("routes"));
       try {
-        res.json(
-          await refreshDrivingRoutes({
-            store,
-            places,
-            homeId: req.params.id || currentHome(store)?.id,
-          }),
-        );
+        const result = await refreshDrivingRoutes({
+          store,
+          places: correctedPlaces(),
+          homeId: req.params.id || currentHome(store)?.id,
+        });
+        res.json({
+          ...result,
+          job:
+            JSON.stringify(store.list("routes")) !== routesBefore
+              ? publishCorrection()
+              : null,
+        });
+      } catch (error) {
+        if (JSON.stringify(store.list("routes")) !== routesBefore)
+          publishCorrection();
+        throw error;
       } finally {
         routing = false;
       }
