@@ -80,6 +80,22 @@ try {
   await page.getByLabel("Map detail", { exact: true }).selectOption("overview");
   await page.locator(".map-error").waitFor({ state: "hidden" });
   await page.screenshot({ path: join(screenshots, "overview-map.png") });
+  const toolbar = page.locator(".compact-toolbar");
+  const toolbarHeight = await toolbar.evaluate((e) => e.offsetHeight);
+  await page.getByRole("button", { name: "Find a place", exact: true }).click();
+  assert.equal(
+    await page.evaluate(() => document.activeElement?.ariaLabel),
+    "Search National Trust places",
+  );
+  assert.equal(await toolbar.evaluate((e) => e.offsetHeight), toolbarHeight);
+  await page.keyboard.type("Abbey");
+  await page.locator(".search-results").waitFor();
+  await page.keyboard.press("Escape");
+  await page.locator(".search-results").waitFor({ state: "detached" });
+  assert.equal(
+    await page.evaluate(() => document.activeElement?.textContent),
+    "Find a place",
+  );
   await page.getByRole("button", { name: "Our timeline", exact: true }).click();
   await page.locator(".visit-card").first().waitFor();
   for (let i = 0; i < 5; i++) {
@@ -143,6 +159,30 @@ try {
   await page
     .getByRole("button", { name: "Record a visit", exact: true })
     .waitFor();
+  await page
+    .getByRole("button", { name: "Record a visit", exact: true })
+    .click();
+  await page.keyboard.press("Escape");
+  await page.locator("dialog").waitFor({ state: "detached" });
+  await page
+    .getByRole("button", { name: "Record a visit", exact: true })
+    .click();
+  await page
+    .getByLabel("A title for the day", { exact: false })
+    .fill("Unsaved draft");
+  await page.keyboard.press("Escape");
+  await page.getByRole("alertdialog").waitFor();
+  await page.getByRole("button", { name: "Keep editing", exact: true }).click();
+  assert.equal(
+    await page.getByLabel("A title for the day", { exact: false }).inputValue(),
+    "Unsaved draft",
+  );
+  await page.mouse.click(5, 5);
+  await page.getByRole("alertdialog").waitFor();
+  await page
+    .getByRole("button", { name: "Discard changes", exact: true })
+    .click();
+  await page.locator("dialog").waitFor({ state: "detached" });
   await page
     .getByRole("button", { name: "Record a visit", exact: true })
     .click();
@@ -279,7 +319,7 @@ try {
   });
   assert.deepEqual(errors, []);
   console.log(
-    "PASS: bundled map, blocked-tile fallback, 45-entry infinite history, back position, visit/photo guest comments, owner signup, draft save, theme persistence, mobile overflow, all-distance calculation busy state and saved totals after reload, no browser exceptions.",
+    "PASS: bundled map, blocked-tile fallback, place search focus and stable toolbar, unsaved-edit guard on Esc and backdrop, 45-entry infinite history, back position, visit/photo guest comments, owner signup, draft save, theme persistence, mobile overflow, all-distance calculation busy state and saved totals after reload, no browser exceptions.",
   );
 } finally {
   await browser.close();

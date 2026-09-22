@@ -92,6 +92,13 @@ try {
     .getByRole("button", { name: "Add home location", exact: true })
     .click();
   await page.getByLabel("Home name", { exact: true }).fill("Family base");
+  await page.getByLabel("Close home dialog").click();
+  await page.getByRole("alertdialog").waitFor();
+  await page.getByRole("button", { name: "Keep editing", exact: true }).click();
+  assert.equal(
+    await page.getByLabel("Home name", { exact: true }).inputValue(),
+    "Family base",
+  );
   await page.getByLabel("Colour", { exact: true }).fill("#3569a0");
   await page.getByLabel("Latitude", { exact: true }).fill("51.99");
   await page.getByLabel("Longitude", { exact: true }).fill("-0.03");
@@ -333,7 +340,7 @@ try {
     .waitFor();
   assert.deepEqual(errors, []);
   console.log(
-    "PASS: add/edit/switch/remove homes, independent styled circles, non-current trip origin, archived-origin editing, mobile and public history.",
+    "PASS: add/edit/switch/remove homes, unsaved home edits guarded, independent styled circles, non-current trip origin, archived-origin editing, mobile and public history.",
   );
 } finally {
   await browser.close();

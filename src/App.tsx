@@ -5,7 +5,6 @@ import {
   useRef,
   useState,
   type FormEvent,
-  type ReactNode,
 } from "react";
 import {
   Map,
@@ -23,17 +22,12 @@ import {
   LogOut,
   Check,
   MapPin,
-  Star,
   Camera,
-  MessageCircle,
-  Trash2,
-  Pencil,
   Download,
   LoaderCircle,
   Compass,
   Globe,
   Home as HomeIcon,
-  ImagePlus,
   Users,
   Monitor,
   Sun,
@@ -43,24 +37,25 @@ import MapView from "./MapView";
 import HomeLocations from "./HomeLocations";
 import DistanceReview from "./DistanceReview";
 import BoatNotice from "./BoatNotice";
-import { enrichCatalogue } from "./catalogue";
-import VisitPhotoEditor, { PhotoLibraries } from "./VisitPhotoEditor";
-import PhotoDropZone from "./PhotoDropZone";
-import AlbumImport from "./AlbumImport";
-import VisitCarousel from "./VisitCarousel";
-import { MAX_VISIT_PHOTOS, photoIdentity } from "../server/photo-albums.mjs";
+import Modal from "./Modal";
+import VisitEditor from "./VisitEditor";
+import VisitDetail from "./VisitDetail";
+import RouteEditor from "./RouteEditor";
 import {
-  photoSource,
-  providerFor,
-  photoLinkIssue,
-} from "../server/photo-links.mjs";
+  EmptyPhoto,
+  PhotoCredit,
+  PhotoImage,
+  Stars,
+  WalkingEstimate,
+} from "./shared";
+import { date, duration, miles } from "./format";
+import { enrichCatalogue } from "./catalogue";
+import { photoSource } from "../server/photo-links.mjs";
 import * as api from "./api";
 import { haversine, outward, sortVisits, wazeLink } from "../server/domain.mjs";
 import type {
-  Comment,
   Home,
   HomeJourney,
-  Photo,
   Place,
   Route,
   Session,
@@ -68,152 +63,12 @@ import type {
   VisitRange,
 } from "./types";
 
-const miles = (m: number) => (m / 1609.344).toFixed(1);
-const duration = (seconds: number) =>
-  seconds >= 3600
-    ? `${Math.floor(seconds / 3600)}h ${Math.round((seconds % 3600) / 60)}m`
-    : `${Math.round(seconds / 60)} min`;
-function WalkingEstimate({
-  route,
-  detail = false,
-}: {
-  route?: Route;
-  detail?: boolean;
-}) {
-  if (!route?.walkingMetres || !route.walkingSeconds) return null;
-  return (
-    <p className="small walking-estimate">
-      + approx. {miles(route.walkingMetres)} mi walk ·{" "}
-      {duration(route.walkingSeconds)} one way
-      {detail && (
-        <>
-          <br />
-          Approx. {miles(route.metres + route.walkingMetres)} mi and{" "}
-          {duration(route.seconds + route.walkingSeconds)} including the drive.
-          <br />
-          <span className="muted">{route.walkingNote}</span>
-        </>
-      )}
-    </p>
-  );
-}
-const date = (value: string) =>
-  new Date(value + "T12:00:00").toLocaleDateString("en-GB", {
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  });
 const timelinePhoto = (v: Visit) =>
   v.photos.find((p) => p.id === v.coverId && photoSource(p)) ||
   v.photos.find((p) => photoSource(p));
 const official = (p: Place) =>
   p.officialUrl ||
   `https://www.nationaltrust.org.uk/search?query=${encodeURIComponent(p.name)}`;
-function Stars({ value }: { value: number | null }) {
-  return value ? (
-    <span className="stars" aria-label={`${value} out of 5 stars`}>
-      {[1, 2, 3, 4, 5].map((i) => (
-        <Star size={13} key={i} fill={i <= value ? "currentColor" : "none"} />
-      ))}
-    </span>
-  ) : null;
-}
-function EmptyPhoto({ small = false }: { small?: boolean }) {
-  return (
-    <div className={`empty-photo ${small ? "small" : ""}`}>
-      <Camera size={small ? 22 : 32} />
-      <span>No visit photo yet</span>
-    </div>
-  );
-}
-function PhotoImage({
-  photo,
-  className = "",
-}: {
-  photo: Photo;
-  className?: string;
-}) {
-  const [failed, setFailed] = useState(false);
-  const source = photoSource(photo);
-  useEffect(() => setFailed(false), [source]);
-  return failed || !source ? (
-    <div className="empty-photo">
-      <Camera />
-      <span>{providerFor(photo.url)?.name || "Photo collection"}</span>
-      <small>
-        {failed
-          ? "Preview unavailable · open original link"
-          : photoLinkIssue(photo.url)
-            ? "Google sharing link needed"
-            : "Open the linked photos"}
-      </small>
-    </div>
-  ) : (
-    <img
-      className={className}
-      src={source}
-      alt={photo.caption || "Photo from our visit"}
-      loading="lazy"
-      referrerPolicy="no-referrer"
-      onError={() => setFailed(true)}
-    />
-  );
-}
-function Modal({
-  title,
-  children,
-  onClose,
-  wide = false,
-}: {
-  title: string;
-  children: ReactNode;
-  onClose: () => void;
-  wide?: boolean;
-}) {
-  const ref = useRef<HTMLDialogElement>(null);
-  useEffect(() => {
-    const d = ref.current;
-    d?.showModal();
-    return () => d?.close();
-  }, []);
-  return (
-    <dialog
-      ref={ref}
-      className={`modal ${wide ? "wide" : ""}`}
-      onCancel={onClose}
-      onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
-      }}
-    >
-      <header>
-        <h2>{title}</h2>
-        <button
-          aria-label="Close dialog"
-          className="icon-button"
-          onClick={onClose}
-        >
-          <X />
-        </button>
-      </header>
-      {children}
-    </dialog>
-  );
-}
-
-function PhotoCredit({ place }: { place: Place }) {
-  return place.imageSource ? (
-    <p className="photo-credit">
-      Photo:{" "}
-      <a href={place.imageSource} target="_blank" rel="noreferrer">
-        {place.imageAuthor}
-      </a>{" "}
-      ·{" "}
-      <a href={place.imageLicenceUrl} target="_blank" rel="noreferrer">
-        {place.imageLicence}
-      </a>
-    </p>
-  ) : null;
-}
 function DestinationCard({
   place,
   index,
@@ -345,8 +200,7 @@ export default function App() {
     [pendingPhotoVisit, setPendingPhotoVisit] = useState<string | null>(() =>
       new URLSearchParams(location.search).get("addPhotos"),
     ),
-    [focusEditorPhotos, setFocusEditorPhotos] = useState(false),
-    [showPhotoAccess, setShowPhotoAccess] = useState(false),
+    [editorFocus, setEditorFocus] = useState<"photos" | "story">(),
     [routePlace, setRoutePlace] = useState<Place | null>(null);
   const [themeChoice, setThemeChoice] = useState(() => {
       try {
@@ -423,7 +277,7 @@ export default function App() {
     }
     const visit = visits.find((v) => v.id === pendingPhotoVisit);
     if (visit) {
-      setFocusEditorPhotos(true);
+      setEditorFocus("photos");
       setEditor(visit);
     } else
       setError(
@@ -606,10 +460,17 @@ export default function App() {
     );
     await reload();
     setEditor(null);
-    setFocusEditorPhotos(false);
+    setEditorFocus(undefined);
     setToast(
       "Visit saved to your local journal. Publish when you’re ready to share.",
     );
+  };
+  const mapSearchToggle = useRef<HTMLButtonElement>(null);
+  const closeMapSearch = () => {
+    setShowMapSearch(false);
+    setQuery("");
+    setFilter("all");
+    mapSearchToggle.current?.focus();
   };
   const selectOnMap = (p: Place) => {
     setSelected(p);
@@ -784,23 +645,7 @@ export default function App() {
         <section className="main-pane">
           <div className="map-view" hidden={view !== "map"}>
             <div className="map-toolbar compact-toolbar">
-              <span className="map-rule">
-                <Compass size={16} />
-                Shared discoveries. Distances from your current home.
-              </span>
-              <button
-                className="text-button map-search-toggle"
-                aria-expanded={showMapSearch}
-                onClick={() => {
-                  setShowMapSearch((v) => !v);
-                  setQuery("");
-                  setFilter("all");
-                }}
-              >
-                <Search size={15} />
-                {showMapSearch ? "Close search" : "Find a place"}
-              </button>
-              {showMapSearch && (
+              {showMapSearch ? (
                 <div className="secondary-search">
                   <label className="search">
                     <Search size={18} />
@@ -808,7 +653,11 @@ export default function App() {
                       aria-label="Search National Trust places"
                       value={query}
                       onChange={(e) => setQuery(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Escape") closeMapSearch();
+                      }}
                       placeholder="Place name"
+                      autoFocus
                     />
                     {query && (
                       <button
@@ -829,7 +678,35 @@ export default function App() {
                     <option value="visited">Visited</option>
                   </select>
                 </div>
+              ) : (
+                <span className="map-rule">
+                  <Compass size={16} />
+                  Shared discoveries. Distances from your current home.
+                </span>
               )}
+              <button
+                ref={mapSearchToggle}
+                className="text-button map-search-toggle"
+                aria-expanded={showMapSearch}
+                onClick={() => {
+                  if (showMapSearch) return closeMapSearch();
+                  setShowMapSearch(true);
+                  setQuery("");
+                  setFilter("all");
+                }}
+              >
+                {showMapSearch ? (
+                  <>
+                    <X size={16} />
+                    <span className="map-search-label">Close search</span>
+                  </>
+                ) : (
+                  <>
+                    <Search size={15} />
+                    Find a place
+                  </>
+                )}
+              </button>
             </div>
             <div className="map-container">
               <MapView
@@ -1061,16 +938,14 @@ export default function App() {
                               <span>With {v.attendees.join(", ")}</span>
                             </p>
                           )}
-                          <p>
-                            {v.summary ||
-                              v.notes.slice(0, 220) ||
-                              "A new memory in our National Trust journey."}
-                          </p>
+                          {(v.summary || v.notes.trim()) && (
+                            <p>{v.summary || v.notes.slice(0, 220)}</p>
+                          )}
                           <button
                             className="text-button"
                             onClick={() => navigate("visit/" + v.id)}
                           >
-                            Read the full visit <ArrowUpRight size={15} />
+                            Read the full visit <ChevronRight size={15} />
                           </button>
                         </div>
                       </article>
@@ -1152,13 +1027,13 @@ export default function App() {
                     places.find((p) => p.id === currentVisit.placeId)!,
                   )
                 }
-                onEdit={() => {
-                  setFocusEditorPhotos(false);
+                onEdit={(focus) => {
+                  setEditorFocus(focus);
                   setEditor(currentVisit);
                 }}
                 onAddPhotos={() => {
-                  if (session.local) setPendingPhotoVisit(currentVisit.id);
-                  else setShowPhotoAccess(true);
+                  setEditorFocus("photos");
+                  setEditor(currentVisit);
                 }}
                 onDelete={async () => {
                   await api.request("/api/visits/" + currentVisit.id, {
@@ -1292,7 +1167,7 @@ export default function App() {
                       className="text-button"
                       onClick={() => navigate("settings")}
                     >
-                      Set up driving distances <ArrowUpRight size={15} />
+                      Set up driving distances <ChevronRight size={15} />
                     </button>
                   </div>
                 )}
@@ -1313,7 +1188,7 @@ export default function App() {
                   yet. Follow the memories as our world gets a little wider.
                 </p>
                 <button className="button" onClick={() => navigate("timeline")}>
-                  Explore our timeline <ArrowUpRight size={16} />
+                  Explore our timeline <ChevronRight size={16} />
                 </button>
               </div>
             )}
@@ -1443,7 +1318,7 @@ export default function App() {
                 : "The catalogue map point may differ from the visitor entrance. Check the destination in Waze before travelling."}
             </p>
             {selected.accessNote && (
-              <p className="small">{selected.accessNote}</p>
+              <p className="access-note">{selected.accessNote}</p>
             )}
             {session.owner && (
               <div className="button-row">
@@ -1505,44 +1380,17 @@ export default function App() {
           }}
         />
       )}
-      {showPhotoAccess && currentVisit && (
-        <Modal
-          title="Add photos to this visit"
-          onClose={() => setShowPhotoAccess(false)}
-        >
-          <div className="form-stack">
-            <p>
-              Photos are added in your owner workspace on the computer where
-              your journal is saved. This public page shows your published
-              visits.
-            </p>
-            <a
-              className="button primary"
-              href={`http://127.0.0.1:3001/?addPhotos=${encodeURIComponent(currentVisit.id)}#visit/${encodeURIComponent(currentVisit.id)}`}
-              target="_blank"
-              rel="noreferrer"
-            >
-              Open this visit in owner workspace <ArrowUpRight size={16} />
-            </a>
-            <p className="small muted">
-              Keep the local app running, then sign in if asked. The visit will
-              open at its photo controls. On another device, open this link on
-              your journal computer instead.
-            </p>
-          </div>
-        </Modal>
-      )}
       {editor && (
         <VisitEditor
           visit={editor === "new" ? null : editor}
           defaultPlace={selected?.id}
           homes={homes}
           currentHome={home}
-          focusPhotos={focusEditorPhotos}
+          focus={editorFocus}
           places={places}
           onClose={() => {
             setEditor(null);
-            setFocusEditorPhotos(false);
+            setEditorFocus(undefined);
           }}
           onSave={saveVisit}
         />
@@ -1643,767 +1491,6 @@ function Login({
             <LogIn size={18} />
           )}{" "}
           {configured ? "Sign in" : "Create owner password"}
-        </button>
-      </form>
-    </Modal>
-  );
-}
-
-function VisitEditor({
-  focusPhotos = false,
-  visit,
-  defaultPlace,
-  homes,
-  currentHome,
-  places,
-  onClose,
-  onSave,
-}: {
-  focusPhotos?: boolean;
-  visit: Visit | null;
-  defaultPlace?: string;
-  homes: Home[];
-  currentHome: Home | null;
-  places: Place[];
-  onClose: () => void;
-  onSave: (
-    v: Omit<Visit, "id" | "createdAt" | "updatedAt"> & { updatedAt?: string },
-  ) => Promise<void>;
-}) {
-  const [origin, setOrigin] = useState(() => ({
-    id: visit?.startingHomeId || currentHome?.id || "",
-    version: visit?.startingHomeVersion || currentHome?.version || "",
-  }));
-  const [photos, setPhotos] = useState<Photo[]>(visit?.photos || []),
-    [coverId, setCoverId] = useState<string | null>(visit?.coverId || null),
-    [error, setError] = useState(""),
-    [busy, setBusy] = useState(false);
-  const photoSection = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    if (!focusPhotos) return;
-    const frame = requestAnimationFrame(() => {
-      photoSection.current?.scrollIntoView({ block: "start" });
-      photoSection.current?.focus({ preventScroll: true });
-    });
-    return () => cancelAnimationFrame(frame);
-  }, [focusPhotos]);
-  const [photoJobs, setPhotoJobs] = useState<Set<string>>(new Set());
-  const photoBusy = useCallback((id: string, active: boolean) => {
-    setPhotoJobs((current) => {
-      if (current.has(id) === active) return current;
-      const next = new Set(current);
-      if (active) next.add(id);
-      else next.delete(id);
-      return next;
-    });
-  }, []);
-  const submit = async (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    if (photoJobs.size) return;
-    if (JSON.stringify(photos).length > 8_000_000) {
-      setError(
-        "The display photos exceed 8 MB. Use shared links or fewer display copies.",
-      );
-      return;
-    }
-    setBusy(true);
-    setError("");
-    const d = new FormData(e.currentTarget);
-    try {
-      await onSave({
-        placeId: String(d.get("placeId")),
-        startingHomeId: origin.id,
-        startingHomeVersion: origin.version,
-        date: String(d.get("date")),
-        title: String(d.get("title")),
-        summary: String(d.get("summary")),
-        notes: String(d.get("notes")),
-        attendees: String(d.get("attendees") || "")
-          .split(/[,\n]/)
-          .map((name) => name.trim())
-          .filter(Boolean),
-        rating: d.get("rating") ? Number(d.get("rating")) : null,
-        published: d.get("published") === "on",
-        photos,
-        coverId,
-        updatedAt: visit?.updatedAt,
-      });
-    } catch (e) {
-      setError((e as Error).message);
-    } finally {
-      setBusy(false);
-    }
-  };
-  return (
-    <Modal
-      title={visit ? "Edit this memory" : "Record a visit"}
-      onClose={onClose}
-      wide
-    >
-      <form className="form-stack" onSubmit={submit}>
-        <label>
-          Started from
-          <select
-            aria-label="Started from"
-            required
-            value={origin.id}
-            onChange={(e) => {
-              const h = homes.find((h) => h.id === e.target.value);
-              if (h) setOrigin({ id: h.id, version: h.version });
-            }}
-          >
-            <option value="">Choose a starting home</option>
-            {homes.map((h) => (
-              <option value={h.id} key={h.id}>
-                {h.label}
-              </option>
-            ))}
-            {visit?.startingHomeId &&
-              !homes.some((h) => h.id === visit.startingHomeId) && (
-                <option value={visit.startingHomeId}>
-                  {visit.startingHomeLabel ||
-                    visit.startingHomeSnapshot?.label ||
-                    "Previous home"}{" "}
-                  (removed)
-                </option>
-              )}
-          </select>
-          <span className="optional">
-            This trip keeps its starting location when the current home changes.
-          </span>
-        </label>
-        {!homes.length && (
-          <p className="form-error">
-            Add a home location in Workspace before recording a visit.
-          </p>
-        )}
-        <div className="form-grid">
-          <label>
-            National Trust place
-            <select
-              name="placeId"
-              defaultValue={visit?.placeId || defaultPlace || ""}
-              required
-            >
-              <option value="">Choose a place</option>
-              {[...places]
-                .sort((a, b) => a.name.localeCompare(b.name))
-                .map((p) => (
-                  <option value={p.id} key={p.id}>
-                    {p.name}
-                  </option>
-                ))}
-            </select>
-          </label>
-          <label>
-            Visit date
-            <input
-              name="date"
-              type="date"
-              defaultValue={
-                visit?.date || new Date().toLocaleDateString("en-CA")
-              }
-              required
-            />
-          </label>
-        </div>
-        <label>
-          Who came along?{" "}
-          <span className="optional">
-            optional · separate names with commas
-          </span>
-          <input
-            name="attendees"
-            defaultValue={visit?.attendees?.join(", ") || ""}
-            maxLength={2430}
-            placeholder="Ana, Sam, Ele"
-          />
-        </label>
-        <label>
-          A title for the day <span className="optional">optional</span>
-          <input
-            name="title"
-            maxLength={120}
-            defaultValue={visit?.title}
-            placeholder="A slow afternoon in the gardens"
-          />
-        </label>
-        <label>
-          Timeline summary
-          <textarea
-            name="summary"
-            maxLength={280}
-            rows={2}
-            defaultValue={visit?.summary}
-            placeholder="The little moments you want to remember…"
-          />
-        </label>
-        <label>
-          The full story
-          <textarea
-            name="notes"
-            maxLength={8000}
-            rows={5}
-            defaultValue={visit?.notes}
-            placeholder="What did you discover? What would you return for?"
-          />
-        </label>
-        <div className="form-grid">
-          <label>
-            Your rating
-            <select name="rating" defaultValue={visit?.rating || ""}>
-              <option value="">Not rated</option>
-              {[5, 4, 3, 2, 1].map((n) => (
-                <option key={n} value={n}>
-                  {"★".repeat(n)} · {n} / 5
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="checkbox">
-            <input
-              name="published"
-              type="checkbox"
-              defaultChecked={visit?.published ?? true}
-            />
-            Include in the public journal when published
-          </label>
-          <p className="small muted">
-            Saving keeps this visit on this computer until you press Publish in
-            Workspace. Uncheck this option to keep it private and exclude it
-            from publishing.
-          </p>
-        </div>
-        <div className="section-heading" ref={photoSection} tabIndex={-1}>
-          <h3>Photo links</h3>
-          <button
-            className="button quiet"
-            type="button"
-            disabled={photos.length >= MAX_VISIT_PHOTOS}
-            onClick={() =>
-              setPhotos((p) => [
-                ...p,
-                {
-                  id: crypto.randomUUID(),
-                  url: "",
-                  caption: "",
-                  kind: "shared",
-                },
-              ])
-            }
-          >
-            <ImagePlus size={16} />
-            Add photo link
-          </button>
-        </div>
-        <p className="small muted">
-          Open your photo library, copy a shared photo or collection link, and
-          paste it below. Load its preview or choose a display photo, then
-          select a visit cover. Album links open the full collection at the
-          provider.
-        </p>
-        <PhotoLibraries />
-        <AlbumImport
-          photos={photos}
-          onBusy={photoBusy}
-          onAdd={(added) =>
-            setPhotos((current) => {
-              const seen = new Set(
-                current.filter((p) => p.url).map((p) => photoIdentity(p.url)),
-              );
-              return [
-                ...current,
-                ...added.filter((p) => {
-                  const key = photoIdentity(p.url);
-                  if (seen.has(key)) return false;
-                  seen.add(key);
-                  return true;
-                }),
-              ].slice(0, MAX_VISIT_PHOTOS);
-            })
-          }
-        />
-        <PhotoDropZone
-          remaining={MAX_VISIT_PHOTOS - photos.length}
-          onBusy={photoBusy}
-          onAdd={(added) =>
-            setPhotos((current) =>
-              [...current, ...added].slice(0, MAX_VISIT_PHOTOS),
-            )
-          }
-        />
-        {photos.map((photo, index) => (
-          <VisitPhotoEditor
-            key={photo.id}
-            photo={photo}
-            index={index}
-            isCover={coverId === photo.id}
-            onBusy={photoBusy}
-            onChange={(updated) => {
-              setPhotos((current) =>
-                current.map((item) => (item.id === photo.id ? updated : item)),
-              );
-              if (coverId === photo.id && !photoSource(updated))
-                setCoverId(null);
-            }}
-            onCover={() => setCoverId(photo.id)}
-            onRemove={() => {
-              setPhotos((current) =>
-                current.filter((item) => item.id !== photo.id),
-              );
-              if (coverId === photo.id) setCoverId(null);
-            }}
-          />
-        ))}
-        {error && (
-          <p className="form-error" role="alert">
-            {error}
-          </p>
-        )}
-        <div className="form-actions">
-          <button className="button" type="button" onClick={onClose}>
-            Cancel
-          </button>
-          <button
-            className="button primary"
-            disabled={busy || photoJobs.size > 0}
-          >
-            {busy ? (
-              <LoaderCircle size={18} className="spin" />
-            ) : (
-              <Check size={18} />
-            )}
-            Save visit
-          </button>
-        </div>
-      </form>
-    </Modal>
-  );
-}
-
-function VisitDetail({
-  visit,
-  place,
-  owner,
-  onBack,
-  onMap,
-  onEdit,
-  onAddPhotos,
-  onDelete,
-}: {
-  visit: Visit;
-  place: Place;
-  owner: boolean;
-  onBack: () => void;
-  onMap: () => void;
-  onEdit: () => void;
-  onAddPhotos: () => void;
-  onDelete: () => Promise<void>;
-}) {
-  const [selectedPhoto, setSelectedPhoto] = useState<Photo | null>(null),
-    [confirm, setConfirm] = useState(false),
-    [deleteError, setDeleteError] = useState("");
-  return (
-    <article className="visit-detail content-scroll">
-      <div className="detail-nav">
-        <button className="text-button" onClick={onBack}>
-          <ArrowLeft size={17} />
-          Back
-        </button>
-        {owner && (
-          <div className="button-row">
-            <button className="button quiet" onClick={onEdit}>
-              <Pencil size={15} />
-              Edit visit
-            </button>
-            <button
-              className="icon-button danger"
-              aria-label="Delete visit"
-              onClick={() => setConfirm(true)}
-            >
-              <Trash2 size={16} />
-            </button>
-          </div>
-        )}
-      </div>
-      <VisitCarousel
-        key={`${visit.id}:${visit.coverId}`}
-        photos={visit.photos}
-        coverId={visit.coverId}
-        suspended={!!selectedPhoto}
-        onOpen={setSelectedPhoto}
-      />
-      <div className="detail-copy">
-        <p className="visit-origin">
-          <HomeIcon size={15} />
-          Started from{" "}
-          {visit.startingHomeLabel ||
-            visit.startingHomeSnapshot?.label ||
-            "location not recorded"}
-        </p>
-        <p className="eyebrow">
-          {date(visit.date)}
-          {owner
-            ? ` · ${visit.publicationStatus || (visit.published ? "Ready to publish" : "Only on this computer")}`
-            : ""}
-        </p>
-        <h2>{visit.title || place?.name}</h2>
-        <p className="location-line">
-          <MapPin size={16} />
-          {place?.name}
-          <Stars value={visit.rating} />
-        </p>
-        <BoatNotice place={place} />
-        {!!visit.attendees?.length && (
-          <section
-            className="visit-attendees"
-            aria-label="People who came along"
-          >
-            <h3>
-              <Users size={17} />
-              Who came along
-            </h3>
-            <ul>
-              {visit.attendees.map((name) => (
-                <li key={name}>{name}</li>
-              ))}
-            </ul>
-          </section>
-        )}
-        {visit.summary && <p className="visit-lead">{visit.summary}</p>}
-        <div className="prose">
-          {visit.notes.split("\n").map((line, i) => (
-            <p key={i}>{line || "\u00a0"}</p>
-          ))}
-        </div>
-        <div className="button-row">
-          <button className="button" onClick={onMap}>
-            <Map size={16} />
-            Show place on map
-          </button>
-          <a
-            className="button"
-            href={wazeLink(place)}
-            target="_blank"
-            rel="noreferrer"
-          >
-            Open Waze <ArrowUpRight size={16} />
-          </a>
-        </div>
-        <section className="photo-gallery">
-          <div className="visit-photo-heading">
-            <h3>Photos from this visit</h3>
-            <button className="button primary" onClick={onAddPhotos}>
-              <ImagePlus size={16} />
-              Add photos
-            </button>
-          </div>
-          {visit.photos.length === 0 && (
-            <p className="small muted">
-              No photos added yet. Add shared links or images, then choose a
-              visit cover.
-            </p>
-          )}
-          <div className="visit-photo-grid">
-            {visit.photos.map((p) => (
-              <button
-                key={p.id}
-                onClick={() => setSelectedPhoto(p)}
-                aria-label={`View photo and comments: ${p.caption || "Visit photo"}`}
-              >
-                <PhotoImage photo={p} />
-                <span>
-                  {p.caption ||
-                    providerFor(p.url)?.name ||
-                    (p.kind === "album" ? "Photo album" : "Visit photo")}
-                </span>
-              </button>
-            ))}
-          </div>
-        </section>
-        {visit.published ? (
-          <Comments visit={visit} photoId={null} owner={owner} />
-        ) : (
-          <p className="notice">Publish this visit to invite comments.</p>
-        )}
-      </div>
-      {selectedPhoto && (
-        <Modal
-          title={selectedPhoto.caption || "A moment from our visit"}
-          onClose={() => setSelectedPhoto(null)}
-          wide
-        >
-          <div className="lightbox-image">
-            <PhotoImage photo={selectedPhoto} />
-          </div>
-          {selectedPhoto.url && (
-            <a
-              className="text-button"
-              href={selectedPhoto.url}
-              target="_blank"
-              rel="noreferrer"
-            >
-              {selectedPhoto.kind === "image"
-                ? "Open original photo"
-                : `Open in ${providerFor(selectedPhoto.url)?.name || "photo provider"}`}{" "}
-              <ArrowUpRight size={15} />
-            </a>
-          )}
-          {visit.published && (
-            <Comments visit={visit} photoId={selectedPhoto.id} owner={owner} />
-          )}
-        </Modal>
-      )}
-      {confirm && (
-        <Modal title="Remove this visit?" onClose={() => setConfirm(false)}>
-          <div className="form-stack">
-            <p>
-              This removes the local visit and its local comments. Publish again
-              to remove it from the public journal.
-            </p>
-            {deleteError && <p className="form-error">{deleteError}</p>}
-            <div className="button-row">
-              <button className="button" onClick={() => setConfirm(false)}>
-                Keep visit
-              </button>
-              <button
-                className="button danger-fill"
-                onClick={() =>
-                  onDelete().catch((e) => setDeleteError(e.message))
-                }
-              >
-                Remove visit
-              </button>
-            </div>
-          </div>
-        </Modal>
-      )}
-    </article>
-  );
-}
-
-function Comments({
-  visit,
-  photoId,
-  owner,
-}: {
-  visit: Visit;
-  photoId: string | null;
-  owner: boolean;
-}) {
-  const [items, setItems] = useState<Comment[]>([]),
-    [error, setError] = useState(""),
-    [busy, setBusy] = useState(false),
-    [notice, setNotice] = useState("");
-  const key = useRef(crypto.randomUUID());
-  const refresh = useCallback(async () => {
-    try {
-      const r = await api.comments(visit.id);
-      setItems(r.comments.filter((c) => (c.photoId || null) === photoId));
-      if (r.cloudError) setError(r.cloudError);
-    } catch (e) {
-      setError((e as Error).message);
-    }
-  }, [visit.id, photoId]);
-  useEffect(() => {
-    setError("");
-    refresh();
-  }, [refresh]);
-  const submit = async (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const form = e.currentTarget,
-      d = new FormData(form);
-    setBusy(true);
-    setError("");
-    try {
-      const name = String(d.get("name")).trim(),
-        body = String(d.get("body")).trim();
-      if (!name || !body)
-        throw new Error("Please enter your name and a comment.");
-      await api.postComment(
-        {
-          visitId: visit.id,
-          photoId,
-          name,
-          body,
-          website: String(d.get("website") || ""),
-        },
-        key.current,
-      );
-      key.current = crypto.randomUUID();
-      form.reset();
-      setNotice(
-        "Your comment has been posted. Thank you for sharing the moment.",
-      );
-      await refresh();
-    } catch (e) {
-      setError((e as Error).message);
-    } finally {
-      setBusy(false);
-    }
-  };
-  return (
-    <section className="comments">
-      <div className="section-heading">
-        <h3>
-          <MessageCircle size={20} />
-          {photoId ? "About this photo" : "Leave a little note"}
-        </h3>
-        <span className="count-label">{items.length}</span>
-      </div>
-      {items.map((c) => (
-        <article className="comment" key={c.id}>
-          <div className="avatar">
-            {c.name.trim().charAt(0).toUpperCase() || "?"}
-          </div>
-          <div>
-            <strong>{c.name}</strong>
-            {c.createdAt && (
-              <time>{new Date(c.createdAt).toLocaleDateString("en-GB")}</time>
-            )}
-            <p>{c.body}</p>
-          </div>
-          {owner && (
-            <button
-              className="icon-button danger"
-              aria-label={`Remove comment by ${c.name}`}
-              onClick={async () => {
-                try {
-                  await api.request(
-                    "/api/comments/" +
-                      c.id +
-                      ((c as Comment & { cloud?: boolean }).cloud
-                        ? "?cloud=1"
-                        : ""),
-                    { method: "DELETE" },
-                  );
-                  await refresh();
-                } catch (e) {
-                  setError((e as Error).message);
-                }
-              }}
-            >
-              <Trash2 size={15} />
-            </button>
-          )}
-        </article>
-      ))}
-      <form className="form-stack" onSubmit={submit}>
-        <p className="small muted">
-          No account needed. Your name and comment will be visible to other
-          visitors.
-        </p>
-        <label>
-          Your name
-          <input name="name" required maxLength={80} autoComplete="name" />
-        </label>
-        <label>
-          Your comment
-          <textarea
-            name="body"
-            required
-            maxLength={2000}
-            rows={3}
-            placeholder="Share a thought or a favourite memory…"
-          />
-        </label>
-        <label className="honeypot" aria-hidden="true">
-          Website
-          <input name="website" tabIndex={-1} autoComplete="off" />
-        </label>
-        {error && (
-          <p role="alert" className="form-error">
-            {error}{" "}
-            <button
-              type="button"
-              className="text-button"
-              onClick={() => {
-                setError("");
-                refresh();
-              }}
-            >
-              Retry loading
-            </button>
-          </p>
-        )}
-        {notice && (
-          <p role="status" className="success-note">
-            {notice}
-          </p>
-        )}
-        <button className="button primary" disabled={busy}>
-          {busy ? (
-            <LoaderCircle className="spin" size={17} />
-          ) : (
-            <MessageCircle size={17} />
-          )}
-          Post comment
-        </button>
-      </form>
-    </section>
-  );
-}
-
-function RouteEditor({
-  place,
-  onClose,
-  onSave,
-}: {
-  place: Place;
-  onClose: () => void;
-  onSave: (metres: number, seconds: number) => Promise<void>;
-}) {
-  const [error, setError] = useState(""),
-    [busy, setBusy] = useState(false);
-  return (
-    <Modal title={`Driving to ${place.name}`} onClose={onClose}>
-      <form
-        className="form-stack"
-        onSubmit={async (e) => {
-          e.preventDefault();
-          const d = new FormData(e.currentTarget);
-          setBusy(true);
-          try {
-            await onSave(
-              Number(d.get("miles")) * 1609.344,
-              Number(d.get("minutes")) * 60,
-            );
-          } catch (e) {
-            setError((e as Error).message);
-          } finally {
-            setBusy(false);
-          }
-        }}
-      >
-        <p>
-          Check the journey from your saved home in Waze, then record its road
-          distance and estimated travel time here.
-        </p>
-        <a
-          className="text-button"
-          href={wazeLink(place)}
-          target="_blank"
-          rel="noreferrer"
-        >
-          Open destination in Waze <ArrowUpRight size={16} />
-        </a>
-        <div className="form-grid">
-          <label>
-            Driving distance (miles)
-            <input name="miles" type="number" min="0" step="0.1" required />
-          </label>
-          <label>
-            Travel time (minutes)
-            <input name="minutes" type="number" min="0" step="1" required />
-          </label>
-        </div>
-        {error && (
-          <p className="form-error" role="alert">
-            {error}
-          </p>
-        )}
-        <button className="button primary" disabled={busy}>
-          Save route
         </button>
       </form>
     </Modal>

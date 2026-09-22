@@ -201,10 +201,10 @@ try {
     );
   }
   await page.goto(`${origin}/#visit/empty`);
-  await page
-    .getByRole("heading", { name: "Photos from this visit", exact: true })
-    .waitFor();
+  await page.locator(".visit-detail h2").waitFor();
   assert.equal(await page.locator(".visit-carousel").count(), 0);
+  // Guests see no empty gallery; only the owner is invited to add photos.
+  assert.equal(await page.locator(".photo-gallery").count(), 0);
   await page.emulateMedia({ reducedMotion: "no-preference" });
   await page.goto(`${origin}/#visit/wheel`);
   const interval = page.getByRole("combobox", { name: "Slideshow interval" });
