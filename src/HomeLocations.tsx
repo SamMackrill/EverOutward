@@ -73,6 +73,7 @@ export function LocationPin({
   );
 }
 
+/** Renders the guarded form for creating or editing a home location. */
 function HomeEditor({
   home,
   homes,
@@ -270,6 +271,7 @@ function HomeEditor({
   );
 }
 
+/** Manages home locations, current-home selection, and route calculations. */
 export default function HomeLocations({
   homes,
   currentId,

@@ -6,6 +6,7 @@ import { join } from "node:path";
 // UTF-8 punctuation decoded as Windows-1252 turns ’ into â€™ and — into â€”.
 const mojibake = /â€|Ã[\u0080-¿]|Â[ -¿]/;
 
+/** Recursively returns file paths whose names match the supplied pattern. */
 async function files(dir, pattern) {
   const found = [];
   for (const entry of await readdir(dir, { withFileTypes: true })) {

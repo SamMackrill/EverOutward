@@ -1,8 +1,10 @@
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { X } from "lucide-react";
 
-// Pass isDirty to protect unsaved edits: Esc, the backdrop, the close button
-// and any requestClose() call ask before discarding changes.
+/**
+ * Renders a modal dialog and optionally guards every close path against
+ * discarding unsaved edits.
+ */
 export default function Modal({
   title,
   children,
@@ -34,6 +36,7 @@ export default function Modal({
   useEffect(() => {
     if (confirming) keep.current?.focus();
   }, [confirming]);
+  /** Closes a clean dialog or asks the user to discard unsaved changes. */
   const requestClose = () => {
     if (isDirty?.()) setConfirming(true);
     else onClose();

@@ -4,6 +4,7 @@ import Modal from "./Modal";
 import { wazeLink } from "../server/domain.mjs";
 import type { Place } from "./types";
 
+/** Collects and saves a place's driving distance and duration. */
 export default function RouteEditor({
   place,
   onClose,

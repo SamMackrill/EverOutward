@@ -51,7 +51,7 @@ function pageData(html) {
   return results;
 }
 
-// The shared album behind a visit's photos, so guests can open the full set.
+/** Returns the shared album behind a visit's photos when one can be identified. */
 export function albumLink(photos) {
   const album = photos.find((p) => p.kind === "album" && p.url);
   if (album) return album.url;

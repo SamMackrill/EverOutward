@@ -14,6 +14,7 @@ import { MAX_VISIT_PHOTOS, photoIdentity } from "../server/photo-albums.mjs";
 import { photoSource } from "../server/photo-links.mjs";
 import type { Home, Photo, Place, Visit } from "./types";
 
+/** Edits visit details and photos while protecting unsaved changes. */
 export default function VisitEditor({
   focus,
   visit,
@@ -55,8 +56,7 @@ export default function VisitEditor({
     });
     return () => cancelAnimationFrame(frame);
   }, [focus]);
-  // Compare the form with its first render so an untouched editor closes
-  // without asking.
+  /** Serializes the current form fields for unsaved-change comparisons. */
   const snapshot = () =>
     JSON.stringify([
       form.current
@@ -71,10 +71,12 @@ export default function VisitEditor({
   useEffect(() => {
     initial.current = { form: snapshot(), photos };
   }, []);
+  /** Reports whether form fields or the photo collection have changed. */
   const isDirty = () =>
     !!initial.current &&
     (photos !== initial.current.photos || snapshot() !== initial.current.form);
   const [photoJobs, setPhotoJobs] = useState<Set<string>>(new Set());
+  /** Tracks active photo jobs so the visit cannot save before they finish. */
   const photoBusy = useCallback((id: string, active: boolean) => {
     setPhotoJobs((current) => {
       if (current.has(id) === active) return current;
@@ -84,6 +86,7 @@ export default function VisitEditor({
       return next;
     });
   }, []);
+  /** Converts the form into visit data and saves it through the parent handler. */
   const submit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (photoJobs.size) return;

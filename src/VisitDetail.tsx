@@ -30,6 +30,7 @@ import { wazeLink } from "../server/domain.mjs";
 import * as api from "./api";
 import type { Comment, Photo, Place, Visit } from "./types";
 
+/** Displays a visit's story, photos, navigation, and owner actions. */
 export default function VisitDetail({
   visit,
   place,
@@ -259,6 +260,7 @@ export default function VisitDetail({
   );
 }
 
+/** Lists comments for a visit or photo and provides the comment form. */
 function Comments({
   visit,
   photoId,
@@ -273,6 +275,7 @@ function Comments({
     [busy, setBusy] = useState(false),
     [notice, setNotice] = useState("");
   const key = useRef(crypto.randomUUID());
+  /** Reloads comments for the selected visit or photo. */
   const refresh = useCallback(async () => {
     try {
       const r = await api.comments(visit.id);
@@ -286,6 +289,7 @@ function Comments({
     setError("");
     refresh();
   }, [refresh]);
+  /** Posts the current comment form and refreshes the displayed thread. */
   const submit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const form = e.currentTarget,

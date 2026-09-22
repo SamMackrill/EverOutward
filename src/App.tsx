@@ -161,6 +161,7 @@ function DestinationCard({
   );
 }
 
+/** Renders the owner workspace or public journal and coordinates application state. */
 export default function App() {
   const [cataloguePlaces, setPlaces] = useState<Place[]>([]),
     [placeOverrides, setPlaceOverrides] = useState<
@@ -466,6 +467,7 @@ export default function App() {
     );
   };
   const mapSearchToggle = useRef<HTMLButtonElement>(null);
+  /** Closes map search and returns focus to its toolbar toggle. */
   const closeMapSearch = () => {
     setShowMapSearch(false);
     setQuery("");
