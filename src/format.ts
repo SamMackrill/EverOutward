@@ -19,3 +19,6 @@ export const date = (value: string) =>
     month: "long",
     year: "numeric",
   });
+const ordinals = ["th", "st", "nd", "rd"];
+export const ordinal = (n: number) =>
+  n + (ordinals[(n % 100) - 20 > 0 ? (n % 100) % 10 : n % 100] || "th");

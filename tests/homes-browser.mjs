@@ -87,7 +87,7 @@ const card = (label) =>
     .filter({ has: page.getByRole("heading", { name: label, exact: true }) });
 try {
   await page.goto(origin);
-  await page.getByRole("button", { name: "Workspace", exact: true }).click();
+  await page.getByRole("link", { name: "Workspace", exact: true }).click();
   await page
     .getByRole("button", { name: "Add home location", exact: true })
     .click();
@@ -120,7 +120,7 @@ try {
       document.querySelector('[aria-label="Current home location"]')
         ?.selectedOptions[0]?.textContent === "Family base",
   );
-  await page.getByRole("button", { name: "Map", exact: true }).click();
+  await page.getByRole("link", { name: "Map", exact: true }).click();
   await page.getByRole("button", { name: "All homes", exact: true }).click();
   await page.locator(".home-map-label").first().waitFor();
   await page.waitForFunction(
@@ -254,7 +254,7 @@ try {
     .check();
   await page.getByRole("button", { name: "Save visit", exact: true }).click();
   await page.locator("dialog").waitFor({ state: "detached" });
-  await page.getByRole("button", { name: "Our timeline", exact: true }).click();
+  await page.getByRole("link", { name: "Our timeline", exact: true }).click();
   await page
     .getByRole("heading", { name: "Trip from original home", exact: true })
     .waitFor();
@@ -263,11 +263,8 @@ try {
       .startingHomeId,
     firstHome.id,
   );
-  await page
-    .getByText("Started from CB3 0LL", { exact: true })
-    .last()
-    .waitFor();
-  await page.getByRole("button", { name: "Workspace", exact: true }).click();
+  await page.getByText("From CB3 0LL", { exact: true }).last().waitFor();
+  await page.getByRole("link", { name: "Workspace", exact: true }).click();
   await card("CB3 0LL")
     .getByRole("button", { name: "Edit", exact: true })
     .click();
@@ -285,9 +282,9 @@ try {
     .getByRole("button", { name: "Remove home location", exact: true })
     .click();
   await card("Original home").waitFor({ state: "detached" });
-  await page.getByRole("button", { name: "Our timeline", exact: true }).click();
+  await page.getByRole("link", { name: "Our timeline", exact: true }).click();
   await page
-    .getByRole("button", { name: "Trip from original home", exact: true })
+    .getByRole("link", { name: "Trip from original home", exact: true })
     .click();
   await page.getByRole("button", { name: "Edit visit", exact: true }).click();
   assert.equal(
@@ -303,7 +300,7 @@ try {
   );
   await page.getByRole("button", { name: "Save visit", exact: true }).click();
   await page.locator("dialog").waitFor({ state: "detached" });
-  await page.getByRole("button", { name: "Workspace", exact: true }).click();
+  await page.getByRole("link", { name: "Workspace", exact: true }).click();
   await page.setViewportSize({ width: 390, height: 844 });
   assert.equal(
     await page.evaluate(
@@ -338,15 +335,12 @@ try {
   );
   await page.route("**/data/history.json", (r) => r.fulfill({ json: journal }));
   await page.goto(origin);
-  await page.getByRole("button", { name: "Our timeline", exact: true }).click();
+  await page.getByRole("link", { name: "Our timeline", exact: true }).click();
   assert.equal(
-    await page.getByRole("button", { name: "Workspace", exact: true }).count(),
+    await page.getByRole("link", { name: "Workspace", exact: true }).count(),
     0,
   );
-  await page
-    .getByText("Started from Original home", { exact: true })
-    .first()
-    .waitFor();
+  await page.getByText("From Original home", { exact: true }).first().waitFor();
   assert.deepEqual(errors, []);
   console.log(
     "PASS: add/edit/switch/remove homes, name-only home labels and numbered rank pins, unsaved home edits guarded, independent styled circles, non-current trip origin, archived-origin editing, mobile and public history.",

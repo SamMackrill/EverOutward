@@ -92,11 +92,12 @@ const errors = [];
 page.on("pageerror", (e) => errors.push(e.message));
 await page.route("**/tile.openstreetmap.org/**", (r) => r.abort());
 try {
+  // Timeline cards only mention the origin when it isn't the current home.
+  await page.goto(origin + "/#visit/included");
+  await page.getByText("From Girton", { exact: true }).waitFor();
   await page.goto(origin + "/#timeline");
-  await page
-    .getByText("Started from Girton", { exact: true })
-    .first()
-    .waitFor();
+  await page.locator(".visit-card").first().waitFor();
+  assert.equal(await page.getByText("From Girton").count(), 0);
   assert.match(
     await page
       .locator(".visit-card")
@@ -104,7 +105,7 @@ try {
       .innerText(),
     /Only on this computer/i,
   );
-  await page.getByRole("button", { name: "Workspace", exact: true }).click();
+  await page.getByRole("link", { name: "Workspace", exact: true }).click();
   await page
     .getByText("1 visits included · 1 excluded from publishing.", {
       exact: true,
@@ -158,7 +159,7 @@ try {
   await page
     .getByText("2 visits published successfully.", { exact: true })
     .waitFor();
-  await page.getByRole("button", { name: "Our timeline", exact: true }).click();
+  await page.getByRole("link", { name: "Our timeline", exact: true }).click();
   assert.match(
     await page
       .locator(".visit-card")

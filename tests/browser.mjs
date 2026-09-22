@@ -108,7 +108,7 @@ try {
     await page.evaluate(() => document.activeElement?.textContent),
     "Find a place",
   );
-  await page.getByRole("button", { name: "Our timeline", exact: true }).click();
+  await page.getByRole("link", { name: "Our timeline", exact: true }).click();
   await page.locator(".visit-card").first().waitFor();
   for (let i = 0; i < 5; i++) {
     await page.evaluate(() => scrollTo(0, document.body.scrollHeight));
@@ -118,7 +118,7 @@ try {
   const before = await page.evaluate(() => scrollY);
   assert.ok(before > 1000, "the timeline scrolls with the page");
   await page
-    .getByRole("button", { name: "Browser memory 0", exact: true })
+    .getByRole("link", { name: "Browser memory 0", exact: true })
     .click();
   await page
     .getByRole("heading", { name: "Browser memory 0", exact: true })
@@ -168,7 +168,7 @@ try {
   await page
     .getByRole("button", { name: "Record a visit", exact: true })
     .waitFor();
-  await page.getByRole("button", { name: "Map", exact: true }).click();
+  await page.getByRole("link", { name: "Map", exact: true }).click();
   await page.getByRole("button", { name: "Find a place", exact: true }).click();
   await page.keyboard.type(catalogue.places[0].name);
   await page
@@ -244,29 +244,32 @@ try {
   await page
     .getByText("Visit saved to your local journal.", { exact: false })
     .waitFor();
-  await page.getByRole("button", { name: "Our timeline", exact: true }).click();
+  await page.getByRole("link", { name: "Our timeline", exact: true }).click();
   await page.getByLabel("Search visit history", { exact: true }).fill("Ele");
   await page
-    .getByRole("button", { name: "Saved through browser", exact: true })
+    .getByRole("link", { name: "Saved through browser", exact: true })
     .waitFor();
   assert.equal(await page.locator(".visit-card").count(), 1);
   await page
-    .getByRole("button", { name: "Saved through browser", exact: true })
+    .getByRole("link", { name: "Saved through browser", exact: true })
     .click();
-  assert.equal(await page.locator(".visit-attendees li").count(), 3);
+  assert.match(
+    await page.locator(".visit-meta").innerText(),
+    /With Ana, Sam, Ele/,
+  );
   await page.getByRole("button", { name: "Edit visit", exact: true }).click();
   assert.equal(
     await page.getByLabel("Who came along?", { exact: false }).inputValue(),
     "Ana, Sam, Ele",
   );
   await page.getByRole("button", { name: "Cancel", exact: true }).click();
-  await page.getByRole("button", { name: "Our timeline", exact: true }).click();
+  await page.getByRole("link", { name: "Our timeline", exact: true }).click();
   await page.getByLabel("Search visit history", { exact: true }).fill("");
-  await page.getByRole("button", { name: "Map", exact: true }).click();
+  await page.getByRole("link", { name: "Map", exact: true }).click();
   await page.getByRole("radio", { name: "Dark theme", exact: true }).check();
   await page.reload();
   assert.equal(await page.locator("html").getAttribute("data-theme"), "dark");
-  await page.getByRole("button", { name: "Our timeline", exact: true }).click();
+  await page.getByRole("link", { name: "Our timeline", exact: true }).click();
   await page.screenshot({ path: join(screenshots, "timeline-dark.png") });
   await page.setViewportSize({ width: 390, height: 844 });
   assert.equal(
@@ -284,12 +287,12 @@ try {
     }),
     ["fixed", 844],
   );
-  await tabs.getByRole("button", { name: "Map", exact: true }).click();
+  await tabs.getByRole("link", { name: "Map", exact: true }).click();
   await page.locator(".map-legend").waitFor({ state: "hidden" });
   await page.getByRole("button", { name: "Map key", exact: true }).click();
   await page.locator(".map-legend").waitFor({ state: "visible" });
   await page.getByRole("button", { name: "Map key", exact: true }).click();
-  await page.getByRole("button", { name: "Workspace", exact: true }).click();
+  await page.getByRole("link", { name: "Workspace", exact: true }).click();
   const driving = page.locator(".home-location-card").first();
   assert.equal(await driving.locator('input[type="file"]').count(), 0);
   let finishCalculation;

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { Camera, Star } from "lucide-react";
 import {
   photoSource,
@@ -56,13 +56,21 @@ export function EmptyPhoto({ small = false }: { small?: boolean }) {
 export function PhotoImage({
   photo,
   className = "",
+  alt,
+  fallback,
+  onFail,
 }: {
   photo: Photo;
   className?: string;
+  alt?: string;
+  // Shown instead of the provider placeholder when the preview won't load.
+  fallback?: ReactNode;
+  onFail?: () => void;
 }) {
   const [failed, setFailed] = useState(false);
   const source = photoSource(photo);
   useEffect(() => setFailed(false), [source]);
+  if ((failed || !source) && fallback) return <>{fallback}</>;
   return failed || !source ? (
     <div className="empty-photo">
       <Camera />
@@ -79,10 +87,13 @@ export function PhotoImage({
     <img
       className={className}
       src={source}
-      alt={photo.caption || "Photo from our visit"}
+      alt={alt ?? (photo.caption || "Photo from our visit")}
       loading="lazy"
       referrerPolicy="no-referrer"
-      onError={() => setFailed(true)}
+      onError={() => {
+        setFailed(true);
+        onFail?.();
+      }}
     />
   );
 }

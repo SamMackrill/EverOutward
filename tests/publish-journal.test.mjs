@@ -8,6 +8,7 @@ import {
   journalSnapshot,
   requireJournal,
   assertJournalUnchanged,
+  withSiteUrl,
 } from "../server/publish-journal.mjs";
 
 test("deployment backup preserves notes and display photos; concurrent edits cancel stale publication", () => {
@@ -51,4 +52,14 @@ test("deployment backup preserves notes and display photos; concurrent edits can
   } finally {
     store.close();
   }
+});
+
+test("link preview images become absolute once the site address is known", () => {
+  const html =
+    '<meta property="og:image" content="/icons/gate-1024.png" /><meta property="og:title" content="/not-a-url" />';
+  assert.equal(withSiteUrl(html, undefined), html);
+  assert.equal(
+    withSiteUrl(html, "https://quartz-oyster-7zxz.here.now/"),
+    '<meta property="og:image" content="https://quartz-oyster-7zxz.here.now/icons/gate-1024.png" /><meta property="og:title" content="/not-a-url" />',
+  );
 });

@@ -24,8 +24,6 @@ import {
   Download,
   LoaderCircle,
   Globe,
-  Home as HomeIcon,
-  Users,
   Monitor,
   Sun,
   Moon,
@@ -33,6 +31,8 @@ import {
 import MapPanel, { type MapCommand } from "./MapPanel";
 import NextFive, { NextGateCompact } from "./NextFive";
 import JourneyBar from "./JourneyBar";
+import Timeline from "./Timeline";
+import Link, { NavigationProvider } from "./navigation";
 import HomeLocations from "./HomeLocations";
 import DistanceReview from "./DistanceReview";
 import BoatNotice from "./BoatNotice";
@@ -40,16 +40,9 @@ import Modal from "./Modal";
 import VisitEditor from "./VisitEditor";
 import VisitDetail from "./VisitDetail";
 import RouteEditor from "./RouteEditor";
-import {
-  EmptyPhoto,
-  PhotoCredit,
-  PhotoImage,
-  Stars,
-  WalkingEstimate,
-} from "./shared";
+import { PhotoCredit, Stars, WalkingEstimate } from "./shared";
 import { date, duration, miles, shortDate } from "./format";
 import { enrichCatalogue } from "./catalogue";
-import { photoSource } from "../server/photo-links.mjs";
 import * as api from "./api";
 import { haversine, outward, sortVisits, wazeLink } from "../server/domain.mjs";
 import type {
@@ -62,9 +55,6 @@ import type {
   VisitRange,
 } from "./types";
 
-const timelinePhoto = (v: Visit) =>
-  v.photos.find((p) => p.id === v.coverId && photoSource(p)) ||
-  v.photos.find((p) => photoSource(p));
 const official = (p: Place) =>
   p.officialUrl ||
   `https://www.nationaltrust.org.uk/search?query=${encodeURIComponent(p.name)}`;
@@ -98,7 +88,6 @@ export default function App() {
   const [loading, setLoading] = useState(true),
     [error, setError] = useState(""),
     [toast, setToast] = useState(""),
-    [query, setQuery] = useState(""),
     [placeQuery, setPlaceQuery] = useState("");
   const [view, setView] = useState(location.hash.slice(1) || "map"),
     [selected, setSelected] = useState<Place | null>(null),
@@ -121,10 +110,9 @@ export default function App() {
       matchMedia("(prefers-color-scheme: dark)").matches,
     );
   const [command, setCommand] = useState<MapCommand>({
-      kind: "next",
-      serial: 0,
-    }),
-    [timelineLimit, setTimelineLimit] = useState(20);
+    kind: "next",
+    serial: 0,
+  });
   const theme =
     themeChoice === "system" ? (systemDark ? "dark" : "light") : themeChoice;
   useEffect(() => {
@@ -321,37 +309,25 @@ export default function App() {
         : [],
     [places, visited, home],
   );
-  const historyVisits = useMemo(
-    () =>
-      sortVisits(visits).filter((v: Visit) => {
-        const p = places.find((p) => p.id === v.placeId);
-        return (
-          !query ||
-          `${p?.name} ${v.title} ${v.summary} ${v.notes} ${(v.attendees || []).join(" ")}`
-            .toLowerCase()
-            .includes(query.toLowerCase())
-        );
-      }) as Visit[],
-    [visits, places, query],
-  );
   const currentVisit = view.startsWith("visit/")
     ? visits.find((v) => v.id === view.slice(6))
     : null;
   const onSelect = useCallback((place: Place) => setSelected(place), []);
-  const sentinel = useRef<HTMLDivElement>(null);
   useEffect(() => {
-    const el = sentinel.current;
-    if (!el || view !== "timeline") return;
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting)
-          setTimelineLimit((n) => Math.min(n + 20, historyVisits.length));
-      },
-      { rootMargin: "300px" },
-    );
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, [view, historyVisits.length, timelineLimit]);
+    const site = "Ever Outward",
+      visitPlace = currentVisit
+        ? places.find((p) => p.id === currentVisit.placeId)
+        : undefined;
+    document.title = currentVisit
+      ? `${currentVisit.title || visitPlace?.name || "A visit"} · ${shortDate(currentVisit.date)} · ${site}`
+      : view === "timeline"
+        ? `Our timeline · ${site}`
+        : view === "settings"
+          ? `Workspace · ${site}`
+          : view === "places"
+            ? `All places · ${site}`
+            : `${site}: The Next Gate`;
+  }, [view, currentVisit, places]);
   const saveVisit = async (
     value: Omit<Visit, "id" | "createdAt" | "updatedAt"> & {
       updatedAt?: string;
@@ -395,50 +371,54 @@ export default function App() {
       </div>
     );
   return (
-    <>
-      <a className="skip" href="#main">
+    <NavigationProvider value={navigate}>
+      <a
+        className="skip"
+        href="#main"
+        onClick={(e) => {
+          // #main is not a route; move focus without changing the view.
+          e.preventDefault();
+          document.getElementById("main")?.focus();
+        }}
+      >
         Skip to content
       </a>
       <header className="site-header">
-        <a
-          className="brand"
-          href="#map"
-          onClick={(e) => {
-            e.preventDefault();
-            navigate("map");
-          }}
-        >
+        <Link className="brand" to="map">
           <img src="/icons/gate.svg" alt="" />
           <span>
             <strong>Ever Outward</strong>
             <small>THE NEXT GATE</small>
           </span>
-        </a>
+        </Link>
         <nav aria-label="Main navigation">
-          <button
+          <Link
+            to="map"
             className={view === "map" ? "active" : ""}
-            onClick={() => navigate("map")}
+            aria-current={view === "map" ? "page" : undefined}
           >
             <Map size={17} />
             Map
-          </button>
-          <button
+          </Link>
+          <Link
+            to="timeline"
             className={
               view === "timeline" || view.startsWith("visit/") ? "active" : ""
             }
-            onClick={() => navigate("timeline")}
+            aria-current={view === "timeline" ? "page" : undefined}
           >
             <BookOpen size={17} />
             Our timeline
-          </button>
+          </Link>
           {session.owner && (
-            <button
+            <Link
+              to="settings"
               className={view === "settings" ? "active" : ""}
-              onClick={() => navigate("settings")}
+              aria-current={view === "settings" ? "page" : undefined}
             >
               <Settings size={17} />
               Workspace
-            </button>
+            </Link>
           )}
         </nav>
         <div className="header-actions">
@@ -517,6 +497,7 @@ export default function App() {
       )}
       <main
         id="main"
+        tabIndex={-1}
         className={`workspace ${view === "map" ? "workspace-map" : "workspace-page"}`}
       >
         <section className="main-pane">
@@ -550,141 +531,17 @@ export default function App() {
             onChooseHome={chooseHome}
             onBrowseList={() => navigate("places")}
           />
-          <div
-            className="timeline-view content-scroll"
+          <Timeline
             hidden={view !== "timeline"}
-          >
-            <div className="section-heading">
-              <h1 className="view-title">Our days beyond the gate</h1>
-              <span className="count-label">
-                {visits.length} {visits.length === 1 ? "visit" : "visits"}
-              </span>
-            </div>
-            <label className="search timeline-search">
-              <Search size={18} />
-              <input
-                aria-label="Search visit history"
-                placeholder="Find a memory or person…"
-                value={query}
-                onChange={(e) => {
-                  setQuery(e.target.value);
-                  setTimelineLimit(20);
-                }}
-              />
-            </label>
-            {!historyVisits.length ? (
-              <div className="empty-state">
-                <img src="/icons/gate.svg" alt="" />
-                <h3>
-                  {query
-                    ? "No matching memories"
-                    : "Every story starts with a first visit"}
-                </h3>
-                <p>
-                  {query
-                    ? "Try another place name or word from your journal."
-                    : "The walks, the gardens, the unexpected discoveries. They’ll all find a home here."}
-                </p>
-                {session.owner && (
-                  <button
-                    className="button primary"
-                    onClick={() => openEditor()}
-                  >
-                    <Plus size={17} />
-                    Record your first visit
-                  </button>
-                )}
-              </div>
-            ) : (
-              <div className="timeline-list">
-                {historyVisits.slice(0, timelineLimit).map((v, index) => {
-                  const p = places.find((p) => p.id === v.placeId),
-                    photo = timelinePhoto(v),
-                    month = v.date.slice(0, 7),
-                    prev = historyVisits[index - 1]?.date.slice(0, 7);
-                  return (
-                    <div key={v.id}>
-                      {month !== prev && (
-                        <h3 className="month-label">
-                          {new Date(v.date + "T12:00:00").toLocaleDateString(
-                            "en-GB",
-                            { month: "long", year: "numeric" },
-                          )}
-                        </h3>
-                      )}
-                      <article className="visit-card">
-                        <button
-                          className="visit-image"
-                          onClick={() => navigate("visit/" + v.id)}
-                          aria-label={`Read visit to ${p?.name} on ${date(v.date)}`}
-                        >
-                          {photo ? (
-                            <PhotoImage photo={photo} />
-                          ) : (
-                            <EmptyPhoto />
-                          )}
-                        </button>
-                        <div>
-                          <p className="eyebrow">
-                            {date(v.date)}
-                            {session.owner
-                              ? ` · ${v.publicationStatus || (v.published ? "Ready to publish" : "Only on this computer")}`
-                              : ""}
-                          </p>
-                          <h3>
-                            <button
-                              className="title-button"
-                              onClick={() => navigate("visit/" + v.id)}
-                            >
-                              {v.title || p?.name}
-                            </button>
-                          </h3>
-                          {v.title && <p className="small muted">{p?.name}</p>}
-                          <Stars value={v.rating} />
-                          <BoatNotice place={p} />
-                          <p className="visit-origin">
-                            <HomeIcon size={13} />
-                            Started from{" "}
-                            {v.startingHomeLabel ||
-                              v.startingHomeSnapshot?.label ||
-                              "location not recorded"}
-                          </p>
-                          {!!v.attendees?.length && (
-                            <p className="attendee-list">
-                              <Users size={14} />
-                              <span>With {v.attendees.join(", ")}</span>
-                            </p>
-                          )}
-                          {(v.summary || v.notes.trim()) && (
-                            <p>{v.summary || v.notes.slice(0, 220)}</p>
-                          )}
-                          <button
-                            className="text-button"
-                            onClick={() => navigate("visit/" + v.id)}
-                          >
-                            Read the full visit <ChevronRight size={15} />
-                          </button>
-                        </div>
-                      </article>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-            <div ref={sentinel} />
-            {historyVisits.length > timelineLimit ? (
-              <button
-                className="button"
-                onClick={() => setTimelineLimit((n) => n + 20)}
-              >
-                Load older visits
-              </button>
-            ) : historyVisits.length > 0 ? (
-              <p className="timeline-end">
-                You’ve reached your first visit. Here’s to the next one.
-              </p>
-            ) : null}
-          </div>
+            visits={visits}
+            places={places}
+            owner={session.owner}
+            currentHomeLabel={
+              homeJourneys.find((h) => h.id === activeHomeId)?.label ||
+              home?.label
+            }
+            onRecord={() => openEditor()}
+          />
           {view === "places" && (
             <div className="content-scroll">
               <button className="text-button" onClick={() => navigate("map")}>
@@ -929,18 +786,16 @@ export default function App() {
               <section>
                 <h3>Our visits here</h3>
                 {placeVisits.map((v) => (
-                  <button
+                  <Link
                     className="place-row"
                     key={v.id}
-                    onClick={() => {
-                      setSelected(null);
-                      navigate("visit/" + v.id);
-                    }}
+                    to={"visit/" + v.id}
+                    onClick={() => setSelected(null)}
                   >
                     <span>{date(v.date)}</span>
                     <Stars value={v.rating} />
                     <ChevronRight size={16} />
-                  </button>
+                  </Link>
                 ))}
               </section>
             )}
@@ -1001,7 +856,7 @@ export default function App() {
           {toast}
         </div>
       )}
-    </>
+    </NavigationProvider>
   );
 }
 

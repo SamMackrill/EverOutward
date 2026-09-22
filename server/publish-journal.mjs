@@ -74,3 +74,13 @@ export function assertJournalUnchanged(path, expected) {
     store.close();
   }
 }
+
+// Link previews need absolute image URLs. The site's address is known once
+// it has been published, so later publishes fill it in.
+export function withSiteUrl(html, siteUrl) {
+  if (!siteUrl) return html;
+  return html.replace(
+    /(<meta\s+(?:property|name)="(?:og:image|twitter:image)"\s+content=")([^"]*)"/g,
+    (_, start, value) => `${start}${new URL(value, siteUrl).href}"`,
+  );
+}

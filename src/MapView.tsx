@@ -188,6 +188,8 @@ export default function MapView({
             }),
           }).addTo(labels);
         }
+      // Home labels decide which town names to hide once these exist.
+      m.fire("labelsdrawn");
     };
     drawLabels();
     m.on("zoomend", drawLabels);
@@ -461,10 +463,10 @@ export default function MapView({
       cancelAnimationFrame(frame);
       frame = requestAnimationFrame(arrangeLabels);
     };
-    map.current?.on("zoomend moveend", arrangeSoon);
+    map.current?.on("zoomend moveend labelsdrawn", arrangeSoon);
     return () => {
       cancelAnimationFrame(frame);
-      map.current?.off("zoomend moveend", arrangeSoon);
+      map.current?.off("zoomend moveend labelsdrawn", arrangeSoon);
       l.clearLayers();
     };
   }, [
