@@ -1,4 +1,12 @@
-import type { Comment, Home, Route, Session, Visit, VisitRange } from "./types";
+import type {
+  Comment,
+  Home,
+  HomeJourney,
+  Route,
+  Session,
+  Visit,
+  VisitRange,
+} from "./types";
 
 const base =
   (import.meta as unknown as { env: Record<string, string> }).env
@@ -38,6 +46,9 @@ export async function session(): Promise<Session> {
 export async function state(): Promise<{
   visits: Visit[];
   home: Home | null;
+  homes?: Home[];
+  activeHomeId?: string | null;
+  homeJourneys?: HomeJourney[];
   routes: Route[];
   range?: VisitRange | null;
   queue?: { placeId: string; metres: number; seconds: number }[];
@@ -52,6 +63,9 @@ export async function state(): Promise<{
   return {
     visits: data.visits || [],
     home: null,
+    homes: [],
+    activeHomeId: data.activeHomeId || null,
+    homeJourneys: data.homes || [],
     routes: [],
     range: data.range || null,
     queue: data.queue || [],

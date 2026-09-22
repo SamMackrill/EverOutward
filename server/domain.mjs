@@ -12,7 +12,11 @@ export function outward(places, visits, home, routes = []) {
   const visited = new Set(visits.map((v) => v.placeId));
   const routeMap = new Map(
     routes
-      .filter((r) => r.homeVersion === home?.version)
+      .filter(
+        (r) =>
+          r.homeVersion === home?.version &&
+          (!home?.id || r.homeId === home.id),
+      )
       .map((r) => [r.placeId, r]),
   );
   const candidates = places.filter((p) => !visited.has(p.id));
@@ -28,6 +32,25 @@ export function outward(places, visits, home, routes = []) {
     ? pending.filter((p) => haversine(home, p) - 2000 <= cutoff).length
     : pending.length;
   const complete = !!home && !blockingPendingCount;
+  // Circle certainty is separate from certainty about the full next-five order.
+  // Every unrouted place that could beat the first known road route is a possible
+  // next gate. A circle is safe when all those gates give the same visited extent.
+  const rangeCandidates =
+    home && ranked.length
+      ? [
+          ranked[0],
+          ...pending.filter(
+            (p) => haversine(home, p) - 2000 <= ranked[0].metres,
+          ),
+        ]
+      : [];
+  const circle = confirmedVisitRange(
+    places,
+    visits,
+    home,
+    rangeCandidates,
+    candidates.length === 0,
+  );
   return {
     ranked: ranked.slice(0, 5),
     pendingCount: pending.length,
@@ -35,18 +58,17 @@ export function outward(places, visits, home, routes = []) {
     complete,
     visitedCount: visited.size,
     remainingCount: candidates.length,
-    radius: visitRange(
-      places,
-      visits,
-      home,
-      complete ? ranked[0] : null,
-      candidates.length === 0,
-    ),
+    radius: circle.radius,
+    rangeComplete: circle.confirmed,
+    rangeCandidates,
     maxRoad: Math.max(
       0,
       ...routes
         .filter(
-          (r) => r.homeVersion === home?.version && visited.has(r.placeId),
+          (r) =>
+            r.homeVersion === home?.version &&
+            (!home?.id || r.homeId === home.id) &&
+            visited.has(r.placeId),
         )
         .map((r) => r.metres),
     ),
@@ -68,21 +90,39 @@ export function visitRange(places, visits, centre, next, allVisited = false) {
   );
 }
 
+function confirmedVisitRange(places, visits, centre, candidates, allVisited) {
+  if (!centre || (!allVisited && !candidates.length))
+    return { radius: 0, confirmed: false };
+  if (allVisited)
+    return {
+      radius: visitRange(places, visits, centre, null, true),
+      confirmed: true,
+    };
+  const radius = visitRange(places, visits, centre, candidates[0]);
+  const confirmed = candidates.every(
+    (candidate) => visitRange(places, visits, centre, candidate) === radius,
+  );
+  return { radius: confirmed ? radius : 0, confirmed };
+}
+
 export function publicRange(places, visits, home, journey) {
   if (!home) return null;
   const centre = {
     lat: Math.round(home.lat * 10) / 10,
     lng: Math.round(home.lng * 10) / 10,
   };
+  const circle = confirmedVisitRange(
+    places,
+    visits,
+    centre,
+    journey.rangeCandidates ||
+      (journey.complete && journey.ranked[0] ? [journey.ranked[0]] : []),
+    journey.remainingCount === 0,
+  );
   return {
     centre,
-    radius: visitRange(
-      places,
-      visits,
-      centre,
-      journey.complete ? journey.ranked[0] : null,
-      journey.remainingCount === 0,
-    ),
+    radius: circle.radius,
+    confirmed: circle.confirmed,
     approximate: true,
   };
 }
@@ -92,7 +132,7 @@ export function sortVisits(visits) {
     (a, b) => b.date.localeCompare(a.date) || b.id.localeCompare(a.id),
   );
 }
-export function publicVisit(visit) {
+export function publicVisit(visit, homes = []) {
   const {
     id,
     placeId,
@@ -107,6 +147,7 @@ export function publicVisit(visit) {
     published,
     createdAt,
     updatedAt,
+    startingHomeSnapshot,
   } = visit;
   return {
     id,
@@ -122,6 +163,10 @@ export function publicVisit(visit) {
     published,
     createdAt,
     updatedAt,
+    startingHomeLabel:
+      homes.find((home) => home.id === visit.startingHomeId)?.label ||
+      startingHomeSnapshot?.label ||
+      null,
   };
 }
 export function wazeLink(place) {

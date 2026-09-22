@@ -75,3 +75,97 @@ test("public range uses rounded coordinates and recalculates its radius from tha
   assert.equal(JSON.stringify(result).includes("secret"), false);
   assert.equal(publicRange(places, visits, null, {}), null);
 });
+
+test("a provisional road queue cannot suppress a circle whose visited extent is already certain", () => {
+  const home = { lat: 54.3, lng: -5.6, version: "v1" };
+  const places = [
+    { id: "castle", lat: 54.4, lng: -5.6 },
+    { id: "lough", lat: 54.41, lng: -5.6 },
+    { id: "next", lat: 54.44, lng: -5.6 },
+    { id: "unrouted", lat: 54.5, lng: -5.6 },
+    { id: "far-visit", lat: 54.6, lng: -5.6 },
+  ];
+  const visits = ["castle", "lough", "far-visit"].map((placeId) => ({
+    placeId,
+  }));
+  const routes = [
+    {
+      placeId: "next",
+      metres: 27000,
+      seconds: 1500,
+      homeVersion: home.version,
+    },
+  ];
+  const result = outward(places, visits, home, routes);
+  assert.equal(result.complete, false);
+  assert.equal(result.blockingPendingCount, 1);
+  assert.equal(result.rangeComplete, true);
+  assert.equal(result.radius, haversine(home, places[1]));
+  assert.equal(publicRange(places, visits, home, result).confirmed, true);
+  assert.equal(publicRange(places, visits, home, result).radius, result.radius);
+  // If this missing distance later changes the road winner, the circle stays put.
+  const resolved = outward(places, visits, home, [
+    ...routes,
+    { placeId: "unrouted", metres: 24000, homeVersion: home.version },
+  ]);
+  assert.equal(resolved.complete, true);
+  assert.equal(resolved.ranked[0].id, "unrouted");
+  assert.equal(resolved.radius, result.radius);
+  // A visit between the two possible gates makes the circle genuinely uncertain.
+  const between = { id: "between", lat: 54.46, lng: -5.6 };
+  const uncertain = outward(
+    [...places, between],
+    [...visits, { placeId: "between" }],
+    home,
+    routes,
+  );
+  assert.equal(uncertain.rangeComplete, false);
+  assert.equal(uncertain.radius, 0);
+  assert.equal(
+    publicRange(
+      [...places, between],
+      [...visits, { placeId: "between" }],
+      home,
+      uncertain,
+    ).confirmed,
+    false,
+  );
+});
+
+test("missing routes affecting only later queue positions do not hold up the circle", () => {
+  const home = { lat: 52, lng: 0, version: "v1" };
+  const places = [
+    { id: "visited", lat: 52.01, lng: 0 },
+    { id: "next", lat: 52.03, lng: 0 },
+    { id: "unrouted", lat: 52.2, lng: 0 },
+  ];
+  const visits = [{ placeId: "visited" }];
+  const result = outward(places, visits, home, [
+    { placeId: "next", metres: 5000, homeVersion: home.version },
+  ]);
+  assert.equal(result.complete, false);
+  assert.equal(result.rangeComplete, true);
+  assert.equal(result.radius, haversine(home, places[0]));
+  const moved = outward(places, visits, { ...home, version: "v2" }, [
+    { placeId: "next", metres: 5000, homeVersion: home.version },
+  ]);
+  assert.equal(moved.rangeComplete, false);
+  assert.equal(moved.radius, 0);
+});
+
+test("public circle confirmation is recomputed after rounding the home centre", () => {
+  const home = { lat: 52.049, lng: 0, version: "v1" };
+  const places = [
+    { id: "visited", lat: 52.05, lng: 0 },
+    { id: "known", lat: 52.06, lng: 0 },
+    { id: "unknown", lat: 52.03, lng: 0 },
+  ];
+  const visits = [{ placeId: "visited" }];
+  const result = outward(places, visits, home, [
+    { placeId: "known", metres: 5000, homeVersion: home.version },
+  ]);
+  assert.equal(result.rangeComplete, true);
+  const published = publicRange(places, visits, home, result);
+  assert.equal(published.confirmed, false);
+  assert.equal(published.radius, 0);
+});

@@ -1,6 +1,21 @@
 import { createHash } from "node:crypto";
 import { existsSync } from "node:fs";
 import { createStore } from "./store.mjs";
+import { publicVisit } from "./domain.mjs";
+
+export const publishedVisitHash = (visit, homes = []) =>
+  createHash("sha256")
+    .update(JSON.stringify(publicVisit(visit, homes)))
+    .digest("hex");
+export function visitPublicationStatus(visit, publication, homes = []) {
+  const previous = publication?.visits?.[visit.id];
+  if (!visit.published)
+    return previous ? "Removal pending publish" : "Only on this computer";
+  if (!previous) return "Ready to publish";
+  return previous === publishedVisitHash(visit, homes)
+    ? "Published"
+    : "Changes not yet published";
+}
 
 export function journalSnapshot(store) {
   const rows = store.snapshot();
@@ -8,7 +23,8 @@ export function journalSnapshot(store) {
     (row) =>
       row.kind === "visits" ||
       row.kind === "routes" ||
-      (row.kind === "settings" && row.id === "home"),
+      row.kind === "homes" ||
+      (row.kind === "settings" && ["home", "activeHomeId"].includes(row.id)),
   );
   const fingerprint = createHash("sha256")
     .update(JSON.stringify(records))
@@ -25,6 +41,14 @@ export function journalSnapshot(store) {
       records.find((r) => r.kind === "settings" && r.id === "home")?.payload ||
         "null",
     ),
+    homes: records
+      .filter((r) => r.kind === "homes")
+      .map((r) => JSON.parse(r.payload)),
+    activeHomeId:
+      JSON.parse(
+        records.find((r) => r.kind === "settings" && r.id === "activeHomeId")
+          ?.payload || "null",
+      )?.value || null,
   };
 }
 export function requireJournal(path) {

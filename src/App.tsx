@@ -40,6 +40,7 @@ import {
   Moon,
 } from "lucide-react";
 import MapView from "./MapView";
+import HomeLocations from "./HomeLocations";
 import { enrichCatalogue } from "./catalogue";
 import VisitPhotoEditor, { PhotoLibraries } from "./VisitPhotoEditor";
 import PhotoDropZone from "./PhotoDropZone";
@@ -56,6 +57,7 @@ import { haversine, outward, sortVisits, wazeLink } from "../server/domain.mjs";
 import type {
   Comment,
   Home,
+  HomeJourney,
   Photo,
   Place,
   Route,
@@ -281,7 +283,10 @@ export default function App() {
     [visits, setVisits] = useState<Visit[]>([]),
     [home, setHome] = useState<Home | null>(null),
     [publicRange, setPublicRange] = useState<VisitRange | null>(null),
-    [routes, setRoutes] = useState<Route[]>([]),
+    [allRoutes, setRoutes] = useState<Route[]>([]),
+    [homes, setHomes] = useState<Home[]>([]),
+    [homeJourneys, setHomeJourneys] = useState<HomeJourney[]>([]),
+    [activeHomeId, setActiveHomeId] = useState<string | null>(null),
     [session, setSession] = useState<Session>({
       local: false,
       owner: false,
@@ -319,7 +324,7 @@ export default function App() {
       matchMedia("(prefers-color-scheme: dark)").matches,
     );
   const [command, setCommand] = useState<{
-      kind: "uk" | "home" | "place" | "next";
+      kind: "uk" | "home" | "place" | "next" | "homes";
       id?: string;
       serial: number;
     }>({ kind: "next", serial: 0 }),
@@ -344,6 +349,9 @@ export default function App() {
     const d = await api.state();
     setVisits(d.visits);
     setHome(d.home);
+    setHomes(d.homes || []);
+    setHomeJourneys(d.homeJourneys || []);
+    setActiveHomeId(d.activeHomeId || null);
     setPublicRange(d.range || null);
     setRoutes(d.routes);
     setPublicQueue(d.queue || []);
@@ -396,8 +404,8 @@ export default function App() {
     return () => window.removeEventListener("popstate", f);
   }, []);
   useEffect(() => {
-    if (home) setCommand({ kind: "home", serial: Date.now() });
-  }, [home?.version]);
+    setCommand({ kind: "next", serial: Date.now() });
+  }, [home?.version, activeHomeId]);
   useEffect(() => {
     if (!toast) return;
     const t = setTimeout(() => setToast(""), 5000);
@@ -421,6 +429,34 @@ export default function App() {
     history.pushState({ from: view }, "", `#${next}`);
     setView(next);
   };
+  const routes = useMemo(
+    () =>
+      allRoutes.filter(
+        (r) => r.homeId === home?.id && r.homeVersion === home?.version,
+      ),
+    [allRoutes, home],
+  );
+  async function chooseHome(id: string) {
+    try {
+      if (session.owner) {
+        await api.request("/api/homes/current", {
+          method: "PUT",
+          body: JSON.stringify({ homeId: id }),
+        });
+        await reload();
+      } else {
+        const selected = homeJourneys.find((h) => h.id === id);
+        if (!selected) return;
+        setActiveHomeId(id);
+        setPublicQueue(selected.queue);
+        setPublicRange(selected.range);
+        setPublicComplete(selected.complete);
+        setPublicPending(selected.pendingCount);
+      }
+    } catch (e) {
+      setToast((e as Error).message);
+    }
+  }
   const visited = useMemo(
     () => new Set(visits.map((v) => v.placeId)),
     [visits],
@@ -449,7 +485,12 @@ export default function App() {
   ]);
   const mapRange: VisitRange | null =
     session.owner && home
-      ? { centre: home, radius: progress.radius, approximate: false }
+      ? {
+          centre: home,
+          radius: progress.radius,
+          confirmed: progress.rangeComplete,
+          approximate: false,
+        }
       : publicRange;
   const filtered = useMemo(
     () =>
@@ -654,14 +695,27 @@ export default function App() {
           </h1>
         </div>
         <div className="journey-meta">
-          {session.owner && home ? (
-            <span className="home-label">
+          {homeJourneys.length > 0 ? (
+            <label className="home-switcher">
               <HomeIcon size={16} />
-              <span className="home-label-copy">
-                <span>{home.label}</span>
-                <span className="private-label">Private home base</span>
-              </span>
-            </span>
+              <span>Starting from</span>
+              <select
+                aria-label="Current home location"
+                value={activeHomeId || ""}
+                onChange={(e) => chooseHome(e.target.value)}
+              >
+                {homeJourneys.map((h) => (
+                  <option value={h.id} key={h.id}>
+                    {h.label}
+                  </option>
+                ))}
+              </select>
+              <small>
+                {session.owner
+                  ? "Exact locations stay private"
+                  : "Approximate home areas"}
+              </small>
+            </label>
           ) : (
             <span className="home-label">
               <Compass size={17} />
@@ -691,7 +745,7 @@ export default function App() {
             <div className="map-toolbar compact-toolbar">
               <span className="map-rule">
                 <Compass size={16} />
-                One home base. Always the nearest unvisited place.
+                Shared discoveries. Distances from your current home.
               </span>
               <button
                 className="text-button map-search-toggle"
@@ -754,6 +808,8 @@ export default function App() {
                 nextId={progress.complete ? progress.ranked[0]?.id : undefined}
                 nextIds={progress.ranked.map((p: Place) => p.id)}
                 home={home}
+                homeJourneys={homeJourneys}
+                activeHomeId={activeHomeId}
                 range={mapRange}
                 theme={theme}
                 selectedId={selected?.id}
@@ -761,6 +817,16 @@ export default function App() {
                 command={command}
               />
               <div className="map-view-controls">
+                {homeJourneys.length > 1 && (
+                  <button
+                    className="button"
+                    onClick={() =>
+                      setCommand({ kind: "homes", serial: Date.now() })
+                    }
+                  >
+                    Show all home locations
+                  </button>
+                )}
                 {progress.ranked.length > 0 && (
                   <button
                     onClick={() => {
@@ -803,8 +869,14 @@ export default function App() {
                   <span>
                     <i className="range-swatch" />
                     {mapRange.approximate
-                      ? "Approximate visit range"
-                      : "Visit range"}
+                      ? "Current circle · approximate"
+                      : "Current discovery circle"}
+                  </span>
+                )}
+                {homeJourneys.length > 1 && (
+                  <span>
+                    <i className="range-swatch other-home-swatch" />
+                    Other homes · dashed
                   </span>
                 )}
               </div>
@@ -929,7 +1001,9 @@ export default function App() {
                         <div>
                           <p className="eyebrow">
                             {date(v.date)}
-                            {!v.published ? " · Private draft" : ""}
+                            {session.owner
+                              ? ` · ${v.publicationStatus || (v.published ? "Ready to publish" : "Only on this computer")}`
+                              : ""}
                           </p>
                           <h3>
                             <button
@@ -941,6 +1015,13 @@ export default function App() {
                           </h3>
                           {v.title && <p className="small muted">{p?.name}</p>}
                           <Stars value={v.rating} />
+                          <p className="visit-origin">
+                            <HomeIcon size={13} />
+                            Started from{" "}
+                            {v.startingHomeLabel ||
+                              v.startingHomeSnapshot?.label ||
+                              "location not recorded"}
+                          </p>
                           {!!v.attendees?.length && (
                             <p className="attendee-list">
                               <Users size={14} />
@@ -1070,7 +1151,10 @@ export default function App() {
           {view === "settings" &&
             (session.owner ? (
               <Workspace
+                visits={visits}
                 home={home}
+                homes={homes}
+                homeJourneys={homeJourneys}
                 routes={routes}
                 places={places}
                 onRefresh={reload}
@@ -1408,6 +1492,8 @@ export default function App() {
         <VisitEditor
           visit={editor === "new" ? null : editor}
           defaultPlace={selected?.id}
+          homes={homes}
+          currentHome={home}
           focusPhotos={focusEditorPhotos}
           places={places}
           onClose={() => {
@@ -1426,6 +1512,8 @@ export default function App() {
               method: "PUT",
               body: JSON.stringify({
                 routes: [{ placeId: routePlace.id, metres, seconds }],
+                homeId: home?.id,
+                homeVersion: home?.version,
               }),
             });
             await reload();
@@ -1521,6 +1609,8 @@ function VisitEditor({
   focusPhotos = false,
   visit,
   defaultPlace,
+  homes,
+  currentHome,
   places,
   onClose,
   onSave,
@@ -1528,12 +1618,18 @@ function VisitEditor({
   focusPhotos?: boolean;
   visit: Visit | null;
   defaultPlace?: string;
+  homes: Home[];
+  currentHome: Home | null;
   places: Place[];
   onClose: () => void;
   onSave: (
     v: Omit<Visit, "id" | "createdAt" | "updatedAt"> & { updatedAt?: string },
   ) => Promise<void>;
 }) {
+  const [origin, setOrigin] = useState(() => ({
+    id: visit?.startingHomeId || currentHome?.id || "",
+    version: visit?.startingHomeVersion || currentHome?.version || "",
+  }));
   const [photos, setPhotos] = useState<Photo[]>(visit?.photos || []),
     [coverId, setCoverId] = useState<string | null>(visit?.coverId || null),
     [error, setError] = useState(""),
@@ -1572,6 +1668,8 @@ function VisitEditor({
     try {
       await onSave({
         placeId: String(d.get("placeId")),
+        startingHomeId: origin.id,
+        startingHomeVersion: origin.version,
         date: String(d.get("date")),
         title: String(d.get("title")),
         summary: String(d.get("summary")),
@@ -1599,6 +1697,42 @@ function VisitEditor({
       wide
     >
       <form className="form-stack" onSubmit={submit}>
+        <label>
+          Started from
+          <select
+            aria-label="Started from"
+            required
+            value={origin.id}
+            onChange={(e) => {
+              const h = homes.find((h) => h.id === e.target.value);
+              if (h) setOrigin({ id: h.id, version: h.version });
+            }}
+          >
+            <option value="">Choose a starting home</option>
+            {homes.map((h) => (
+              <option value={h.id} key={h.id}>
+                {h.label}
+              </option>
+            ))}
+            {visit?.startingHomeId &&
+              !homes.some((h) => h.id === visit.startingHomeId) && (
+                <option value={visit.startingHomeId}>
+                  {visit.startingHomeLabel ||
+                    visit.startingHomeSnapshot?.label ||
+                    "Previous home"}{" "}
+                  (removed)
+                </option>
+              )}
+          </select>
+          <span className="optional">
+            This trip keeps its starting location when the current home changes.
+          </span>
+        </label>
+        {!homes.length && (
+          <p className="form-error">
+            Add a home location in Workspace before recording a visit.
+          </p>
+        )}
         <div className="form-grid">
           <label>
             National Trust place
@@ -1686,10 +1820,15 @@ function VisitEditor({
             <input
               name="published"
               type="checkbox"
-              defaultChecked={visit?.published ?? false}
+              defaultChecked={visit?.published ?? true}
             />
             Include in the public journal when published
           </label>
+          <p className="small muted">
+            Saving keeps this visit on this computer until you press Publish in
+            Workspace. Uncheck this option to keep it private and exclude it
+            from publishing.
+          </p>
         </div>
         <div className="section-heading" ref={photoSection} tabIndex={-1}>
           <h3>Photo links</h3>
@@ -1851,9 +1990,18 @@ function VisitDetail({
         onOpen={setSelectedPhoto}
       />
       <div className="detail-copy">
+        <p className="visit-origin">
+          <HomeIcon size={15} />
+          Started from{" "}
+          {visit.startingHomeLabel ||
+            visit.startingHomeSnapshot?.label ||
+            "location not recorded"}
+        </p>
         <p className="eyebrow">
           {date(visit.date)}
-          {!visit.published ? " · Private draft" : ""}
+          {owner
+            ? ` · ${visit.publicationStatus || (visit.published ? "Ready to publish" : "Only on this computer")}`
+            : ""}
         </p>
         <h2>{visit.title || place?.name}</h2>
         <p className="location-line">
@@ -2217,57 +2365,105 @@ function RouteEditor({
   );
 }
 
+type PublishJob = {
+  id: string;
+  status: "running" | "succeeded" | "failed";
+  message?: string;
+  error?: string;
+  result?: {
+    siteUrl: string;
+    publishedAt: string;
+    pendingLocalChanges?: boolean;
+    publishedVisitCount: number;
+    warnings?: string[];
+  };
+};
 function Workspace({
+  visits,
   home,
+  homes,
+  homeJourneys,
   routes,
   places,
   onRefresh,
   notify,
 }: {
+  visits: Visit[];
   home: Home | null;
+  homes: Home[];
+  homeJourneys: HomeJourney[];
   routes: Route[];
   places: Place[];
   onRefresh: () => Promise<void>;
   notify: (s: string) => void;
 }) {
-  const [location, setLocation] = useState(
-      home
-        ? { label: home.label, lat: home.lat, lng: home.lng }
-        : { label: "", lat: 52, lng: 0 },
-    ),
-    [postcode, setPostcode] = useState(""),
-    [error, setError] = useState(""),
-    [busy, setBusy] = useState(false),
+  const [error, setError] = useState(""),
+    [submitting, setSubmitting] = useState(false),
+    [job, setJob] = useState<PublishJob | null>(null),
+    [connectionError, setConnectionError] = useState(""),
+    [changingVisit, setChangingVisit] = useState(""),
+    [pendingSelection, setPendingSelection] = useState<{
+      id: string;
+      included: boolean;
+    } | null>(null),
     [calculating, setCalculating] = useState(false),
     [site, setSite] = useState<{
       siteUrl: string | null;
       publishedAt: string | null;
     }>({ siteUrl: null, publishedAt: null });
+  const busy = submitting || job?.status === "running";
+  const finished = useRef("");
   useEffect(() => {
     api
       .request<typeof site>("/api/site")
       .then(setSite)
       .catch(() => {});
   }, []);
+  useEffect(() => {
+    let cancelled = false;
+    let timer: ReturnType<typeof setTimeout>;
+    const poll = async () => {
+      try {
+        const { job: current } = await api.request<{ job: PublishJob | null }>(
+          "/api/publish",
+        );
+        if (cancelled) return;
+        setJob(current);
+        setConnectionError("");
+        if (current?.status === "succeeded" && current.result) {
+          setSite(current.result);
+          if (finished.current !== current.id) {
+            finished.current = current.id;
+            await onRefresh();
+          }
+        }
+      } catch {
+        if (!cancelled)
+          setConnectionError(
+            "Cannot reach the local server. Reconnecting to check publishing status…",
+          );
+      } finally {
+        if (!cancelled) timer = setTimeout(poll, 1500);
+      }
+    };
+    void poll();
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [onRefresh]);
   async function publish() {
-    setBusy(true);
+    setSubmitting(true);
     setError("");
     try {
-      const s = await api.request<{
-        siteUrl: string;
-        publishedAt: string;
-        pendingLocalChanges?: boolean;
-      }>("/api/publish", { method: "POST" });
-      setSite(s);
-      if (s.pendingLocalChanges)
-        setError(
-          "The site was published, but newer edits were saved during finalisation. They are safe on this computer; publish again to include them.",
-        );
-      else notify("Your public journal has been published.");
+      const result = await api.request<{ job: PublishJob }>("/api/publish", {
+        method: "POST",
+      });
+      setJob(result.job);
     } catch (e) {
       setError((e as Error).message);
     } finally {
-      setBusy(false);
+      setSubmitting(false);
     }
   }
   return (
@@ -2279,174 +2475,14 @@ function Workspace({
         </div>
         <Settings size={26} />
       </div>
-      {error && (
-        <p role="alert" className="form-error">
-          {error}
-        </p>
-      )}
-      <section className="settings-section">
-        <div>
-          <h3>Your starting point</h3>
-          <p>
-            Kept on this computer. Your exact home and exact distance circle are
-            excluded from the public site. The public map uses a centre rounded
-            to 0.1° and a range recalculated from that approximate area.
-          </p>
-        </div>
-        <form
-          className="form-stack"
-          onSubmit={async (e) => {
-            e.preventDefault();
-            try {
-              await api.request("/api/home", {
-                method: "PUT",
-                body: JSON.stringify(location),
-              });
-              await onRefresh();
-              notify(
-                home?.lat === location.lat && home?.lng === location.lng
-                  ? "Home saved. Your driving distances are unchanged."
-                  : "Home updated. Calculate all driving distances for your new starting point below.",
-              );
-            } catch (e) {
-              setError((e as Error).message);
-            }
-          }}
-        >
-          <div className="postcode-row">
-            <label>
-              Find a UK postcode
-              <input
-                value={postcode}
-                onChange={(e) => setPostcode(e.target.value)}
-                placeholder="Your postcode"
-              />
-            </label>
-            <button
-              type="button"
-              className="button"
-              onClick={async () => {
-                try {
-                  const h = await api.request<typeof location>(
-                    "/api/postcode?q=" + encodeURIComponent(postcode),
-                  );
-                  setLocation(h);
-                } catch (e) {
-                  setError((e as Error).message);
-                }
-              }}
-            >
-              Find
-            </button>
-          </div>
-          <label>
-            Home label
-            <input
-              value={location.label}
-              onChange={(e) =>
-                setLocation({ ...location, label: e.target.value })
-              }
-              required
-            />
-          </label>
-          <div className="form-grid">
-            <label>
-              Latitude
-              <input
-                type="number"
-                step="any"
-                value={location.lat}
-                onChange={(e) =>
-                  setLocation({ ...location, lat: Number(e.target.value) })
-                }
-                required
-              />
-            </label>
-            <label>
-              Longitude
-              <input
-                type="number"
-                step="any"
-                value={location.lng}
-                onChange={(e) =>
-                  setLocation({ ...location, lng: Number(e.target.value) })
-                }
-                required
-              />
-            </label>
-          </div>
-          <button className="button primary" disabled={busy || calculating}>
-            Save home
-          </button>
-        </form>
-      </section>
-      <section className="settings-section">
-        <div>
-          <h3>Driving distances</h3>
-          <p>
-            Calculate the driving distance and time to every place in one go.
-            They’re saved on this computer and reused for your next five places.
-            You only need to calculate them again if you move your starting
-            point.
-          </p>
-          <p className="small muted">
-            {routes.length} of {places.length} places have a saved driving
-            distance
-            {home ? " from this home." : ". Set your starting point first."}
-          </p>
-        </div>
-        <div className="form-stack">
-          <button
-            className="button primary"
-            disabled={
-              busy || calculating || !home || routes.length >= places.length
-            }
-            onClick={async () => {
-              setCalculating(true);
-              setError("");
-              try {
-                const result = await api.request<{
-                  saved: number;
-                  total: number;
-                  remaining: number;
-                }>("/api/routes/refresh", { method: "POST" });
-                await onRefresh();
-                notify(
-                  result.remaining
-                    ? `${result.saved} of ${result.total} distances saved. ${result.remaining} places need a road-access check; see the README for agent instructions.`
-                    : `All ${result.total} driving distances are saved.`,
-                );
-              } catch (e) {
-                setError((e as Error).message);
-                await onRefresh();
-              } finally {
-                setCalculating(false);
-              }
-            }}
-          >
-            {calculating ? (
-              <LoaderCircle className="spin" size={17} />
-            ) : (
-              <RouteIcon size={17} />
-            )}
-            {calculating
-              ? "Calculating all distances…"
-              : routes.length >= places.length
-                ? "All distances saved"
-                : "Calculate all distances"}
-          </button>
-          <p className="small muted" role="status">
-            {calculating
-              ? "This may take a minute or two. Each batch is saved as it finishes."
-              : "Saved distances don’t expire. If a calculation is interrupted, run it again to finish the remaining places."}
-          </p>
-          <p className="small muted">
-            Free estimates from OSRM / FOSSGIS. Calculating sends your starting
-            point to the routing service. Waze still opens directions for each
-            trip.
-          </p>
-        </div>
-      </section>
+      <HomeLocations
+        homes={homes}
+        currentId={home?.id || null}
+        journeys={homeJourneys}
+        onRefresh={onRefresh}
+        notify={notify}
+        onBusy={setCalculating}
+      />
       <section className="settings-section">
         <div>
           <h3>Your public here.now site</h3>
@@ -2472,18 +2508,101 @@ function Workspace({
           <button
             className="button primary"
             onClick={publish}
-            disabled={busy || calculating}
+            disabled={busy || calculating || !!changingVisit}
           >
             {busy ? (
               <LoaderCircle className="spin" size={18} />
             ) : (
               <Globe size={18} />
             )}{" "}
-            {busy ? "Building and publishing…" : "Publish journal to here.now"}
+            {busy ? "Publishing…" : "Publish journal to here.now"}
           </button>
+          <div className="publish-status" role="status" aria-live="polite">
+            {busy && (
+              <p>
+                {job?.message || "Starting publication…"} You can leave this
+                page; publishing will continue.
+              </p>
+            )}
+            {!busy && job?.status === "succeeded" && (
+              <p>
+                {job.result?.publishedVisitCount} visits published successfully.
+                {job.result?.pendingLocalChanges
+                  ? " Newer local edits are waiting for another publish."
+                  : ""}
+              </p>
+            )}
+            {job?.result?.warnings?.map((warning, i) => (
+              <p key={i}>{warning}</p>
+            ))}
+            {connectionError && <p>{connectionError}</p>}
+          </div>
+          {(error || job?.status === "failed") && (
+            <p role="alert" className="form-error">
+              {error || job?.error} Your local visits are safe. You can retry
+              publishing.
+            </p>
+          )}
+          <p className="small">
+            {visits.filter((v) => v.published).length} visits included ·{" "}
+            {visits.filter((v) => !v.published).length} excluded from
+            publishing.
+          </p>
+          <details className="publish-selection">
+            <summary>Choose visits to publish</summary>
+            <p className="small muted">
+              Unchecked visits are kept on this computer. If a visit is already
+              public, unchecking it removes it from the website the next time
+              you publish.
+            </p>
+            {visits.map((visit) => (
+              <label className="checkbox" key={visit.id}>
+                <input
+                  type="checkbox"
+                  aria-label={`Include ${visit.title || places.find((p) => p.id === visit.placeId)?.name || "visit"} in next publish`}
+                  checked={
+                    pendingSelection?.id === visit.id
+                      ? pendingSelection.included
+                      : visit.published
+                  }
+                  disabled={busy || !!changingVisit}
+                  onChange={async (e) => {
+                    setChangingVisit(visit.id);
+                    setPendingSelection({
+                      id: visit.id,
+                      included: e.target.checked,
+                    });
+                    setError("");
+                    try {
+                      await api.request(`/api/visits/${visit.id}/publication`, {
+                        method: "PATCH",
+                        body: JSON.stringify({
+                          published: e.target.checked,
+                          updatedAt: visit.updatedAt,
+                        }),
+                      });
+                      await onRefresh();
+                    } catch (error) {
+                      setError((error as Error).message);
+                    } finally {
+                      setChangingVisit("");
+                      setPendingSelection(null);
+                    }
+                  }}
+                />
+                <span>
+                  {visit.title ||
+                    places.find((p) => p.id === visit.placeId)?.name}
+                  <small className="muted">
+                    {date(visit.date)} · {visit.publicationStatus}
+                  </small>
+                </span>
+              </label>
+            ))}
+          </details>
           <p className="small muted">
-            Reuses this project’s dedicated site. Private drafts, home settings
-            and account credentials stay local.
+            Reuses this project’s dedicated site. Excluded visits, exact home
+            coordinates and account credentials stay local.
           </p>
         </div>
       </section>

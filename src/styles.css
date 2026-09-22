@@ -18,6 +18,206 @@
   --map: #e9efe6;
   color-scheme: light;
 }
+.home-switcher {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 3px 8px;
+  align-items: center;
+  font-size: 11px;
+  color: var(--muted);
+  min-width: 0;
+}
+.home-switcher select {
+  grid-column: 2;
+  max-width: 240px;
+  padding: 7px 10px;
+  color: var(--ink);
+}
+.home-switcher small {
+  grid-column: 2;
+  font-size: 10px;
+}
+.visit-origin {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12px;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+.home-locations-section {
+  display: grid;
+  gap: 20px;
+  padding: 28px 0;
+  border-bottom: 1px solid var(--line);
+}
+.home-locations-section .section-heading {
+  gap: 20px;
+  flex-wrap: wrap;
+}
+.home-locations-section .section-heading > div {
+  display: grid;
+  gap: 8px;
+  max-width: 65ch;
+}
+.home-locations-section .section-heading p {
+  font-size: 13px;
+  color: var(--muted);
+}
+.home-location-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));
+  gap: 16px;
+}
+.home-location-card {
+  display: grid;
+  gap: 16px;
+  align-content: start;
+  padding: 21px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--paper);
+  min-width: 0;
+}
+.home-location-card.is-current {
+  outline: 2px solid var(--green);
+  outline-offset: -2px;
+}
+.home-card-heading {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 9px;
+}
+.home-card-heading h4 {
+  margin: 0;
+  font-size: 16px;
+  overflow-wrap: anywhere;
+  flex: 1;
+  min-width: 0;
+}
+.home-colour {
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  border: 1px solid var(--line);
+  flex-shrink: 0;
+}
+.current-home-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--green);
+  font-size: 11px;
+  font-weight: 700;
+}
+.home-location-card details {
+  font-size: 12px;
+  color: var(--muted);
+}
+.home-location-card details summary {
+  cursor: pointer;
+}
+.home-location-card details ul {
+  padding-left: 18px;
+  display: grid;
+  gap: 8px;
+}
+.home-name-colour {
+  display: grid;
+  grid-template-columns: 1fr 80px;
+  gap: 16px;
+}
+.home-name-colour input[type="color"] {
+  width: 100%;
+  height: 42px;
+  padding: 4px;
+}
+.home-location-picker {
+  height: 230px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--map);
+}
+.home-picker-pin span,
+.home-centre {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border: 3px solid var(--paper);
+  border-radius: 50%;
+  background: var(--green);
+  color: var(--paper);
+  font-size: 17px;
+  box-shadow: 0 1px 5px #0005;
+}
+.home-centre {
+  width: 24px;
+  height: 24px;
+  color: #14221a;
+}
+.home-centre.current {
+  width: 30px;
+  height: 30px;
+}
+.home-map-label.leaflet-tooltip {
+  background: var(--paper);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  box-shadow: none;
+  font:
+    11px "DM Sans Variable",
+    sans-serif;
+  width: max-content;
+  max-width: 220px;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.home-map-label.current {
+  font-weight: 700;
+  border: 2px solid var(--green);
+  z-index: 1000;
+}
+.home-map-label::before {
+  display: none;
+}
+.range-swatch.other-home-swatch {
+  border-style: dashed;
+  background: transparent;
+}
+.home-empty {
+  padding: 20px;
+  background: var(--wash);
+  font-size: 14px;
+}
+.publish-status:empty {
+  display: none;
+}
+.publish-status {
+  font-size: 13px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  background: var(--wash);
+}
+.publish-selection summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+.publish-selection > p {
+  margin: 12px 0;
+}
+.publish-selection .checkbox {
+  padding: 10px 0;
+  border-top: 1px solid var(--line);
+  align-items: flex-start;
+}
+.publish-selection small {
+  display: block;
+  font-size: 11px;
+  margin-top: 4px;
+}
 :root[data-theme="dark"] {
   --bg: #14221a;
   --paper: #1c2d22;
@@ -1693,9 +1893,10 @@ select {
     justify-content: center;
     height: 42px;
     border-top: 1px solid var(--line);
+    gap: 0;
   }
   .site-header nav button {
-    padding: 10px 18px;
+    padding: 10px 8px;
   }
   .header-actions {
     gap: 5px;

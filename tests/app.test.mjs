@@ -2,6 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { createApp } from "../server/app.mjs";
 import { createStore } from "../server/store.mjs";
+import { currentHome } from "../server/homes.mjs";
 import { outward, sortVisits } from "../server/domain.mjs";
 
 const home = { lat: 52, lng: 0, label: "Private base", version: "v1" };
@@ -99,6 +100,7 @@ for (const passwordConfigured of [false, true]) {
         placeId: "a",
         date: "2026-09-01",
         title: "Draft without login",
+        startingHomeId: currentHome(store).id,
         summary: "",
         notes: "Private notes",
         photos: [],
@@ -109,7 +111,8 @@ for (const passwordConfigured of [false, true]) {
     });
     assert.equal(created.status, 201);
     const state = await (await fetch(base + "/api/state")).json();
-    assert.deepEqual(state.home, home);
+    assert.equal(state.home.label, home.label);
+    assert.equal(state.home.version, home.version);
     assert.equal(state.visits[0].title, "Draft without login");
     assert.equal(state.visits[0].notes, "Private notes");
     for (const invalidHeaders of [
@@ -123,7 +126,8 @@ for (const passwordConfigured of [false, true]) {
       });
       assert.equal(blocked.status, 403);
     }
-    assert.deepEqual(store.get("settings", "home"), home);
+    assert.equal(currentHome(store).label, home.label);
+    assert.equal(currentHome(store).version, home.version);
     assert.equal(!!store.get("settings", "owner"), passwordConfigured);
   });
 }
@@ -186,6 +190,7 @@ test("owner access, draft privacy, validation, comments, conflicts and route inv
   assert.equal(login.status, 200);
   cookie = login.cookie.split(";")[0];
   const draft = {
+    startingHomeId: currentHome(store).id,
     placeId: "a",
     date: "2026-09-01",
     title: "Private draft",

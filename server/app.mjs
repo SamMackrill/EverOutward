@@ -8,9 +8,19 @@ import {
 } from "node:crypto";
 import { publicVisit, sortVisits, outward, publicRange } from "./domain.mjs";
 import { cloudRecords, cloudRequest, siteState } from "./herenow.mjs";
-import { execFile } from "node:child_process";
-import { promisify } from "node:util";
+import { createPublishJobs } from "./publish-jobs.mjs";
+import { visitPublicationStatus } from "./publish-journal.mjs";
 import { refreshDrivingRoutes } from "./routing.mjs";
+import {
+  currentHome,
+  homeJourneys,
+  homeRoutes,
+  liveHomes,
+  migrateHomes,
+  originFor,
+  publicJournal,
+  routeKey,
+} from "./homes.mjs";
 import { MAX_VISIT_PHOTOS, resolvePhotoAlbum } from "./photo-albums.mjs";
 import {
   photoSource,
@@ -53,6 +63,8 @@ const photo = z
 export const visitSchema = z
   .object({
     placeId: z.string(),
+    startingHomeId: z.string().min(1).optional(),
+    startingHomeVersion: z.string().min(1).optional(),
     date: z
       .string()
       .regex(/^\d{4}-\d{2}-\d{2}$/)
@@ -110,13 +122,20 @@ export function createApp({
   initialHome = null,
   enableCloud = true,
   localOwner = false,
+  publisher,
 }) {
   const app = express(),
     sessions = new Map(),
     limits = new Map();
   const placeIds = new Set(places.map((p) => p.id));
-  if (!store.get("settings", "home") && initialHome)
+  if (
+    !store.get("settings", "homesSchema") &&
+    !store.get("settings", "home") &&
+    initialHome
+  )
     store.put("settings", "home", initialHome);
+  migrateHomes(store);
+  const publishJobs = publisher || createPublishJobs({ store });
   app.disable("x-powered-by");
   app.use(express.json({ limit: "10mb" }));
   app.use("/api", (req, res, next) => {
@@ -228,52 +247,100 @@ export function createApp({
     }
   });
   app.get("/api/state", (req, res) => {
-    const visits = sortVisits(
-      store.list("visits").filter((v) => req.owner || v.published),
-    );
-    const home = req.owner ? store.get("settings", "home") : null;
-    const routes = req.owner
-      ? store.list("routes").filter((r) => r.homeVersion === home?.version)
-      : [];
-    const journey = outward(
+    const visits = sortVisits(store.list("visits"));
+    const home = currentHome(store);
+    const homes = liveHomes(store);
+    const allHomes = store.list("homes");
+    const routes = store.list("routes");
+    const shared = publicJournal(
       places,
       visits,
-      store.get("settings", "home"),
-      store.list("routes"),
+      allHomes,
+      routes,
+      home?.id || null,
     );
+    if (!req.owner)
+      return res.json({
+        ...shared,
+        home: null,
+        routes: [],
+        homes: [],
+        homeJourneys: shared.homes,
+      });
     res.json({
-      visits: visits.map(publicVisit),
-      queue: journey.ranked.map(({ id, metres, seconds }) => ({
-        placeId: id,
-        metres,
-        seconds,
+      ...shared,
+      visits: visits.map((visit) => ({
+        ...visit,
+        startingHomeLabel: publicVisit(visit, allHomes).startingHomeLabel,
+        publicationStatus: visitPublicationStatus(
+          visit,
+          store.get("settings", "lastPublication"),
+          allHomes,
+        ),
       })),
-      complete: journey.complete,
-      pendingCount: journey.blockingPendingCount,
-      range: publicRange(
+      home,
+      homes,
+      activeHomeId: home?.id || null,
+      routes: routes.filter((r) =>
+        homes.some((h) => h.id === r.homeId && h.version === r.homeVersion),
+      ),
+      homeJourneys: homeJourneys(
         places,
         visits,
-        store.get("settings", "home"),
-        journey,
+        homes,
+        routes,
+        store.list("routeReports"),
       ),
-      home,
-      routes,
       revision: store.get("settings", "revision")?.value || 0,
-      outward: req.owner ? outward(places, visits, home, routes) : null,
+      outward: outward(places, visits, home, homeRoutes(store, home)),
     });
   });
   const bump = () =>
     store.put("settings", "revision", {
       value: (store.get("settings", "revision")?.value || 0) + 1,
     });
+  const visitOrigin = (data, old = null) => {
+    if (
+      old?.startingHomeId &&
+      (!data.startingHomeId || data.startingHomeId === old.startingHomeId)
+    )
+      return {
+        startingHomeId: old.startingHomeId,
+        startingHomeVersion: old.startingHomeVersion,
+        startingHomeSnapshot: old.startingHomeSnapshot,
+      };
+    if (!data.startingHomeId)
+      throw new Error("Choose the starting home for this trip.");
+    const home = store.get("homes", data.startingHomeId);
+    if (!home || home.archivedAt)
+      throw new Error(
+        "This starting home was removed. Choose another location.",
+      );
+    if (data.startingHomeVersion && data.startingHomeVersion !== home.version)
+      throw new Error(
+        "This home moved while the visit was open. Reload and check the trip origin.",
+      );
+    return originFor(home);
+  };
+  const checkOrigin = (origin, old = null) => {
+    if (old?.startingHomeId === origin.startingHomeId) return;
+    const home = store.get("homes", origin.startingHomeId);
+    if (!home || home.archivedAt || home.version !== origin.startingHomeVersion)
+      throw new Error(
+        "The starting home changed while saving. Reload and choose the trip origin again.",
+      );
+  };
   app.post("/api/visits", owner, async (req, res) => {
     const data = visitSchema.parse(req.body);
+    const origin = visitOrigin(data);
     if (!placeIds.has(data.placeId))
       throw new Error("Select a known National Trust place.");
     data.photos = await resolveMissingPhotoPreviews(data.photos);
+    checkOrigin(origin);
     const stamp = new Date().toISOString();
     const visit = {
       ...data,
+      ...origin,
       id: randomUUID(),
       createdAt: stamp,
       updatedAt: stamp,
@@ -286,6 +353,7 @@ export function createApp({
     const old = store.get("visits", req.params.id);
     if (!old) return res.status(404).json({ error: "Visit not found." });
     const data = visitSchema.parse(req.body);
+    const origin = visitOrigin(data, old);
     if (data.updatedAt !== old.updatedAt)
       return res
         .status(409)
@@ -297,7 +365,13 @@ export function createApp({
         error:
           "This visit changed while loading photos. Reload before editing.",
       });
-    const visit = { ...old, ...data, updatedAt: new Date().toISOString() };
+    checkOrigin(origin, old);
+    const visit = {
+      ...old,
+      ...data,
+      ...origin,
+      updatedAt: new Date().toISOString(),
+    };
     store.put("visits", visit.id, visit);
     bump();
     res.json({ visit });
@@ -311,24 +385,122 @@ export function createApp({
     bump();
     res.json({ ok: true });
   });
-  app.put("/api/home", owner, (req, res) => {
+  app.patch("/api/visits/:id/publication", owner, (req, res) => {
     const data = z
-      .object({
-        label: z.string().trim().min(1).max(120),
-        lat: z.number().min(49).max(61),
-        lng: z.number().min(-9).max(3),
-      })
+      .object({ published: z.boolean(), updatedAt: z.string() })
       .parse(req.body);
-    const previous = store.get("settings", "home");
+    const visit = store.transaction(() => {
+      const previous = store.get("visits", req.params.id);
+      if (!previous)
+        throw Object.assign(new Error("Visit not found."), { status: 404 });
+      if (data.updatedAt !== previous.updatedAt)
+        throw Object.assign(
+          new Error(
+            "This visit changed. Reload before changing its publishing choice.",
+          ),
+          { status: 409 },
+        );
+      const visit = {
+        ...previous,
+        published: data.published,
+        updatedAt: new Date().toISOString(),
+      };
+      store.put("visits", visit.id, visit);
+      bump();
+      return visit;
+    });
+    res.json({ visit });
+  });
+  const homeSchema = z.object({
+    label: z.string().trim().min(1, "Give this home a name.").max(120),
+    colour: z
+      .string()
+      .regex(/^#[0-9a-fA-F]{6}$/)
+      .default("#007a3b"),
+    lat: z.number().min(49).max(61),
+    lng: z.number().min(-9).max(3),
+  });
+  const saveHome = (data, previous = null) => {
     const home = {
+      ...previous,
       ...data,
+      id: previous?.id || randomUUID(),
       version:
         previous?.lat === data.lat && previous?.lng === data.lng
           ? previous.version
           : randomUUID(),
+      archivedAt: null,
+      createdAt: previous?.createdAt || new Date().toISOString(),
     };
-    store.put("settings", "home", home);
+    store.put("homes", home.id, home);
+    if (!currentHome(store))
+      store.put("settings", "activeHomeId", { value: home.id });
     bump();
+    return home;
+  };
+  const requireHome = (id) => {
+    const home = store.get("homes", id || "");
+    if (!home || home.archivedAt)
+      throw new Error("Choose an available home location.");
+    return home;
+  };
+  app.post("/api/homes", owner, (req, res) => {
+    const data = homeSchema.parse(req.body);
+    const home = store.transaction(() => saveHome(data));
+    res.status(201).json({ home });
+  });
+  app.patch("/api/homes/:id", owner, (req, res) => {
+    const home = store.transaction(() => {
+      const previous = requireHome(req.params.id);
+      if (
+        req.body.expectedVersion &&
+        req.body.expectedVersion !== previous.version
+      )
+        throw Object.assign(
+          new Error(
+            "This home moved while the editor was open. Reload before saving.",
+          ),
+          { status: 409 },
+        );
+      return saveHome(homeSchema.parse({ ...previous, ...req.body }), previous);
+    });
+    res.json({ home });
+  });
+  app.put("/api/homes/current", owner, (req, res) => {
+    store.transaction(() => {
+      const home = requireHome(req.body.homeId);
+      store.put("settings", "activeHomeId", { value: home.id });
+      bump();
+    });
+    res.json({ home: currentHome(store) });
+  });
+  app.delete("/api/homes/:id", owner, (req, res) => {
+    store.transaction(() => {
+      const home = requireHome(req.params.id);
+      if (liveHomes(store).length < 2)
+        throw new Error("Add another home before removing the last location.");
+      if (currentHome(store)?.id === home.id) {
+        const replacement = requireHome(req.body?.replacementId);
+        if (replacement.id === home.id)
+          throw new Error("Choose a different current home.");
+        store.put("settings", "activeHomeId", { value: replacement.id });
+      }
+      store.put("homes", home.id, {
+        ...home,
+        archivedAt: new Date().toISOString(),
+      });
+      bump();
+    });
+    res.json({ ok: true });
+  });
+  // Compatibility for existing local clients; the Workspace uses /api/homes.
+  app.put("/api/home", owner, (req, res) => {
+    const home = store.transaction(() =>
+      saveHome(
+        homeSchema.parse({ ...currentHome(store), ...req.body }),
+        currentHome(store),
+      ),
+    );
     res.json({ home });
   });
   app.get("/api/postcode", owner, async (req, res) => {
@@ -349,8 +521,9 @@ export function createApp({
     });
   });
   app.put("/api/routes", owner, (req, res) => {
-    const home = store.get("settings", "home");
-    if (!home) throw new Error("Set home first.");
+    const home = requireHome(req.body.homeId || currentHome(store)?.id);
+    if (req.body.homeVersion && req.body.homeVersion !== home.version)
+      throw new Error("Home moved. Reload before saving distances.");
     const rows = z
       .array(
         z.object({
@@ -364,7 +537,8 @@ export function createApp({
     if (rows.some((r) => !placeIds.has(r.placeId)))
       throw new Error("The route file contains an unknown place ID.");
     for (const r of rows)
-      store.put("routes", r.placeId, {
+      store.put("routes", routeKey(home, r.placeId), {
+        homeId: home.id,
         ...r,
         homeVersion: home.version,
         source: "Owner-entered Waze route",
@@ -470,11 +644,15 @@ export function createApp({
       'attachment; filename="ever-outward-backup.json"',
     );
     res.json({
-      version: 1,
+      version: 2,
       exportedAt: new Date().toISOString(),
       visits: store.list("visits"),
       comments: store.list("comments"),
-      home: store.get("settings", "home"),
+      home: currentHome(store),
+      homes: store.list("homes"),
+      activeHomeId: currentHome(store)?.id || null,
+      routeReports: store.list("routeReports"),
+      legacyRoutes: store.list("legacyRoutes"),
       routes: store.list("routes"),
     });
   });
@@ -485,43 +663,38 @@ export function createApp({
       publishedAt: s.publishedAt || null,
     });
   });
-  let publishing = false,
-    routing = false;
-  app.post("/api/routes/refresh", owner, async (req, res) => {
-    if (routing || publishing)
-      return res
-        .status(409)
-        .json({ error: "A route calculation or publish is already running." });
-    routing = true;
-    try {
-      res.json(await refreshDrivingRoutes({ store, places }));
-    } finally {
-      routing = false;
-    }
-  });
-  app.post("/api/publish", owner, async (req, res) => {
-    if (publishing || routing)
-      return res.status(409).json({ error: "A publish is already running." });
-    publishing = true;
-    try {
-      await promisify(execFile)(process.execPath, ["scripts/publish.mjs"], {
-        timeout: 180000,
-        maxBuffer: 1024 * 1024,
+  let routing = false;
+  app.get("/api/publish", owner, (req, res) =>
+    res.json({ job: publishJobs.status() }),
+  );
+  app.post(
+    ["/api/routes/refresh", "/api/homes/:id/routes/refresh"],
+    owner,
+    async (req, res) => {
+      if (routing || publishJobs.status()?.status === "running")
+        return res.status(409).json({
+          error: "A route calculation or publish is already running.",
+        });
+      routing = true;
+      try {
+        res.json(
+          await refreshDrivingRoutes({
+            store,
+            places,
+            homeId: req.params.id || currentHome(store)?.id,
+          }),
+        );
+      } finally {
+        routing = false;
+      }
+    },
+  );
+  app.post("/api/publish", owner, (req, res) => {
+    if (routing)
+      return res.status(409).json({
+        error: "Wait for the distance calculation to finish before publishing.",
       });
-      const state = await siteState();
-      res.json({
-        siteUrl: state.siteUrl,
-        publishedAt: state.publishedAt,
-        pendingLocalChanges: !!state.pendingLocalChanges,
-      });
-    } catch {
-      res.status(502).json({
-        error:
-          "Publishing did not complete. Your local visits are safe. Run npm run deploy in the workspace to see the deployment details.",
-      });
-    } finally {
-      publishing = false;
-    }
+    res.status(202).json({ job: publishJobs.start() });
   });
   app.use((error, req, res, next) => {
     if (res.headersSent) return next(error);

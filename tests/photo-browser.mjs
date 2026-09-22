@@ -13,6 +13,7 @@ const app = createApp({
   places: catalogue.places,
   enableCloud: false,
   localOwner: true,
+  initialHome: { label: "Test home", lat: 52, lng: 0, version: "photo-home" },
 });
 app.use(express.static(resolve("dist")));
 const server = app.listen(0, "127.0.0.1");

@@ -1,5 +1,6 @@
 import { setTimeout as delay } from "node:timers/promises";
 import { haversine, outward } from "./domain.mjs";
+import { currentHome, homeRoutes, migrateHomes, routeKey } from "./homes.mjs";
 
 const endpoint =
   "https://routing.openstreetmap.de/routed-car/table/v1/driving/";
@@ -11,15 +12,16 @@ export async function refreshDrivingRoutes({
   wait = delay,
   force = false,
   onProgress = () => {},
+  homeId,
 }) {
-  const home = store.get("settings", "home");
-  if (!home)
+  migrateHomes(store);
+  const home = homeId ? store.get("homes", homeId) : currentHome(store);
+  if (!home || home.archivedAt)
     throw new Error("Set your home before calculating driving distances.");
   const candidates = [...places].sort(
     (a, b) => haversine(home, a) - haversine(home, b),
   );
-  const available = () =>
-    store.list("routes").filter((r) => r.homeVersion === home.version);
+  const available = () => homeRoutes(store, home);
   const known = new Set(available().map((r) => r.placeId));
   const pending = candidates.filter((p) => force || !known.has(p.id));
   const unavailablePlaces = [];
@@ -48,43 +50,49 @@ export async function refreshDrivingRoutes({
       throw new Error(
         "Home is too far from a routable road. Check your starting coordinates.",
       );
-    if (store.get("settings", "home")?.version !== home.version)
-      throw new Error(
-        "Home changed while routes were being calculated. Please retry.",
-      );
-    next.forEach((p, index) => {
-      const metres = data.distances?.[0]?.[index + 1],
-        seconds = data.durations?.[0]?.[index + 1],
-        destination = data.destinations?.[index + 1];
+    store.transaction(() => {
       if (
-        !Number.isFinite(metres) ||
-        metres < 0 ||
-        !Number.isFinite(seconds) ||
-        seconds < 0 ||
-        !destination ||
-        !Number.isFinite(destination.distance) ||
-        destination.distance > 1000
-      ) {
-        unavailablePlaces.push({
+        store.get("homes", home.id)?.version !== home.version ||
+        store.get("homes", home.id)?.archivedAt
+      )
+        throw new Error(
+          "Home changed while routes were being calculated. Please retry.",
+        );
+      next.forEach((p, index) => {
+        const metres = data.distances?.[0]?.[index + 1],
+          seconds = data.durations?.[0]?.[index + 1],
+          destination = data.destinations?.[index + 1];
+        if (
+          !Number.isFinite(metres) ||
+          metres < 0 ||
+          !Number.isFinite(seconds) ||
+          seconds < 0 ||
+          !destination ||
+          !Number.isFinite(destination.distance) ||
+          destination.distance > 1000
+        ) {
+          unavailablePlaces.push({
+            placeId: p.id,
+            name: p.name,
+            reason:
+              destination?.distance > 1000
+                ? "Catalogue point is more than 1 km from a routable road; check the visitor entrance."
+                : "No car route returned; check road access and the visitor entrance.",
+          });
+          return;
+        }
+        store.put("routes", routeKey(home, p.id), {
+          homeId: home.id,
           placeId: p.id,
-          name: p.name,
-          reason:
-            destination?.distance > 1000
-              ? "Catalogue point is more than 1 km from a routable road; check the visitor entrance."
-              : "No car route returned; check road access and the visitor entrance.",
+          metres,
+          seconds,
+          homeVersion: home.version,
+          checkedAt: new Date().toISOString(),
+          source: "OSRM / FOSSGIS — estimated fastest car route",
+          snapMetres: destination.distance,
         });
-        return;
-      }
-      store.put("routes", p.id, {
-        placeId: p.id,
-        metres,
-        seconds,
-        homeVersion: home.version,
-        checkedAt: new Date().toISOString(),
-        source: "OSRM / FOSSGIS — estimated fastest car route",
-        snapMetres: destination.distance,
+        calculated++;
       });
-      calculated++;
     });
     onProgress({
       processed: Math.min(offset + next.length, pending.length),
@@ -95,15 +103,25 @@ export async function refreshDrivingRoutes({
   }
   const placeIds = new Set(places.map((p) => p.id));
   const saved = available().filter((r) => placeIds.has(r.placeId)).length;
-  return {
+  const result = {
     calculated,
     saved,
     total: places.length,
     remaining: places.length - saved,
     catalogueComplete: saved === places.length,
     homeVersion: home.version,
+    homeId: home.id,
     unavailable: unavailablePlaces.length,
     unavailablePlaces,
     ...outward(places, store.list("visits"), home, available()),
   };
+  store.put("routeReports", JSON.stringify([home.id, home.version]), {
+    homeId: home.id,
+    homeVersion: home.version,
+    checkedAt: new Date().toISOString(),
+    saved,
+    total: places.length,
+    unavailablePlaces,
+  });
+  return result;
 }

@@ -5,6 +5,7 @@ import { tmpdir } from "node:os";
 import assert from "node:assert/strict";
 import express from "express";
 import { createStore } from "../server/store.mjs";
+import { currentHome, routeKey } from "../server/homes.mjs";
 import { createApp } from "../server/app.mjs";
 
 const require = createRequire(import.meta.url);
@@ -64,7 +65,7 @@ const screenshots = join(tmpdir(), "everoutward-browser-check");
 await mkdir(screenshots, { recursive: true });
 try {
   await page.goto(origin);
-  await page.locator(".leaflet-baseLand-pane path").first().waitFor();
+  await page.locator(".leaflet-baseLand-pane path:visible").first().waitFor();
   await page
     .getByText("Street detail is unavailable.", { exact: false })
     .waitFor();
@@ -154,6 +155,15 @@ try {
   await page
     .getByLabel("The full story")
     .fill("A private draft created in the browser.");
+  assert.equal(
+    await page
+      .getByLabel("Include in the public journal when published")
+      .isChecked(),
+    true,
+  );
+  await page
+    .getByLabel("Include in the public journal when published")
+    .uncheck();
   await page
     .getByLabel("Who came along?", { exact: false })
     .fill("Ana, Sam, Ele");
@@ -194,18 +204,17 @@ try {
   );
   await page.screenshot({ path: join(screenshots, "timeline-mobile.png") });
   await page.getByRole("button", { name: "Workspace", exact: true }).click();
-  const driving = page.locator(".settings-section").filter({
-    has: page.getByRole("heading", { name: "Driving distances", exact: true }),
-  });
+  const driving = page.locator(".home-location-card").first();
   assert.equal(await driving.locator('input[type="file"]').count(), 0);
   let finishCalculation;
   const calculation = new Promise((resolve) => {
     finishCalculation = resolve;
   });
-  await page.route("**/api/routes/refresh", async (route) => {
+  await page.route("**/api/homes/*/routes/refresh", async (route) => {
     await calculation;
     for (const [index, place] of catalogue.places.entries())
-      store.put("routes", place.id, {
+      store.put("routes", routeKey(currentHome(store), place.id), {
+        homeId: currentHome(store).id,
         placeId: place.id,
         metres: 1000 + index * 1000,
         seconds: 100 + index * 100,
@@ -222,14 +231,17 @@ try {
     });
   });
   await driving
-    .getByRole("button", { name: "Calculate all distances", exact: true })
+    .getByRole("button", {
+      name: "Calculate all distances for Test home",
+      exact: true,
+    })
     .click();
   await driving
-    .getByRole("button", { name: "Calculating all distances…", exact: true })
+    .getByRole("button", { name: "Working…", exact: true })
     .waitFor();
   assert.equal(
     await page
-      .getByRole("button", { name: "Save home", exact: true })
+      .getByRole("button", { name: "Add home location", exact: true })
       .isDisabled(),
     true,
   );

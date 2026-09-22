@@ -2,7 +2,14 @@ import { useEffect, useRef, useState } from "react";
 import L from "leaflet";
 import "leaflet.markercluster";
 import "leaflet.markercluster/dist/MarkerCluster.css";
-import type { Home, Place, Visit, Route, VisitRange } from "./types";
+import type {
+  Home,
+  HomeJourney,
+  Place,
+  Visit,
+  Route,
+  VisitRange,
+} from "./types";
 import type { GeoJsonObject } from "geojson";
 
 type Basemap = {
@@ -18,12 +25,14 @@ type Props = {
   nextId?: string;
   nextIds?: string[];
   home: Home | null;
+  homeJourneys: HomeJourney[];
+  activeHomeId: string | null;
   range: VisitRange | null;
   theme: string;
   selectedId?: string;
   onSelect: (p: Place) => void;
   command: {
-    kind: "uk" | "home" | "place" | "next";
+    kind: "uk" | "home" | "place" | "next" | "homes";
     id?: string;
     serial: number;
   };
@@ -36,6 +45,8 @@ export default function MapView({
   nextId,
   nextIds = [],
   home,
+  homeJourneys,
+  activeHomeId,
   range,
   theme,
   selectedId,
@@ -200,29 +211,84 @@ export default function MapView({
     const l = layers.current;
     if (!l) return;
     l.clearLayers();
-    if (range && range.radius > 0)
-      L.circle([range.centre.lat, range.centre.lng], {
-        radius: range.radius,
-        color: theme === "dark" ? "#8ed3aa" : "#007a3b",
-        weight: 2,
-        fill: true,
-        fillColor: "#007a3b",
-        fillOpacity: theme === "dark" ? 0.28 : 0.18,
-        className: "visit-range-circle",
-        interactive: false,
-      }).addTo(l);
-    if (home) {
-      L.marker([home.lat, home.lng], {
-        icon: L.divIcon({
-          className: "home-marker",
-          html: '<span aria-hidden="true">⌂</span>',
-          iconSize: [28, 28],
-        }),
-        title: "Private home base",
-      })
-        .addTo(l)
-        .bindTooltip("Home base");
-    }
+    const homeMarkers: L.Marker[] = [];
+    const mapHomes = homeJourneys.length
+      ? homeJourneys
+      : range
+        ? [
+            {
+              id: "legacy",
+              label: "Starting area",
+              colour: "#007a3b",
+              range,
+              complete: true,
+            },
+          ]
+        : [];
+    [...mapHomes]
+      .sort(
+        (a, b) => Number(a.id === activeHomeId) - Number(b.id === activeHomeId),
+      )
+      .forEach((h, index) => {
+        const active = h.id === activeHomeId || h.id === "legacy";
+        const colour =
+          theme === "dark"
+            ? "#" +
+              h.colour
+                .slice(1)
+                .match(/.{2}/g)!
+                .map((v) =>
+                  Math.round(parseInt(v, 16) * 0.55 + 255 * 0.45)
+                    .toString(16)
+                    .padStart(2, "0"),
+                )
+                .join("")
+            : h.colour;
+        if (h.range.radius > 0)
+          L.circle([h.range.centre.lat, h.range.centre.lng], {
+            radius: h.range.radius,
+            color: colour,
+            weight: active ? 4 : 1.5,
+            dashArray: active ? undefined : "5 5",
+            fillColor: colour,
+            fillOpacity: active ? 0.18 : 0.045,
+            interactive: false,
+            className: active
+              ? "visit-range-circle current-home-circle"
+              : "visit-range-circle other-home-circle",
+          }).addTo(l);
+        const icon = document.createElement("span");
+        icon.className = active ? "home-centre current" : "home-centre";
+        icon.style.backgroundColor = colour;
+        icon.textContent = "⌂";
+        const label = document.createElement("span");
+        label.textContent =
+          h.label +
+          (active ? " · Current" : "") +
+          (h.range.approximate ? " · approximate" : "") +
+          (!(h.range.confirmed ?? h.complete)
+            ? " · circle pending: distances need review"
+            : h.range.radius === 0
+              ? " · no visits inside next gate yet"
+              : "");
+        const homeMarker = L.marker([h.range.centre.lat, h.range.centre.lng], {
+          icon: L.divIcon({
+            className: "multi-home-marker",
+            html: icon,
+            iconSize: [active ? 30 : 24, active ? 30 : 24],
+          }),
+          title: label.textContent,
+          zIndexOffset: active ? 2000 : 1500,
+        })
+          .addTo(l)
+          .bindTooltip(label, {
+            permanent: true,
+            direction: active ? "top" : index % 2 ? "right" : "left",
+            offset: active ? [0, -16] : [index % 2 ? 14 : -14, 0],
+            className: active ? "home-map-label current" : "home-map-label",
+          });
+        homeMarkers.push(homeMarker);
+      });
     const cluster = L.markerClusterGroup({
       maxClusterRadius: 35,
       showCoverageOnHover: false,
@@ -305,6 +371,48 @@ export default function MapView({
         el?.addEventListener("blur", () => marker.closeTooltip());
       });
     }
+    // Reserve space for the current label first, then place nearby labels around it.
+    const arrangeLabels = () => {
+      const occupied: DOMRect[] = [];
+      for (const marker of [...homeMarkers].reverse()) {
+        const tooltip = marker.getTooltip();
+        if (!tooltip?.getElement()) continue;
+        const positions: [L.Direction, L.PointExpression][] = [
+          ["top", [0, -16]],
+          ["right", [18, 0]],
+          ["left", [-18, 0]],
+          ["bottom", [0, 18]],
+          ["right", [18, -48]],
+          ["left", [-18, 48]],
+          ["right", [18, 48]],
+          ["left", [-18, -48]],
+        ];
+        for (const [direction, offset] of positions) {
+          tooltip.options.direction = direction;
+          tooltip.options.offset = L.point(offset);
+          tooltip.update();
+          const rect = tooltip.getElement()!.getBoundingClientRect();
+          if (
+            !occupied.some(
+              (r) =>
+                rect.left < r.right + 6 &&
+                rect.right > r.left - 6 &&
+                rect.top < r.bottom + 6 &&
+                rect.bottom > r.top - 6,
+            )
+          )
+            break;
+        }
+        occupied.push(tooltip.getElement()!.getBoundingClientRect());
+      }
+    };
+    const frame = requestAnimationFrame(arrangeLabels);
+    map.current?.on("zoomend moveend", arrangeLabels);
+    return () => {
+      cancelAnimationFrame(frame);
+      map.current?.off("zoomend moveend", arrangeLabels);
+      l.clearLayers();
+    };
   }, [
     places,
     visits,
@@ -313,6 +421,8 @@ export default function MapView({
     nextId,
     nextIdsKey,
     home,
+    homeJourneys,
+    activeHomeId,
     range?.radius,
     range?.centre.lat,
     range?.centre.lng,
@@ -322,7 +432,25 @@ export default function MapView({
   useEffect(() => {
     const m = map.current;
     if (!m) return;
-    if (command.kind === "next") {
+    // Home and queue updates can arrive in adjacent renders. Finish the new
+    // framing immediately so a previous pan cannot move the map back afterward.
+    m.stop();
+    if (command.kind === "homes" && homeJourneys.length) {
+      const bounds = L.latLngBounds(
+        homeJourneys.map(
+          (h) => [h.range.centre.lat, h.range.centre.lng] as [number, number],
+        ),
+      );
+      homeJourneys.forEach((h) => {
+        if (h.range.radius)
+          bounds.extend(
+            L.latLng(h.range.centre.lat, h.range.centre.lng).toBounds(
+              h.range.radius * 2,
+            ),
+          );
+      });
+      m.fitBounds(bounds, { padding: [55, 55], maxZoom: 11, animate: false });
+    } else if (command.kind === "next") {
       const upcoming = places.filter((p) => nextIds.includes(p.id));
       if (upcoming.length) {
         const bounds = L.latLngBounds(
@@ -336,24 +464,27 @@ export default function MapView({
               range.radius * 2,
             ),
           );
-        m.fitBounds(bounds, { padding: [45, 45], maxZoom: 11 });
-      }
+        m.fitBounds(bounds, { padding: [45, 45], maxZoom: 11, animate: false });
+      } else if (range)
+        m.setView([range.centre.lat, range.centre.lng], 10, { animate: false });
     } else if (command.kind === "uk")
       m.fitBounds(
         [
           [49.8, -8.5],
           [61, 2],
         ],
-        { padding: [30, 30] },
+        { padding: [30, 30], animate: false },
       );
     else if (command.kind === "home" && home)
-      m.setView([home.lat, home.lng], 10);
+      m.setView([home.lat, home.lng], 10, { animate: false });
     else if (command.kind === "place") {
       const p = places.find((p) => p.id === command.id);
-      if (p) m.setView([p.lat, p.lng], 11);
+      if (p) m.setView([p.lat, p.lng], 11, { animate: false });
     }
   }, [
     command,
+    homeJourneys,
+    activeHomeId,
     home,
     places,
     nextIdsKey,

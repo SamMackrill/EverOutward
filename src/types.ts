@@ -23,6 +23,16 @@ export type Photo = {
   previewUrl?: string;
 };
 export type Visit = {
+  publicationStatus?: string;
+  startingHomeId?: string;
+  startingHomeVersion?: string;
+  startingHomeSnapshot?: {
+    label: string;
+    colour: string;
+    lat: number;
+    lng: number;
+  };
+  startingHomeLabel?: string | null;
   id: string;
   placeId: string;
   date: string;
@@ -37,13 +47,35 @@ export type Visit = {
   createdAt: string;
   updatedAt: string;
 };
-export type Home = { label: string; lat: number; lng: number; version: string };
+export type Home = {
+  id: string;
+  label: string;
+  colour: string;
+  lat: number;
+  lng: number;
+  version: string;
+  archivedAt?: string | null;
+};
+export type HomeJourney = {
+  id: string;
+  label: string;
+  colour: string;
+  range: VisitRange;
+  queue: { placeId: string; metres: number; seconds: number }[];
+  complete: boolean;
+  pendingCount: number;
+  saved?: number;
+  total?: number;
+  unavailablePlaces?: { placeId: string; name: string; reason: string }[];
+};
 export type VisitRange = {
+  confirmed?: boolean;
   centre: { lat: number; lng: number };
   radius: number;
   approximate: boolean;
 };
 export type Route = {
+  homeId?: string;
   placeId: string;
   metres: number;
   seconds: number;

@@ -2,6 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { createStore } from "../server/store.mjs";
 import { refreshDrivingRoutes } from "../server/routing.mjs";
+import { currentHome, homeRoutes, routeKey } from "../server/homes.mjs";
 import { outward } from "../server/domain.mjs";
 
 const home = { lat: 52, lng: 0, version: "home-1" };
@@ -47,7 +48,7 @@ test("distances include visited places and are saved for reuse", async () => {
     assert.equal(result.ranked[0].seconds, 500);
     assert.equal(result.complete, true);
     for (const route of store.list("routes"))
-      store.put("routes", route.placeId, {
+      store.put("routes", routeKey(currentHome(store), route.placeId), {
         ...route,
         checkedAt: "2020-01-01T00:00:00Z",
       });
@@ -58,8 +59,14 @@ test("distances include visited places and are saved for reuse", async () => {
       wait: async () => {},
     });
     assert.equal(calls, 1);
-    assert.equal(store.get("routes", "5").homeVersion, "home-1");
-    assert.equal(store.get("routes", "0").metres, 11000);
+    assert.equal(
+      store.get("routes", routeKey(currentHome(store), "5")).homeVersion,
+      "home-1",
+    );
+    assert.equal(
+      store.get("routes", routeKey(currentHome(store), "0")).metres,
+      11000,
+    );
   } finally {
     store.close();
   }
@@ -154,10 +161,18 @@ test("one run covers the whole catalogue beyond the next five and four batches",
     const forced = await refreshDrivingRoutes({ ...options, force: true });
     assert.equal(forced.calculated, 128);
     assert.equal(calls, 12);
-    store.put("settings", "home", { ...home, lat: 53, version: "home-2" });
+    store.put("homes", currentHome(store).id, {
+      ...currentHome(store),
+      lat: 53,
+      version: "home-2",
+    });
     const moved = await refreshDrivingRoutes(options);
     assert.equal(moved.calculated, 128);
-    assert.ok(store.list("routes").every((r) => r.homeVersion === "home-2"));
+    assert.ok(
+      homeRoutes(store, currentHome(store)).every(
+        (r) => r.homeVersion === "home-2",
+      ),
+    );
   } finally {
     store.close();
   }
@@ -197,7 +212,10 @@ test("an interrupted full calculation keeps its batches and resumes only missing
     assert.equal(result.calculated, 5);
     assert.equal(result.saved, 30);
     for (const route of firstBatch)
-      assert.deepEqual(store.get("routes", route.placeId), route);
+      assert.deepEqual(
+        store.get("routes", routeKey(currentHome(store), route.placeId)),
+        route,
+      );
   } finally {
     store.close();
   }
@@ -213,7 +231,11 @@ test("a home change during calculation cannot save distances for the new home", 
         places,
         wait: async () => {},
         fetcher: async (url) => {
-          store.put("settings", "home", { ...home, lat: 53, version: "moved" });
+          store.put("homes", currentHome(store).id, {
+            ...currentHome(store),
+            lat: 53,
+            version: "moved",
+          });
           return tableResponse(url);
         },
       }),
@@ -246,7 +268,10 @@ test("routing service failure preserves saved data", async () => {
       }),
       /unavailable/,
     );
-    assert.equal(store.get("routes", "0").metres, 4000);
+    assert.equal(
+      store.get("routes", routeKey(currentHome(store), "0")).metres,
+      4000,
+    );
   } finally {
     store.close();
   }
