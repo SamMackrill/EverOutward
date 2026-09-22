@@ -743,7 +743,7 @@ export default function App() {
         <div className="journey-meta">
           {homeJourneys.length > 0 ? (
             <label className="home-switcher">
-              <HomeIcon size={16} />
+              <HomeIcon size={16} aria-hidden="true" />
               <span>Starting from</span>
               <select
                 aria-label="Current home location"
@@ -756,11 +756,6 @@ export default function App() {
                   </option>
                 ))}
               </select>
-              <small>
-                {session.owner
-                  ? "Exact locations stay private"
-                  : "Approximate home areas"}
-              </small>
             </label>
           ) : (
             <span className="home-label">
