@@ -1,6 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
+  albumLink,
   googleAlbumFromHtml,
   resolvePhotoAlbum,
   photoIdentity,
@@ -106,13 +107,33 @@ test("visits accept an album selection but enforce count and total display-copy 
   assert.equal(
     visitSchema.safeParse({
       ...base,
-      photos: photos
-        .slice(0, 12)
-        .map((p) => ({
-          ...p,
-          previewUrl: "data:image/jpeg;base64," + "A".repeat(700000),
-        })),
+      photos: photos.slice(0, 12).map((p) => ({
+        ...p,
+        previewUrl: "data:image/jpeg;base64," + "A".repeat(700000),
+      })),
     }).success,
     false,
   );
+});
+test("album link prefers a saved album and otherwise derives it from imported photos", () => {
+  const imported = {
+    kind: "shared",
+    url: "https://photos.google.com/share/album/photo/AF1Qone?key=access",
+  };
+  assert.equal(
+    albumLink([imported]),
+    "https://photos.google.com/share/album?key=access",
+  );
+  assert.equal(
+    albumLink([
+      imported,
+      { kind: "album", url: "https://photos.app.goo.gl/saved" },
+    ]),
+    "https://photos.app.goo.gl/saved",
+  );
+  assert.equal(
+    albumLink([{ kind: "image", url: "https://example.org/a.jpg" }]),
+    null,
+  );
+  assert.equal(albumLink([{ kind: "shared", url: "" }]), null);
 });

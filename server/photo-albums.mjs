@@ -51,6 +51,25 @@ function pageData(html) {
   return results;
 }
 
+/** Returns the shared album behind a visit's photos when one can be identified. */
+export function albumLink(photos) {
+  const album = photos.find((p) => p.kind === "album" && p.url);
+  if (album) return album.url;
+  for (const photo of photos) {
+    try {
+      const url = new URL(photo.url);
+      if (
+        url.hostname === "photos.google.com" &&
+        url.pathname.includes("/photo/")
+      ) {
+        url.pathname = url.pathname.split("/photo/")[0];
+        return url.href;
+      }
+    } catch {}
+  }
+  return null;
+}
+
 export function googleAlbumFromHtml(html, albumUrl) {
   const album = new URL(albumUrl);
   if (

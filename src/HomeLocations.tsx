@@ -1,46 +1,15 @@
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Check,
   Home as HomeIcon,
   LoaderCircle,
   Plus,
   Route as RouteIcon,
-  X,
 } from "lucide-react";
 import L from "leaflet";
+import Modal from "./Modal";
 import type { Home, HomeJourney } from "./types";
 import * as api from "./api";
-
-function Dialog({
-  title,
-  children,
-  onClose,
-}: {
-  title: string;
-  children: ReactNode;
-  onClose: () => void;
-}) {
-  const ref = useRef<HTMLDialogElement>(null);
-  useEffect(() => {
-    ref.current?.showModal();
-  }, []);
-  return (
-    <dialog className="modal" ref={ref} onCancel={onClose}>
-      <header>
-        <h2>{title}</h2>
-        <button
-          className="icon-button"
-          type="button"
-          aria-label="Close home dialog"
-          onClick={onClose}
-        >
-          <X size={20} />
-        </button>
-      </header>
-      {children}
-    </dialog>
-  );
-}
 
 export function LocationPin({
   lat,
@@ -104,6 +73,7 @@ export function LocationPin({
   );
 }
 
+/** Renders the guarded form for creating or editing a home location. */
 function HomeEditor({
   home,
   homes,
@@ -124,174 +94,184 @@ function HomeEditor({
   const [postcode, setPostcode] = useState(""),
     [error, setError] = useState(""),
     [busy, setBusy] = useState(false);
+  const [initial] = useState(() => JSON.stringify(location));
   return (
-    <Dialog
+    <Modal
       title={home ? "Edit home location" : "Add home location"}
+      closeLabel="Close home dialog"
       onClose={onClose}
+      isDirty={() =>
+        JSON.stringify(location) !== initial || postcode.trim() !== ""
+      }
     >
-      <form
-        className="form-stack"
-        onSubmit={async (e) => {
-          e.preventDefault();
-          setBusy(true);
-          setError("");
-          try {
-            await api.request(home ? `/api/homes/${home.id}` : "/api/homes", {
-              method: home ? "PATCH" : "POST",
-              body: JSON.stringify({
-                ...location,
-                expectedVersion: home?.version,
-              }),
-            });
-            await onSave();
-            onClose();
-          } catch (e) {
-            setError((e as Error).message);
-          } finally {
-            setBusy(false);
-          }
-        }}
-      >
-        <div className="home-name-colour">
-          <label>
-            Home name
-            <input
-              value={location.label}
-              onChange={(e) =>
-                setLocation({ ...location, label: e.target.value })
-              }
-              required
-              maxLength={120}
-              autoFocus
-            />
-          </label>
-          <label>
-            Colour
-            <input
-              type="color"
-              value={location.colour}
-              onChange={(e) =>
-                setLocation({ ...location, colour: e.target.value })
-              }
-            />
-          </label>
-        </div>
-        <p className="small muted">
-          Names appear on the map and published visits. Use a friendly name if
-          you do not want to share an address or postcode.
-        </p>
-        {homes.some(
-          (h) =>
-            h.id !== home?.id &&
-            h.label.toLowerCase() === location.label.trim().toLowerCase(),
-        ) && (
+      {(requestClose) => (
+        <form
+          className="form-stack"
+          onSubmit={async (e) => {
+            e.preventDefault();
+            setBusy(true);
+            setError("");
+            try {
+              await api.request(home ? `/api/homes/${home.id}` : "/api/homes", {
+                method: home ? "PATCH" : "POST",
+                body: JSON.stringify({
+                  ...location,
+                  expectedVersion: home?.version,
+                }),
+              });
+              await onSave();
+              onClose();
+            } catch (e) {
+              setError((e as Error).message);
+            } finally {
+              setBusy(false);
+            }
+          }}
+        >
+          <div className="home-name-colour">
+            <label>
+              Home name
+              <input
+                value={location.label}
+                onChange={(e) =>
+                  setLocation({ ...location, label: e.target.value })
+                }
+                required
+                maxLength={120}
+                autoFocus
+              />
+            </label>
+            <label>
+              Colour
+              <input
+                type="color"
+                value={location.colour}
+                onChange={(e) =>
+                  setLocation({ ...location, colour: e.target.value })
+                }
+              />
+            </label>
+          </div>
           <p className="small muted">
-            Another home has this name. A distinct name makes the map and trip
-            origins easier to recognise.
+            Names appear on the map and published visits. Use a friendly name if
+            you do not want to share an address or postcode.
           </p>
-        )}
-        <div className="postcode-row">
-          <label>
-            Find a UK postcode
-            <input
-              value={postcode}
-              onChange={(e) => setPostcode(e.target.value)}
-              autoComplete="postal-code"
-            />
-          </label>
-          <button
-            type="button"
-            className="button"
-            disabled={busy || !postcode.trim()}
-            onClick={async () => {
-              setBusy(true);
-              setError("");
-              try {
-                const result = await api.request<{
-                  label: string;
-                  lat: number;
-                  lng: number;
-                }>(`/api/postcode?q=${encodeURIComponent(postcode)}`);
-                setLocation((old) => ({
-                  ...old,
-                  lat: result.lat,
-                  lng: result.lng,
-                  label: old.label || result.label,
-                }));
-              } catch (e) {
-                setError((e as Error).message);
-              } finally {
-                setBusy(false);
-              }
-            }}
-          >
-            Find postcode
-          </button>
-        </div>
-        <LocationPin
-          lat={location.lat}
-          lng={location.lng}
-          onChange={(lat, lng) => setLocation((old) => ({ ...old, lat, lng }))}
-        />
-        <p className="small muted">
-          Click the map or drag the pin. Exact coordinates stay private; the
-          published map shows an approximate area.
-        </p>
-        <div className="form-grid">
-          <label>
-            Latitude
-            <input
-              type="number"
-              min="49"
-              max="61"
-              step="any"
-              required
-              value={location.lat}
-              onChange={(e) =>
-                setLocation({ ...location, lat: Number(e.target.value) })
-              }
-            />
-          </label>
-          <label>
-            Longitude
-            <input
-              type="number"
-              min="-9"
-              max="3"
-              step="any"
-              required
-              value={location.lng}
-              onChange={(e) =>
-                setLocation({ ...location, lng: Number(e.target.value) })
-              }
-            />
-          </label>
-        </div>
-        {home && (
+          {homes.some(
+            (h) =>
+              h.id !== home?.id &&
+              h.label.toLowerCase() === location.label.trim().toLowerCase(),
+          ) && (
+            <p className="small muted">
+              Another home has this name. A distinct name makes the map and trip
+              origins easier to recognise.
+            </p>
+          )}
+          <div className="postcode-row">
+            <label>
+              Find a UK postcode
+              <input
+                value={postcode}
+                onChange={(e) => setPostcode(e.target.value)}
+                autoComplete="postal-code"
+              />
+            </label>
+            <button
+              type="button"
+              className="button"
+              disabled={busy || !postcode.trim()}
+              onClick={async () => {
+                setBusy(true);
+                setError("");
+                try {
+                  const result = await api.request<{
+                    label: string;
+                    lat: number;
+                    lng: number;
+                  }>(`/api/postcode?q=${encodeURIComponent(postcode)}`);
+                  setLocation((old) => ({
+                    ...old,
+                    lat: result.lat,
+                    lng: result.lng,
+                    label: old.label || result.label,
+                  }));
+                } catch (e) {
+                  setError((e as Error).message);
+                } finally {
+                  setBusy(false);
+                }
+              }}
+            >
+              Find postcode
+            </button>
+          </div>
+          <LocationPin
+            lat={location.lat}
+            lng={location.lng}
+            onChange={(lat, lng) =>
+              setLocation((old) => ({ ...old, lat, lng }))
+            }
+          />
           <p className="small muted">
-            Changing the position requires new distances for this home. Renaming
-            or recolouring keeps its saved distances. Previous trips keep their
-            recorded starting point.
+            Click the map or drag the pin. Exact coordinates stay private; the
+            published map shows an approximate area.
           </p>
-        )}
-        {error && (
-          <p className="form-error" role="alert">
-            {error}
-          </p>
-        )}
-        <div className="button-row">
-          <button className="button primary" disabled={busy}>
-            {busy ? "Saving…" : "Save home location"}
-          </button>
-          <button className="button" type="button" onClick={onClose}>
-            Cancel
-          </button>
-        </div>
-      </form>
-    </Dialog>
+          <div className="form-grid">
+            <label>
+              Latitude
+              <input
+                type="number"
+                min="49"
+                max="61"
+                step="any"
+                required
+                value={location.lat}
+                onChange={(e) =>
+                  setLocation({ ...location, lat: Number(e.target.value) })
+                }
+              />
+            </label>
+            <label>
+              Longitude
+              <input
+                type="number"
+                min="-9"
+                max="3"
+                step="any"
+                required
+                value={location.lng}
+                onChange={(e) =>
+                  setLocation({ ...location, lng: Number(e.target.value) })
+                }
+              />
+            </label>
+          </div>
+          {home && (
+            <p className="small muted">
+              Changing the position requires new distances for this home.
+              Renaming or recolouring keeps its saved distances. Previous trips
+              keep their recorded starting point.
+            </p>
+          )}
+          {error && (
+            <p className="form-error" role="alert">
+              {error}
+            </p>
+          )}
+          <div className="button-row">
+            <button className="button primary" disabled={busy}>
+              {busy ? "Saving…" : "Save home location"}
+            </button>
+            <button className="button" type="button" onClick={requestClose}>
+              Cancel
+            </button>
+          </div>
+        </form>
+      )}
+    </Modal>
   );
 }
 
+/** Manages home locations, current-home selection, and route calculations. */
 export default function HomeLocations({
   homes,
   currentId,
@@ -499,8 +479,9 @@ export default function HomeLocations({
         />
       )}
       {removing && (
-        <Dialog
+        <Modal
           title={`Remove ${removing.label}?`}
+          closeLabel="Close home dialog"
           onClose={() => setRemoving(null)}
         >
           <form
@@ -567,7 +548,7 @@ export default function HomeLocations({
               </button>
             </div>
           </form>
-        </Dialog>
+        </Modal>
       )}
     </section>
   );

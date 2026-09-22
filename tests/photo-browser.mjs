@@ -146,6 +146,15 @@ try {
     true,
   );
   await page.getByRole("button", { name: "Cancel", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Add the story of this day", exact: true })
+    .click();
+  await page.getByLabel("The full story").waitFor();
+  assert.equal(
+    await page.evaluate(() => document.activeElement?.getAttribute("name")),
+    "notes",
+  );
+  await page.getByRole("button", { name: "Cancel", exact: true }).click();
   await page.getByRole("button", { name: "Add photos", exact: true }).click();
   await page
     .getByRole("heading", { name: "Photo links", exact: true })
@@ -293,21 +302,40 @@ try {
   );
   await page.route("**/data/history.json", (route) =>
     route.fulfill({
-      json: { visits: [{ ...visit, photos: [], coverId: null }], queue: [] },
+      json: {
+        visits: [
+          { ...visit, photos: [], coverId: null },
+          { ...albumVisit, id: "public-album", notes: "" },
+        ],
+        queue: [],
+      },
     }),
   );
-  await page.goto(`${origin}/?publicTest=1#visit/${visit.id}`);
-  await page.getByRole("button", { name: "Add photos", exact: true }).click();
-  const ownerLink = new URL(
-    await page
-      .getByRole("link", { name: "Open this visit in owner workspace" })
-      .getAttribute("href"),
+  await page.goto(`${origin}/?publicTest=1#visit/public-album`);
+  await page.locator(".photo-summary").waitFor();
+  assert.equal(
+    await page.getByRole("button", { name: "Add photos" }).count(),
+    0,
   );
-  assert.equal(ownerLink.searchParams.get("addPhotos"), visit.id);
-  assert.equal(ownerLink.hash, `#visit/${visit.id}`);
-  assert.equal(ownerLink.origin, "http://127.0.0.1:3001");
+  assert.equal(
+    await page
+      .getByRole("button", { name: "Add the story of this day" })
+      .count(),
+    0,
+  );
+  assert.equal(await page.locator(".visit-detail .prose").count(), 0);
+  assert.match(await page.locator(".photo-summary").innerText(), /3 photos/);
+  assert.equal(
+    await page
+      .getByRole("link", { name: "Open album", exact: true })
+      .getAttribute("href"),
+    "https://photos.google.com/share/test?key=example",
+  );
+  await page.goto(`${origin}/?publicTest=1#visit/${visit.id}`);
+  await page.locator(".visit-detail h2").waitFor();
+  assert.equal(await page.locator(".photo-gallery").count(), 0);
   console.log(
-    "PASS: local editing and photo deep links without login or cookies, drop Google link, unavailable preview fallback, drop display photo onto link, select cover, drop standalone image, save/reopen, gallery and timeline render, provider link preserved, mobile layout.",
+    "PASS: local editing and photo deep links without login or cookies, story prompt opens the notes field, guests see a photo count and album link instead of Add photos, drop Google link, unavailable preview fallback, drop display photo onto link, select cover, drop standalone image, save/reopen, gallery and timeline render, provider link preserved, mobile layout.",
   );
 } finally {
   await browser.close();
