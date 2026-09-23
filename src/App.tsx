@@ -225,6 +225,9 @@ export default function App() {
     }
     history.pushState({ from: view }, "", `#${next}`);
     setView(next);
+    // Pages scroll with the window, so a new page starts at its top. Going
+    // back to the timeline restores its position separately.
+    if (next !== "timeline") window.scrollTo(0, 0);
   };
   const routes = useMemo(
     () =>

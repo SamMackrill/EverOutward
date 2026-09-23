@@ -123,6 +123,11 @@ try {
   await page
     .getByRole("heading", { name: "Browser memory 0", exact: true })
     .waitFor();
+  assert.equal(
+    await page.evaluate(() => scrollY),
+    0,
+    "a visit opened from a scrolled timeline starts at its top",
+  );
   await page.getByLabel("Your name", { exact: true }).fill("Browser Guest");
   await page
     .getByLabel("Your comment", { exact: true })
