@@ -5,6 +5,7 @@ import { LocationPin } from "./HomeLocations";
 import { wazeLink } from "../server/domain.mjs";
 import * as api from "./api";
 import BoatNotice from "./BoatNotice";
+import { HowItWorks } from "./shared";
 
 type ReviewRow = {
   placeId: string;
@@ -458,10 +459,15 @@ export default function DistanceReview({
       <div>
         <h3>Review driving distances</h3>
         <p className="small muted">
-          Resolve failed routes, correct visitor entrances or check a suspicious
-          saved distance. Corrections are saved locally and automatically queued
-          for publishing.
+          Resolve failed routes and correct visitor entrances.
         </p>
+        <HowItWorks>
+          <p>
+            Check a suspicious saved distance or record the road distance from
+            Waze. Corrections are saved locally and automatically queued for
+            publishing.
+          </p>
+        </HowItWorks>
       </div>
       <div className="review-filters">
         <label>

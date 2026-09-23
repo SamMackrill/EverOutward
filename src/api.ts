@@ -56,6 +56,7 @@ export async function state(): Promise<{
   queue?: Route[];
   pendingCount?: number;
   complete?: boolean;
+  unpublishedChanges?: number;
 }> {
   if (local) return request("/api/state");
   const response = await fetch("/data/history.json", { cache: "no-store" });

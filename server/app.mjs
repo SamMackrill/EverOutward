@@ -15,7 +15,10 @@ import {
 } from "./domain.mjs";
 import { cloudRecords, cloudRequest, siteState } from "./herenow.mjs";
 import { createPublishJobs } from "./publish-jobs.mjs";
-import { visitPublicationStatus } from "./publish-journal.mjs";
+import {
+  unpublishedChanges,
+  visitPublicationStatus,
+} from "./publish-journal.mjs";
 import {
   applyPlaceCorrections,
   publicPlaceOverrides,
@@ -321,6 +324,11 @@ export function createApp({
         store.list("routeReports"),
       ),
       revision: store.get("settings", "revision")?.value || 0,
+      unpublishedChanges: unpublishedChanges(
+        visits,
+        store.get("settings", "lastPublication"),
+        allHomes,
+      ),
       outward: outward(places, visits, home, homeRoutes(store, home)),
     });
   });
@@ -413,6 +421,41 @@ export function createApp({
       store.delete("comments", c.id);
     bump();
     res.json({ ok: true });
+  });
+  // Include or exclude several visits at once; any stale visit aborts all.
+  app.patch("/api/visits/publication", owner, (req, res) => {
+    const data = z
+      .object({
+        published: z.boolean(),
+        visits: z
+          .array(z.object({ id: z.string(), updatedAt: z.string() }))
+          .min(1)
+          .max(5000),
+      })
+      .parse(req.body);
+    const visits = store.transaction(() =>
+      data.visits.map(({ id, updatedAt }) => {
+        const previous = store.get("visits", id);
+        if (!previous)
+          throw Object.assign(new Error("Visit not found."), { status: 404 });
+        if (updatedAt !== previous.updatedAt)
+          throw Object.assign(
+            new Error(
+              "A visit changed. Reload before changing its publishing choice.",
+            ),
+            { status: 409 },
+          );
+        const visit = {
+          ...previous,
+          published: data.published,
+          updatedAt: new Date().toISOString(),
+        };
+        store.put("visits", visit.id, visit);
+        return visit;
+      }),
+    );
+    bump();
+    res.json({ visits });
   });
   app.patch("/api/visits/:id/publication", owner, (req, res) => {
     const data = z

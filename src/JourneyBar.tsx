@@ -1,4 +1,12 @@
-import { ChevronRight, Plus } from "lucide-react";
+import {
+  Check,
+  ChevronRight,
+  Globe,
+  LoaderCircle,
+  Plus,
+  TriangleAlert,
+} from "lucide-react";
+import type { Publisher } from "./usePublish";
 import { miles } from "./format";
 import type { Place, VisitRange } from "./types";
 
@@ -56,6 +64,7 @@ export default function JourneyBar({
   nextGate,
   progress,
   owner,
+  publishing,
   onRecord,
   onNextGate,
 }: {
@@ -64,6 +73,7 @@ export default function JourneyBar({
   nextGate?: Place;
   progress: Parameters<typeof ProgressStrip>[0];
   owner: boolean;
+  publishing?: { changes: number; publisher: Publisher };
   onRecord: () => void;
   onNextGate: () => void;
 }) {
@@ -86,6 +96,7 @@ export default function JourneyBar({
             <ChevronRight size={15} />
           </button>
         )}
+        {publishing && <PublishPill {...publishing} />}
         {owner && (
           <button className="button primary" onClick={onRecord}>
             <Plus size={18} />
@@ -95,4 +106,42 @@ export default function JourneyBar({
       </div>
     </div>
   );
+}
+
+/** Shows the owner whether the public journal is behind, with a one-click publish. */
+function PublishPill({
+  changes,
+  publisher,
+}: {
+  changes: number;
+  publisher: Publisher;
+}) {
+  if (publisher.busy)
+    return (
+      <span className="publish-pill busy" role="status">
+        <LoaderCircle className="spin" size={15} />
+        Publishing to here.now
+      </span>
+    );
+  if (publisher.failed)
+    return (
+      <button className="publish-pill failed" onClick={publisher.publish}>
+        <TriangleAlert size={15} aria-hidden="true" />
+        Publish failed · Retry
+      </button>
+    );
+  if (changes)
+    return (
+      <button className="publish-pill" onClick={publisher.publish}>
+        <Globe size={15} aria-hidden="true" />
+        {changes} {changes === 1 ? "change" : "changes"} not published ·{" "}
+        <strong>Publish</strong>
+      </button>
+    );
+  return publisher.site.publishedAt ? (
+    <span className="publish-pill done">
+      <Check size={15} aria-hidden="true" />
+      Journal up to date
+    </span>
+  ) : null;
 }

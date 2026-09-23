@@ -17,6 +17,22 @@ export function visitPublicationStatus(visit, publication, homes = []) {
     : "Changes not yet published";
 }
 
+/**
+ * Counts visits whose public copy is out of date: new, changed, newly
+ * excluded or deleted since the last publish.
+ */
+export function unpublishedChanges(visits, publication, homes = []) {
+  const live = new Set(visits.map((v) => v.id));
+  const pending = visits.filter((visit) => {
+    const status = visitPublicationStatus(visit, publication, homes);
+    return status !== "Published" && status !== "Only on this computer";
+  }).length;
+  const deleted = Object.keys(publication?.visits || {}).filter(
+    (id) => !live.has(id),
+  ).length;
+  return pending + deleted;
+}
+
 export function journalSnapshot(store) {
   const rows = store.snapshot();
   const records = rows.filter(
