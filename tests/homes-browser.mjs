@@ -108,7 +108,7 @@ try {
   await card("Family base").waitFor();
   assert.doesNotMatch(
     await page.locator(".home-location-list").innerText(),
-    /0\.0 miles/,
+    /Discovery circle:\s*0\.0 miles\b/,
   );
   assert.match(
     await card("Family base")

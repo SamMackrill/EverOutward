@@ -182,10 +182,15 @@ export default function Workspace({
             ))}
             {publisher.connectionError && <p>{publisher.connectionError}</p>}
           </div>
-          {(error || publisher.failed) && (
+          {error && (
             <p role="alert" className="form-error">
-              {error || publisher.error} Your local visits are safe. You can
-              retry publishing.
+              {error}
+            </p>
+          )}
+          {publisher.failed && (
+            <p role="alert" className="form-error">
+              {publisher.error} Your local visits are safe. You can retry
+              publishing.
             </p>
           )}
           <p className="small">

@@ -173,6 +173,31 @@ try {
   await page
     .getByRole("button", { name: "2 changes not published · Publish" })
     .waitFor();
+  // A failed selection save gets its own alert, without publishing advice.
+  await page.route("**/api/visits/*/publication", (route) =>
+    route.fulfill({
+      status: 409,
+      json: {
+        error:
+          "This visit changed. Reload before changing its publishing choice.",
+      },
+    }),
+  );
+  await page
+    .getByRole("checkbox", { name: "Include My Fair Lady in next publish" })
+    .uncheck();
+  const selectionAlert = page
+    .getByRole("alert")
+    .filter({ hasText: "This visit changed." });
+  await selectionAlert.waitFor();
+  assert.doesNotMatch(await selectionAlert.innerText(), /retry publishing/);
+  assert.equal(
+    await page
+      .getByRole("checkbox", { name: "Include My Fair Lady in next publish" })
+      .isChecked(),
+    true,
+  );
+  await page.unroute("**/api/visits/*/publication");
   await page
     .getByRole("button", { name: "Publish journal to here.now", exact: true })
     .click();
