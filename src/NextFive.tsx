@@ -21,6 +21,7 @@ export type Progress = {
   remainingCount: number;
 };
 
+/** A destination's licensed photo that can be retried when it fails to load. */
 function DestinationPhoto({
   place,
   eager,
@@ -77,6 +78,7 @@ function DestinationPhoto({
   );
 }
 
+/** One of the next five; the first card adds opening times and directions. */
 function DestinationCard({
   place,
   index,
@@ -131,8 +133,10 @@ function DestinationCard({
   );
 }
 
-// A small next-gate summary for places where the full rail doesn't fit: above
-// the map on phones. The page heading already names the place there.
+/**
+ * A small next-gate summary for places where the full rail doesn't fit: above
+ * the map on phones. The page heading already names the place there.
+ */
 export function NextGateCompact({
   place,
   onSelect,
@@ -170,6 +174,7 @@ export function NextGateCompact({
   );
 }
 
+/** The map view's side rail: the next five, routing notes and nearby places. */
 export default function NextFive({
   progress,
   hasQueue,

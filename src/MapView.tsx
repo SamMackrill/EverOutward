@@ -18,7 +18,7 @@ type Basemap = {
   cities: { name: string; lat: number; lng: number; zoom: number }[];
 };
 
-// Ranked places are numbered brand-green pins; the first carries its label.
+/** Builds a numbered brand-green pin for a ranked place; the first can carry its label. */
 function rankPin(rank: number, labelled: boolean, selected: boolean) {
   const size = rank === 1 ? 34 : 26;
   return L.divIcon({
@@ -456,6 +456,7 @@ export default function MapView({
     };
     // Settlement labels are redrawn on zoom too, so arrange after they render.
     let frame = requestAnimationFrame(arrangeLabels);
+    /** Re-arranges labels on the next frame, once markers and towns have rendered. */
     const arrangeSoon = () => {
       cancelAnimationFrame(frame);
       frame = requestAnimationFrame(arrangeLabels);

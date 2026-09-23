@@ -2,7 +2,7 @@ import { ChevronRight, Plus } from "lucide-react";
 import { miles } from "./format";
 import type { Place, VisitRange } from "./types";
 
-// The journey at a glance: every view shows how far the family has come.
+/** The journey at a glance: places visited, days out and the current range. */
 export function ProgressStrip({
   visited,
   total,
@@ -47,6 +47,10 @@ export function ProgressStrip({
   );
 }
 
+/**
+ * The strip under the site header. The map view gets the next gate as its
+ * title; other views get a slim bar with a link to the next gate.
+ */
 export default function JourneyBar({
   title,
   nextGate,

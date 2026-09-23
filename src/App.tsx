@@ -371,6 +371,7 @@ export default function App() {
   const placeVisits = selected
     ? sortVisits(visits.filter((v) => v.placeId === selected.id))
     : [];
+  /** Opens the visit editor for a new visit, optionally with a place chosen. */
   const openEditor = (placeId?: string) => {
     setEditorPlace(placeId);
     setEditorFocus(undefined);

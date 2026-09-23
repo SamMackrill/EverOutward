@@ -25,6 +25,7 @@ export type MapCommand = {
   serial: number;
 };
 
+/** The map view: home switcher, place search, map, view controls and legend. */
 export default function MapPanel({
   hidden,
   places,
@@ -84,6 +85,7 @@ export default function MapPanel({
       ),
     [places, visited, filter, query],
   );
+  /** Clears and closes place search, returning focus to its toggle. */
   const closeSearch = () => {
     setSearching(false);
     setQuery("");
