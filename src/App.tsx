@@ -15,17 +15,14 @@ import {
   ChevronRight,
   ArrowLeft,
   Plus,
-  X,
   Search,
   Settings,
   LogIn,
   LogOut,
   Check,
   MapPin,
-  Camera,
   Download,
   LoaderCircle,
-  Compass,
   Globe,
   Home as HomeIcon,
   Users,
@@ -33,7 +30,9 @@ import {
   Sun,
   Moon,
 } from "lucide-react";
-import MapView from "./MapView";
+import MapPanel, { type MapCommand } from "./MapPanel";
+import NextFive, { NextGateCompact } from "./NextFive";
+import JourneyBar from "./JourneyBar";
 import HomeLocations from "./HomeLocations";
 import DistanceReview from "./DistanceReview";
 import BoatNotice from "./BoatNotice";
@@ -48,7 +47,7 @@ import {
   Stars,
   WalkingEstimate,
 } from "./shared";
-import { date, duration, miles } from "./format";
+import { date, duration, miles, shortDate } from "./format";
 import { enrichCatalogue } from "./catalogue";
 import { photoSource } from "../server/photo-links.mjs";
 import * as api from "./api";
@@ -69,98 +68,6 @@ const timelinePhoto = (v: Visit) =>
 const official = (p: Place) =>
   p.officialUrl ||
   `https://www.nationaltrust.org.uk/search?query=${encodeURIComponent(p.name)}`;
-function DestinationCard({
-  place,
-  index,
-  onSelect,
-}: {
-  place: Place & Route;
-  index: number;
-  onSelect: () => void;
-}) {
-  const [failed, setFailed] = useState(false);
-  const [retry, setRetry] = useState(0);
-  useEffect(() => {
-    setFailed(false);
-    setRetry(0);
-  }, [place.id, place.image]);
-  return (
-    <article
-      className={`destination-card ${index === 0 ? "first-destination" : ""}`}
-    >
-      <button
-        className="destination-photo"
-        onClick={
-          failed && place.image
-            ? () => {
-                setFailed(false);
-                setRetry(Date.now());
-              }
-            : onSelect
-        }
-        aria-label={
-          failed && place.image
-            ? `Retry photo for ${place.name}`
-            : `View ${place.name}`
-        }
-      >
-        {place.image && !failed ? (
-          <img
-            src={
-              retry
-                ? `${place.image}${place.image.includes("?") ? "&" : "?"}retry=${retry}`
-                : place.image
-            }
-            alt={place.imageAlt || place.name}
-            loading={index === 0 ? "eager" : "lazy"}
-            onError={() => setFailed(true)}
-          />
-        ) : (
-          <span className="destination-no-photo">
-            <Camera size={24} />
-            {place.image ? "Photo could not load · Retry" : "Photo to follow"}
-          </span>
-        )}
-        <span className="destination-number">{index + 1}</span>
-        {index === 0 && <span className="next-gate-label">Your next gate</span>}
-      </button>
-      <div className="destination-copy">
-        <h3>
-          <button onClick={onSelect}>{place.name}</button>
-        </h3>
-        <p className="destination-distance">
-          <RouteIcon size={13} />
-          {miles(place.metres)} mi by road{" "}
-          <span>· {duration(place.seconds)}</span>
-        </p>
-        <p className="destination-description">
-          {place.description ||
-            `Discover this National Trust place in ${place.region}.`}
-        </p>
-        <WalkingEstimate route={place} />
-        <BoatNotice place={place} />
-      </div>
-      <PhotoCredit place={place} />
-      {index === 0 && (
-        <>
-          <p className="destination-opening">{place.hours}</p>
-          <a
-            className="button primary destination-go"
-            href={wazeLink(place)}
-            target="_blank"
-            rel="noreferrer"
-          >
-            Directions in Waze <ArrowUpRight size={15} />
-          </a>
-          <button className="text-button" onClick={onSelect}>
-            Plan this visit <ChevronRight size={14} />
-          </button>
-        </>
-      )}
-    </article>
-  );
-}
-
 /** Renders the owner workspace or public journal and coordinates application state. */
 export default function App() {
   const [cataloguePlaces, setPlaces] = useState<Place[]>([]),
@@ -192,11 +99,11 @@ export default function App() {
     [error, setError] = useState(""),
     [toast, setToast] = useState(""),
     [query, setQuery] = useState(""),
-    [filter, setFilter] = useState("all"),
-    [showMapSearch, setShowMapSearch] = useState(false);
+    [placeQuery, setPlaceQuery] = useState("");
   const [view, setView] = useState(location.hash.slice(1) || "map"),
     [selected, setSelected] = useState<Place | null>(null),
     [editor, setEditor] = useState<Visit | "new" | null>(null),
+    [editorPlace, setEditorPlace] = useState<string>(),
     [showLogin, setShowLogin] = useState(false),
     [pendingPhotoVisit, setPendingPhotoVisit] = useState<string | null>(() =>
       new URLSearchParams(location.search).get("addPhotos"),
@@ -213,11 +120,10 @@ export default function App() {
     [systemDark, setSystemDark] = useState(
       matchMedia("(prefers-color-scheme: dark)").matches,
     );
-  const [command, setCommand] = useState<{
-      kind: "uk" | "home" | "place" | "next" | "homes";
-      id?: string;
-      serial: number;
-    }>({ kind: "next", serial: 0 }),
+  const [command, setCommand] = useState<MapCommand>({
+      kind: "next",
+      serial: 0,
+    }),
     [timelineLimit, setTimelineLimit] = useState(20);
   const theme =
     themeChoice === "system" ? (systemDark ? "dark" : "light") : themeChoice;
@@ -308,7 +214,7 @@ export default function App() {
     if (view === "timeline" && timelineFocus.current) {
       requestAnimationFrame(() => {
         timelineFocus.current?.focus({ preventScroll: true });
-        if (innerWidth <= 760) window.scrollTo(0, timelineScroll.current);
+        window.scrollTo(0, timelineScroll.current);
       });
     }
   }, [view]);
@@ -319,6 +225,9 @@ export default function App() {
     }
     history.pushState({ from: view }, "", `#${next}`);
     setView(next);
+    // Pages scroll with the window, so a new page starts at its top. Going
+    // back to the timeline restores its position separately.
+    if (next !== "timeline") window.scrollTo(0, 0);
   };
   const routes = useMemo(
     () =>
@@ -393,18 +302,14 @@ export default function App() {
           approximate: false,
         }
       : publicRange;
-  const filtered = useMemo(
+  const placeList = useMemo(
     () =>
-      places.filter(
-        (p) =>
-          (filter === "all" ||
-            (filter === "visited" ? visited.has(p.id) : !visited.has(p.id))) &&
-          (!query ||
-            `${p.name} ${p.region}`
-              .toLowerCase()
-              .includes(query.toLowerCase())),
+      places.filter((p) =>
+        `${p.name} ${p.region}`
+          .toLowerCase()
+          .includes(placeQuery.toLowerCase()),
       ),
-    [places, visited, filter, query],
+    [places, placeQuery],
   );
   const nearby = useMemo(
     () =>
@@ -466,13 +371,14 @@ export default function App() {
       "Visit saved to your local journal. Publish when you’re ready to share.",
     );
   };
-  const mapSearchToggle = useRef<HTMLButtonElement>(null);
-  /** Closes map search and returns focus to its toolbar toggle. */
-  const closeMapSearch = () => {
-    setShowMapSearch(false);
-    setQuery("");
-    setFilter("all");
-    mapSearchToggle.current?.focus();
+  const placeVisits = selected
+    ? sortVisits(visits.filter((v) => v.placeId === selected.id))
+    : [];
+  /** Opens the visit editor for a new visit, optionally with a place chosen. */
+  const openEditor = (placeId?: string) => {
+    setEditorPlace(placeId);
+    setEditorFocus(undefined);
+    setEditor("new");
   };
   const selectOnMap = (p: Place) => {
     setSelected(p);
@@ -586,54 +492,23 @@ export default function App() {
             ))}
         </div>
       </header>
-      <div className="journey-bar">
-        <div>
-          <span className="eyebrow">
-            {view === "map"
-              ? "Your next gate · nearest unvisited by road"
-              : "A little further. A little more to remember."}
-          </span>
-          <h1>
-            {view === "timeline"
-              ? "Our days beyond the gate"
-              : view === "settings"
-                ? "Your journey, your way"
-                : currentVisit
-                  ? "A day to remember"
-                  : progress.ranked[0]?.name || "Your next gate"}
-          </h1>
-        </div>
-        <div className="journey-meta">
-          {homeJourneys.length > 0 ? (
-            <label className="home-switcher">
-              <HomeIcon size={16} aria-hidden="true" />
-              <span>Starting from</span>
-              <select
-                aria-label="Current home location"
-                value={activeHomeId || ""}
-                onChange={(e) => chooseHome(e.target.value)}
-              >
-                {homeJourneys.map((h) => (
-                  <option value={h.id} key={h.id}>
-                    {h.label}
-                  </option>
-                ))}
-              </select>
-            </label>
-          ) : (
-            <span className="home-label">
-              <Compass size={17} />
-              England, Wales &amp; Northern Ireland
-            </span>
-          )}
-          {session.owner && (
-            <button className="button primary" onClick={() => setEditor("new")}>
-              <Plus size={18} />
-              Record a visit
-            </button>
-          )}
-        </div>
-      </div>
+      <JourneyBar
+        title={
+          view === "map"
+            ? progress.ranked[0]?.name || "Your next gate"
+            : undefined
+        }
+        nextGate={progress.ranked[0]}
+        progress={{
+          visited: visited.size,
+          total: places.length,
+          days: visits.length,
+          range: mapRange,
+        }}
+        owner={session.owner}
+        onRecord={() => openEditor()}
+        onNextGate={() => selectOnMap(progress.ranked[0])}
+      />
       {error && (
         <div role="alert" className="error-banner">
           {error}
@@ -642,205 +517,45 @@ export default function App() {
       )}
       <main
         id="main"
-        className={`workspace ${view === "settings" ? "workspace-settings" : ""} ${view === "map" ? "workspace-map" : ""}`}
+        className={`workspace ${view === "map" ? "workspace-map" : "workspace-page"}`}
       >
         <section className="main-pane">
-          <div className="map-view" hidden={view !== "map"}>
-            <div className="map-toolbar compact-toolbar">
-              {showMapSearch ? (
-                <div className="secondary-search">
-                  <label className="search">
-                    <Search size={18} />
-                    <input
-                      aria-label="Search National Trust places"
-                      value={query}
-                      onChange={(e) => setQuery(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Escape") closeMapSearch();
-                      }}
-                      placeholder="Place name"
-                      autoFocus
-                    />
-                    {query && (
-                      <button
-                        aria-label="Clear search"
-                        onClick={() => setQuery("")}
-                      >
-                        <X size={16} />
-                      </button>
-                    )}
-                  </label>
-                  <select
-                    aria-label="Filter places"
-                    value={filter}
-                    onChange={(e) => setFilter(e.target.value)}
-                  >
-                    <option value="all">All places</option>
-                    <option value="unvisited">Still to explore</option>
-                    <option value="visited">Visited</option>
-                  </select>
-                </div>
-              ) : (
-                <span className="map-rule">
-                  <Compass size={16} />
-                  Shared discoveries. Distances from your current home.
-                </span>
-              )}
-              <button
-                ref={mapSearchToggle}
-                className="text-button map-search-toggle"
-                aria-expanded={showMapSearch}
-                onClick={() => {
-                  if (showMapSearch) return closeMapSearch();
-                  setShowMapSearch(true);
-                  setQuery("");
-                  setFilter("all");
-                }}
-              >
-                {showMapSearch ? (
-                  <>
-                    <X size={16} />
-                    <span className="map-search-label">Close search</span>
-                  </>
-                ) : (
-                  <>
-                    <Search size={15} />
-                    Find a place
-                  </>
-                )}
-              </button>
-            </div>
-            <div className="map-container">
-              <MapView
-                places={filtered}
-                visits={visits}
-                routes={routes}
-                visited={visited}
-                nextId={progress.complete ? progress.ranked[0]?.id : undefined}
-                nextIds={progress.ranked.map((p: Place) => p.id)}
-                home={home}
-                homeJourneys={homeJourneys}
-                activeHomeId={activeHomeId}
-                range={mapRange}
-                theme={theme}
-                selectedId={selected?.id}
-                onSelect={onSelect}
-                command={command}
-              />
-              <div className="map-view-controls">
-                {homeJourneys.length > 1 && (
-                  <button
-                    className="button"
-                    onClick={() =>
-                      setCommand({ kind: "homes", serial: Date.now() })
-                    }
-                  >
-                    Show all home locations
-                  </button>
-                )}
-                {progress.ranked.length > 0 && (
-                  <button
-                    onClick={() => {
-                      setQuery("");
-                      setFilter("all");
-                      setCommand({ kind: "next", serial: Date.now() });
-                    }}
-                  >
-                    <RouteIcon size={15} />
-                    Next five
-                  </button>
-                )}
-                <button
-                  onClick={() => setCommand({ kind: "uk", serial: Date.now() })}
-                >
-                  <Globe size={15} />
-                  Whole UK
-                </button>
-                {home && (
-                  <button
-                    onClick={() =>
-                      setCommand({ kind: "home", serial: Date.now() })
-                    }
-                  >
-                    <HomeIcon size={15} />
-                    Around home
-                  </button>
-                )}
-              </div>
-              <div className="map-legend">
-                <span>
-                  <i className="dot unvisited" />
-                  Still to explore
-                </span>
-                <span>
-                  <i className="dot done" />
-                  Visited
-                </span>
-                {mapRange && mapRange.radius > 0 && (
-                  <span>
-                    <i className="range-swatch" />
-                    {mapRange.approximate
-                      ? "Current circle · approximate"
-                      : "Current discovery circle"}
-                  </span>
-                )}
-                {homeJourneys.length > 1 && (
-                  <span>
-                    <i className="range-swatch other-home-swatch" />
-                    Other homes · dashed
-                  </span>
-                )}
-              </div>
-              {query && (
-                <div className="search-results">
-                  <small>{filtered.length} places found</small>
-                  {filtered.slice(0, 12).map((p) => (
-                    <button
-                      key={p.id}
-                      onClick={() => {
-                        setSelected(p);
-                        setCommand({
-                          kind: "place",
-                          id: p.id,
-                          serial: Date.now(),
-                        });
-                      }}
-                    >
-                      {p.name}
-                      <ChevronRight size={15} />
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-            <div className="map-foot">
-              <span>
-                {filtered.length} catalogue places ·{" "}
-                <a
-                  href="https://services-eu1.arcgis.com/NPIbx47lsIiu2pqz/ArcGIS/rest/services/National_Trust_Visitor_Properties_/FeatureServer/0"
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  National Trust open data
-                </a>
-              </span>
-              <button
-                className="text-button"
-                onClick={() => navigate("places")}
-              >
-                Browse accessible place list <ChevronRight size={14} />
-              </button>
-            </div>
-          </div>
+          {view === "map" && progress.ranked[0] && (
+            <NextGateCompact
+              place={progress.ranked[0]}
+              onSelect={() => selectOnMap(progress.ranked[0])}
+            />
+          )}
+          <MapPanel
+            hidden={view !== "map"}
+            places={places}
+            visits={visits}
+            routes={routes}
+            visited={visited}
+            nextId={progress.complete ? progress.ranked[0]?.id : undefined}
+            nextIds={progress.ranked.map((p: Place) => p.id)}
+            home={home}
+            homeJourneys={homeJourneys}
+            activeHomeId={activeHomeId}
+            range={mapRange}
+            theme={theme}
+            selectedId={selected?.id}
+            command={command}
+            onCommand={(kind) => setCommand({ kind, serial: Date.now() })}
+            onSelect={onSelect}
+            onFind={(p) => {
+              setSelected(p);
+              setCommand({ kind: "place", id: p.id, serial: Date.now() });
+            }}
+            onChooseHome={chooseHome}
+            onBrowseList={() => navigate("places")}
+          />
           <div
             className="timeline-view content-scroll"
             hidden={view !== "timeline"}
           >
             <div className="section-heading">
-              <div>
-                <p className="eyebrow">The places become memories</p>
-                <h2>Our visit history</h2>
-              </div>
+              <h1 className="view-title">Our days beyond the gate</h1>
               <span className="count-label">
                 {visits.length} {visits.length === 1 ? "visit" : "visits"}
               </span>
@@ -873,7 +588,7 @@ export default function App() {
                 {session.owner && (
                   <button
                     className="button primary"
-                    onClick={() => setEditor("new")}
+                    onClick={() => openEditor()}
                   >
                     <Plus size={17} />
                     Record your first visit
@@ -976,18 +691,18 @@ export default function App() {
                 <ArrowLeft size={17} />
                 Back to map
               </button>
-              <h2>All the places to explore</h2>
+              <h1 className="view-title">All the places to explore</h1>
               <label className="search">
                 <Search size={17} />
                 <input
                   aria-label="Filter the places list"
                   placeholder="Search places"
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
+                  value={placeQuery}
+                  onChange={(e) => setPlaceQuery(e.target.value)}
                 />
               </label>
               <div className="places-grid">
-                {filtered.map((p) => (
+                {placeList.map((p) => (
                   <button
                     key={p.id}
                     className="place-row"
@@ -1051,7 +766,7 @@ export default function App() {
             ) : (
               <div className="empty-state">
                 <BookOpen />
-                <h2>This visit isn’t available</h2>
+                <h1 className="view-title">This visit isn’t available</h1>
                 <p>It may be unpublished or have been removed.</p>
                 <button className="button" onClick={() => navigate("timeline")}>
                   Back to timeline
@@ -1072,7 +787,7 @@ export default function App() {
               />
             ) : (
               <div className="empty-state">
-                <h2>Owner workspace</h2>
+                <h1 className="view-title">Owner workspace</h1>
                 <p>Sign in locally to manage your journey.</p>
                 <button
                   className="button primary"
@@ -1083,164 +798,17 @@ export default function App() {
               </div>
             ))}
         </section>
-        {view !== "settings" && (
-          <aside className="journey-sidebar">
-            <div className="sidebar-head">
-              <p className="eyebrow">One gate at a time</p>
-              <h2>The next five</h2>
-              <p>
-                Our next adventure begins with the nearest place we haven’t
-                visited.
-              </p>
-            </div>
-            {progress.remainingCount === 0 && places.length > 0 ? (
-              <div className="public-note">
-                <Check size={28} />
-                <h3>Every gate explored</h3>
-                <p>
-                  You’ve visited every place in the current catalogue. Your
-                  memories are waiting in the timeline.
-                </p>
-              </div>
-            ) : session.owner || publicQueue.length > 0 ? (
-              <>
-                {progress.ranked.length > 0 ? (
-                  <>
-                    <div
-                      className={`route-status ${progress.complete ? "ready" : ""}`}
-                    >
-                      <RouteIcon size={17} />
-                      <span>
-                        {progress.complete
-                          ? "Ranked by driving distance"
-                          : "Saved routes · order still provisional"}
-                      </span>
-                    </div>
-                    <div className="next-list destination-list">
-                      {progress.ranked.map(
-                        (p: Place & Route, index: number) => (
-                          <DestinationCard
-                            key={p.id}
-                            place={p}
-                            index={index}
-                            onSelect={() => selectOnMap(p)}
-                          />
-                        ),
-                      )}
-                    </div>
-                    <p className="route-note">
-                      Estimated car routes ·{" "}
-                      <a
-                        href="https://routing.openstreetmap.de/about.html"
-                        target="_blank"
-                        rel="noreferrer"
-                      >
-                        OSRM / FOSSGIS
-                      </a>{" "}
-                      · ©{" "}
-                      <a
-                        href="https://www.openstreetmap.org/copyright"
-                        target="_blank"
-                        rel="noreferrer"
-                      >
-                        OpenStreetMap
-                      </a>
-                      . Times exclude live traffic. Check the visitor entrance
-                      and opening days before travelling.{" "}
-                      <a
-                        href="https://www.openstreetmap.org/fixthemap"
-                        target="_blank"
-                        rel="noreferrer"
-                      >
-                        Report a map issue
-                      </a>
-                      .
-                    </p>
-                  </>
-                ) : (
-                  <div className="route-setup">
-                    <RouteIcon size={25} />
-                    <h3>Your next gate is waiting</h3>
-                    <p>
-                      Calculate free driving estimates to find the nearest
-                      unvisited places.
-                    </p>
-                    <button
-                      className="text-button"
-                      onClick={() => navigate("settings")}
-                    >
-                      Set up driving distances <ChevronRight size={15} />
-                    </button>
-                  </div>
-                )}
-                {!progress.complete && (
-                  <p className="route-note">
-                    {progress.blockingPendingCount} nearby unvisited places
-                    still need a route. We won’t call a place “nearest” until
-                    the ranking is complete.
-                  </p>
-                )}
-              </>
-            ) : (
-              <div className="public-note">
-                <Compass size={28} />
-                <h3>A journey that grows from home</h3>
-                <p>
-                  We visit the nearest National Trust place we haven’t explored
-                  yet. Follow the memories as our world gets a little wider.
-                </p>
-                <button className="button" onClick={() => navigate("timeline")}>
-                  Explore our timeline <ChevronRight size={16} />
-                </button>
-              </div>
-            )}
-            <div className="stats">
-              <div>
-                <strong>{visited.size}</strong>
-                <span>places visited</span>
-              </div>
-              <div>
-                <strong>{visits.length}</strong>
-                <span>days remembered</span>
-              </div>
-              {mapRange && (
-                <div>
-                  <strong>
-                    {mapRange.approximate ? "≈ " : ""}
-                    {miles(mapRange.radius)}
-                    <small> mi</small>
-                  </strong>
-                  <span>
-                    {mapRange.approximate
-                      ? "approximate visit range"
-                      : "visit range"}
-                  </span>
-                </div>
-              )}
-            </div>
-            {session.owner && nearby.length > 0 && (
-              <div className="nearby">
-                <h3>Around your home</h3>
-                <p className="small muted">
-                  Straight-line discovery · not the driving queue
-                </p>
-                {nearby.map((p) => (
-                  <button key={p.id} onClick={() => selectOnMap(p)}>
-                    <span>{p.name}</span>
-                    <span>{miles(haversine(home!, p))} mi</span>
-                  </button>
-                ))}
-              </div>
-            )}
-            <div className="sidebar-footer">
-              <img src="/icons/gate.svg" alt="" />
-              <p>
-                Collect days out.
-                <br />
-                Keep the little moments.
-              </p>
-            </div>
-          </aside>
+        {view === "map" && (
+          <NextFive
+            progress={progress}
+            hasQueue={publicQueue.length > 0}
+            owner={session.owner}
+            hasPlaces={places.length > 0}
+            nearby={nearby}
+            home={home}
+            onSelect={selectOnMap}
+            onNavigate={navigate}
+          />
         )}
       </main>
       <footer className="site-footer">
@@ -1261,6 +829,18 @@ export default function App() {
               </>
             )}
             <p className="eyebrow">{selected.region}</p>
+            {session.owner && placeVisits.length > 0 && (
+              <p className="visit-count">
+                <Check size={15} />
+                Visited{" "}
+                {placeVisits.length === 1
+                  ? "once"
+                  : placeVisits.length === 2
+                    ? "twice"
+                    : `${placeVisits.length} times`}{" "}
+                · last {shortDate(placeVisits[0].date)}
+              </p>
+            )}
             <BoatNotice place={selected} />
             <p>
               {selected.description ||
@@ -1327,11 +907,12 @@ export default function App() {
                 <button
                   className="button"
                   onClick={() => {
-                    setEditor("new");
+                    setSelected(null);
+                    openEditor(selected.id);
                   }}
                 >
                   <Plus size={16} />
-                  Record a visit
+                  Record a visit here
                 </button>
                 <button
                   className="button"
@@ -1344,25 +925,23 @@ export default function App() {
                 </button>
               </div>
             )}
-            {visits.filter((v) => v.placeId === selected.id).length > 0 && (
+            {placeVisits.length > 0 && (
               <section>
                 <h3>Our visits here</h3>
-                {visits
-                  .filter((v) => v.placeId === selected.id)
-                  .map((v) => (
-                    <button
-                      className="place-row"
-                      key={v.id}
-                      onClick={() => {
-                        setSelected(null);
-                        navigate("visit/" + v.id);
-                      }}
-                    >
-                      <span>{date(v.date)}</span>
-                      <Stars value={v.rating} />
-                      <ChevronRight size={16} />
-                    </button>
-                  ))}
+                {placeVisits.map((v) => (
+                  <button
+                    className="place-row"
+                    key={v.id}
+                    onClick={() => {
+                      setSelected(null);
+                      navigate("visit/" + v.id);
+                    }}
+                  >
+                    <span>{date(v.date)}</span>
+                    <Stars value={v.rating} />
+                    <ChevronRight size={16} />
+                  </button>
+                ))}
               </section>
             )}
           </div>
@@ -1385,7 +964,7 @@ export default function App() {
       {editor && (
         <VisitEditor
           visit={editor === "new" ? null : editor}
-          defaultPlace={selected?.id}
+          defaultPlace={editorPlace}
           homes={homes}
           currentHome={home}
           focus={editorFocus}
@@ -1610,7 +1189,7 @@ function Workspace({
       <div className="section-heading">
         <div>
           <p className="eyebrow">Local owner workspace</p>
-          <h2>A home for your adventures</h2>
+          <h1 className="view-title">A home for your adventures</h1>
         </div>
         <Settings size={26} />
       </div>

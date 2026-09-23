@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import L from "leaflet";
+import { X } from "lucide-react";
 import "leaflet.markercluster";
 import "leaflet.markercluster/dist/MarkerCluster.css";
 import type {
@@ -16,6 +17,17 @@ type Basemap = {
   countries: GeoJsonObject;
   cities: { name: string; lat: number; lng: number; zoom: number }[];
 };
+
+/** Builds a numbered brand-green pin for a ranked place; the first can carry its label. */
+function rankPin(rank: number, labelled: boolean, selected: boolean) {
+  const size = rank === 1 ? 34 : 26;
+  return L.divIcon({
+    className: `rank-marker ${rank === 1 ? "rank-first" : ""} ${selected ? "selected" : ""}`,
+    html: `<span class="rank-pin"><b>${rank}</b></span>${labelled ? '<span class="rank-label">Next gate</span>' : ""}`,
+    iconSize: [size, size],
+    iconAnchor: [size / 2, Math.round(size * 1.21)],
+  });
+}
 
 type Props = {
   places: Place[];
@@ -55,6 +67,7 @@ export default function MapView({
 }: Props) {
   const nextIdsKey = nextIds.join("|");
   const [tileFailed, setTileFailed] = useState(false);
+  const [dismissed, setDismissed] = useState<string[]>([]);
   const [basemap, setBasemap] = useState<Basemap | null>(null),
     [baseFailed, setBaseFailed] = useState(false),
     [mapStyle, setMapStyle] = useState("streets");
@@ -187,6 +200,7 @@ export default function MapView({
     if (!map.current) return;
     tiles.current?.remove();
     setTileFailed(false);
+    setDismissed((d) => d.filter((id) => id !== "tiles"));
     if (mapStyle !== "streets") return;
     const layer = L.tileLayer(
       "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
@@ -261,11 +275,20 @@ export default function MapView({
         icon.className = active ? "home-centre current" : "home-centre";
         icon.style.backgroundColor = colour;
         icon.textContent = "⌂";
+        // Keep the map label to the home's name; the detail lives in the
+        // marker title and the legend.
         const label = document.createElement("span");
-        label.textContent =
+        if (active) {
+          const dot = document.createElement("i");
+          dot.className = "current-dot";
+          dot.title = "Current home";
+          label.append(dot);
+        }
+        label.append(h.label);
+        const detail =
           h.label +
-          (active ? " · Current" : "") +
-          (h.range.approximate ? " · approximate" : "") +
+          (active ? " · current home" : "") +
+          (h.range.approximate ? " · approximate area" : "") +
           (!(h.range.confirmed ?? h.complete)
             ? " · circle pending: distances need review"
             : h.range.radius === 0
@@ -277,7 +300,7 @@ export default function MapView({
             html: icon,
             iconSize: [active ? 30 : 24, active ? 30 : 24],
           }),
-          title: label.textContent,
+          title: detail,
           zIndexOffset: active ? 2000 : 1500,
         })
           .addTo(l)
@@ -297,7 +320,7 @@ export default function MapView({
         L.divIcon({
           className: "place-cluster",
           html: `<span>${g.getChildCount()}</span>`,
-          iconSize: [35, 35],
+          iconSize: [30, 30],
         }),
     }).addTo(l);
     for (const p of places) {
@@ -350,24 +373,23 @@ export default function MapView({
         node.append(list);
         L.DomEvent.disableScrollPropagation(list);
       }
+      const rank = next ? Math.max(1, nextIds.indexOf(p.id) + 1) : 0;
       const marker = L.marker([p.lat, p.lng], {
-        icon: L.divIcon({
-          className: `place-marker ${done ? "visited" : ""} ${next ? "next" : ""} ${selected ? "selected" : ""}`,
-          html: done
-            ? "✓"
-            : next
-              ? String(Math.max(1, nextIds.indexOf(p.id) + 1))
-              : "",
-          iconSize: next || selected ? [24, 24] : [14, 14],
-        }),
-        title: p.name,
+        icon: rank
+          ? rankPin(rank, p.id === nextId, selected)
+          : L.divIcon({
+              className: `place-marker ${done ? "visited" : ""} ${selected ? "selected" : ""}`,
+              html: done ? "✓" : "",
+              iconSize: selected ? [24, 24] : [14, 14],
+            }),
+        title: rank ? `${rank}. ${p.name}` : p.name,
         keyboard: true,
         zIndexOffset: selected ? 1000 : next ? 500 : done ? 100 : 0,
       });
       marker.addTo(next || selected ? l : cluster).bindTooltip(node, {
         className: "place-tooltip",
         direction: "top",
-        offset: [0, -8],
+        offset: [0, rank ? -(rank === 1 ? 36 : 28) : -8],
         interactive: true,
       });
       marker.on("click", () => select.current(p));
@@ -411,12 +433,38 @@ export default function MapView({
         }
         occupied.push(tooltip.getElement()!.getBoundingClientRect());
       }
+      // Town names give way to home labels and markers.
+      for (const marker of homeMarkers) {
+        const icon = marker.getElement();
+        if (icon) occupied.push(icon.getBoundingClientRect());
+      }
+      map.current
+        ?.getPane("baseLabels")
+        ?.querySelectorAll<HTMLElement>(".settlement-label span")
+        .forEach((town) => {
+          const rect = town.getBoundingClientRect();
+          town.style.visibility = occupied.some(
+            (r) =>
+              rect.left < r.right &&
+              rect.right > r.left &&
+              rect.top < r.bottom &&
+              rect.bottom > r.top,
+          )
+            ? "hidden"
+            : "";
+        });
     };
-    const frame = requestAnimationFrame(arrangeLabels);
-    map.current?.on("zoomend moveend", arrangeLabels);
+    // Settlement labels are redrawn on zoom too, so arrange after they render.
+    let frame = requestAnimationFrame(arrangeLabels);
+    /** Re-arranges labels on the next frame, once markers and towns have rendered. */
+    const arrangeSoon = () => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(arrangeLabels);
+    };
+    map.current?.on("zoomend moveend", arrangeSoon);
     return () => {
       cancelAnimationFrame(frame);
-      map.current?.off("zoomend moveend", arrangeLabels);
+      map.current?.off("zoomend moveend", arrangeSoon);
       l.clearLayers();
     };
   }, [
@@ -516,17 +564,32 @@ export default function MapView({
           <option value="streets">Street detail</option>
         </select>
       </label>
-      {baseFailed && (
-        <div className="map-error" role="status">
-          The overview map could not be loaded. Refresh to retry, or use the
-          places list.
-        </div>
-      )}
-      {tileFailed && (
-        <div className="map-error" role="status">
-          Street detail is unavailable. The overview map is still available.
-        </div>
-      )}
+      {[
+        baseFailed && {
+          id: "base",
+          text: "The overview map could not be loaded. Refresh to retry, or use the places list.",
+        },
+        tileFailed && {
+          id: "tiles",
+          text: "Street detail is unavailable. The overview map is still available.",
+        },
+      ]
+        .filter((n) => !!n && !dismissed.includes(n.id))
+        .map(
+          (n) =>
+            n && (
+              <div className="map-error" role="status" key={n.id}>
+                <span>{n.text}</span>
+                <button
+                  className="icon-button"
+                  aria-label="Dismiss map notice"
+                  onClick={() => setDismissed((d) => [...d, n.id])}
+                >
+                  <X size={15} />
+                </button>
+              </div>
+            ),
+        )}
     </>
   );
 }

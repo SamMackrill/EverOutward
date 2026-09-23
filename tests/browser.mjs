@@ -77,9 +77,21 @@ try {
     .waitFor();
   assert.ok((await page.locator(".leaflet-baseLand-pane path").count()) > 0);
   assert.equal(await page.locator(".leaflet-tile").count(), 0);
+  await page
+    .getByRole("button", { name: "Dismiss map notice", exact: true })
+    .click();
+  await page.locator(".map-error").waitFor({ state: "detached" });
   await page.getByLabel("Map detail", { exact: true }).selectOption("overview");
   await page.locator(".map-error").waitFor({ state: "hidden" });
   await page.screenshot({ path: join(screenshots, "overview-map.png") });
+  assert.match(
+    await page.locator(".progress-strip").innerText(),
+    new RegExp(`45 of ${catalogue.places.length} places · 45 days out`),
+  );
+  const wholeUk = page.getByRole("button", { name: "Whole UK", exact: true });
+  assert.equal(await wholeUk.getAttribute("aria-pressed"), "false");
+  await wholeUk.click();
+  assert.equal(await wholeUk.getAttribute("aria-pressed"), "true");
   const toolbar = page.locator(".compact-toolbar");
   const toolbarHeight = await toolbar.evaluate((e) => e.offsetHeight);
   await page.getByRole("button", { name: "Find a place", exact: true }).click();
@@ -99,21 +111,23 @@ try {
   await page.getByRole("button", { name: "Our timeline", exact: true }).click();
   await page.locator(".visit-card").first().waitFor();
   for (let i = 0; i < 5; i++) {
-    await page
-      .locator(".timeline-view")
-      .evaluate((e) => (e.scrollTop = e.scrollHeight));
+    await page.evaluate(() => scrollTo(0, document.body.scrollHeight));
     await page.waitForTimeout(120);
   }
   assert.equal(await page.locator(".visit-card").count(), 45);
-  const before = await page
-    .locator(".timeline-view")
-    .evaluate((e) => e.scrollTop);
+  const before = await page.evaluate(() => scrollY);
+  assert.ok(before > 1000, "the timeline scrolls with the page");
   await page
     .getByRole("button", { name: "Browser memory 0", exact: true })
     .click();
   await page
     .getByRole("heading", { name: "Browser memory 0", exact: true })
     .waitFor();
+  assert.equal(
+    await page.evaluate(() => scrollY),
+    0,
+    "a visit opened from a scrolled timeline starts at its top",
+  );
   await page.getByLabel("Your name", { exact: true }).fill("Browser Guest");
   await page
     .getByLabel("Your comment", { exact: true })
@@ -143,12 +157,7 @@ try {
   await page.getByLabel("Close dialog").click();
   await page.getByRole("button", { name: "Back", exact: true }).click();
   await page.locator(".timeline-view").waitFor({ state: "visible" });
-  assert.ok(
-    Math.abs(
-      (await page.locator(".timeline-view").evaluate((e) => e.scrollTop)) -
-        before,
-    ) < 100,
-  );
+  await page.waitForFunction((y) => Math.abs(scrollY - y) < 100, before);
   await page
     .getByRole("button", { name: "Owner sign-in", exact: true })
     .click();
@@ -159,6 +168,30 @@ try {
   await page
     .getByRole("button", { name: "Record a visit", exact: true })
     .waitFor();
+  await page.getByRole("button", { name: "Map", exact: true }).click();
+  await page.getByRole("button", { name: "Find a place", exact: true }).click();
+  await page.keyboard.type(catalogue.places[0].name);
+  await page
+    .locator(".search-results button")
+    .filter({ hasText: catalogue.places[0].name })
+    .first()
+    .click();
+  assert.match(
+    await page.locator("dialog .visit-count").innerText(),
+    /Visited once · last 1 Jan 2026/,
+  );
+  await page
+    .getByRole("button", { name: "Record a visit here", exact: true })
+    .click();
+  await page.getByRole("heading", { name: "Record a visit" }).waitFor();
+  assert.equal(await page.locator("dialog").count(), 1);
+  assert.equal(
+    await page.locator("dialog select[name=placeId]").inputValue(),
+    catalogue.places[0].id,
+  );
+  await page.keyboard.press("Escape");
+  await page.locator("dialog").waitFor({ state: "detached" });
+  await page.getByRole("button", { name: "Close search" }).click();
   await page
     .getByRole("button", { name: "Record a visit", exact: true })
     .click();
@@ -243,6 +276,19 @@ try {
     false,
   );
   await page.screenshot({ path: join(screenshots, "timeline-mobile.png") });
+  const tabs = page.getByRole("navigation", { name: "Main navigation" });
+  assert.deepEqual(
+    await tabs.evaluate((nav) => {
+      const box = nav.getBoundingClientRect();
+      return [getComputedStyle(nav).position, Math.round(box.bottom)];
+    }),
+    ["fixed", 844],
+  );
+  await tabs.getByRole("button", { name: "Map", exact: true }).click();
+  await page.locator(".map-legend").waitFor({ state: "hidden" });
+  await page.getByRole("button", { name: "Map key", exact: true }).click();
+  await page.locator(".map-legend").waitFor({ state: "visible" });
+  await page.getByRole("button", { name: "Map key", exact: true }).click();
   await page.getByRole("button", { name: "Workspace", exact: true }).click();
   const driving = page.locator(".home-location-card").first();
   assert.equal(await driving.locator('input[type="file"]').count(), 0);
@@ -319,7 +365,7 @@ try {
   });
   assert.deepEqual(errors, []);
   console.log(
-    "PASS: bundled map, blocked-tile fallback, place search focus and stable toolbar, unsaved-edit guard on Esc and backdrop, 45-entry infinite history, back position, visit/photo guest comments, owner signup, draft save, theme persistence, mobile overflow, all-distance calculation busy state and saved totals after reload, no browser exceptions.",
+    "PASS: bundled map, blocked-tile fallback, progress strip, pressed map view and dismissible notice, place visit count and Record a visit here, mobile tab bar and map key, place search focus and stable toolbar, unsaved-edit guard on Esc and backdrop, 45-entry infinite history, back position, visit/photo guest comments, owner signup, draft save, theme persistence, mobile overflow, all-distance calculation busy state and saved totals after reload, no browser exceptions.",
   );
 } finally {
   await browser.close();
