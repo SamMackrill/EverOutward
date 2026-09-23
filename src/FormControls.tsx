@@ -60,11 +60,13 @@ export function PlacePicker({
     options.push(...list);
     return { ...g, list };
   });
+  /** Selects a place and closes the list. */
   const choose = (place: Place) => {
     onChange(place.id);
     setText(place.name);
     setOpen(false);
   };
+  /** Arrow keys move through the options, Enter picks one and Escape closes the list. */
   const keyDown = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "ArrowDown" || e.key === "ArrowUp") {
       e.preventDefault();
@@ -219,6 +221,7 @@ export function PeopleInput({
 }) {
   const id = useId();
   const [text, setText] = useState("");
+  /** Adds new, non-empty names as chips, skipping any already present. */
   const add = (names: string[]) => {
     const fresh = names
       .map((n) => n.trim())

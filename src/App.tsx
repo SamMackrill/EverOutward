@@ -348,7 +348,7 @@ export default function App() {
     );
   };
   const publisher = usePublish(session.owner, reload);
-  // Places and people the visit form offers first.
+  /** Places and people the visit form offers first. */
   const editorSuggestions = useMemo(() => {
     const byId = new globalThis.Map(places.map((p) => [p.id, p]));
     const recent: Place[] = [];

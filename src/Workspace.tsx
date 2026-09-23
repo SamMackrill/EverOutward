@@ -62,8 +62,10 @@ export default function Workspace({
       placeId: string;
       serial: number;
     } | null>(null);
+  /** The short label and colour for a visit's publication status. */
   const status = (visit: Visit) =>
     statuses[visit.publicationStatus || ""] || statuses["Ready to publish"];
+  /** The visit's title, or its place name when it has none. */
   const name = (visit: Visit) =>
     visit.title || places.find((p) => p.id === visit.placeId)?.name || "visit";
   const excluded = visits.filter((v) => !v.published);

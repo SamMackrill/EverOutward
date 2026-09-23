@@ -41,6 +41,7 @@ export function usePublish(enabled: boolean, onFinished: () => Promise<void>) {
     if (!enabled) return;
     let cancelled = false;
     let timer: ReturnType<typeof setTimeout>;
+    /** Reads the latest job, refreshing the journal once a new publish succeeds. */
     const poll = async () => {
       try {
         const { job: current } = await api.request<{ job: PublishJob | null }>(
@@ -71,6 +72,7 @@ export function usePublish(enabled: boolean, onFinished: () => Promise<void>) {
       clearTimeout(timer);
     };
   }, [enabled]);
+  /** Starts a publish; progress arrives through polling. */
   const publish = useCallback(async () => {
     setSubmitting(true);
     setError("");

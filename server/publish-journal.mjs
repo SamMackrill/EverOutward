@@ -17,8 +17,10 @@ export function visitPublicationStatus(visit, publication, homes = []) {
     : "Changes not yet published";
 }
 
-// Visits whose public copy is out of date: new, changed, newly excluded or
-// deleted since the last publish.
+/**
+ * Counts visits whose public copy is out of date: new, changed, newly
+ * excluded or deleted since the last publish.
+ */
 export function unpublishedChanges(visits, publication, homes = []) {
   const live = new Set(visits.map((v) => v.id));
   const pending = visits.filter((visit) => {
