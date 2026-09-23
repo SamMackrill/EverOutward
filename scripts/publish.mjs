@@ -19,6 +19,7 @@ import {
   requireJournal,
   assertJournalUnchanged,
   publishedVisitHash,
+  withSiteUrl,
 } from "../server/publish-journal.mjs";
 
 const exec = promisify(execFile);
@@ -105,6 +106,13 @@ export async function publishWebsite(progress = () => {}) {
       },
       null,
       2,
+    ),
+  );
+  await writeFile(
+    "dist/index.html",
+    withSiteUrl(
+      await readFile("dist/index.html", "utf8"),
+      (await siteState()).siteUrl,
     ),
   );
   const root = resolve("dist");

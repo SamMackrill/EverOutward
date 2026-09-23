@@ -167,7 +167,7 @@ try {
     .click();
   await page.getByRole("dialog").waitFor();
   await page.getByLabel("Close dialog").click();
-  await page.getByRole("button", { name: "Our timeline", exact: true }).click();
+  await page.getByRole("link", { name: "Our timeline", exact: true }).click();
   assert.deepEqual(
     await page
       .locator(".visit-card img")
@@ -224,7 +224,7 @@ try {
   await page.reload();
   await interval.waitFor();
   assert.equal(await interval.inputValue(), "20");
-  await page.getByRole("button", { name: "Our timeline", exact: true }).click();
+  await page.getByRole("link", { name: "Our timeline", exact: true }).click();
   await page.goto(`${origin}/#visit/one`);
   await interval.waitFor();
   assert.equal(await interval.inputValue(), "20");
@@ -252,7 +252,7 @@ try {
   await interval.selectOption("3");
   await page.clock.runFor(3000);
   assert.equal(await current().getAttribute("alt"), "garden");
-  await page.getByRole("button", { name: "Our timeline", exact: true }).click();
+  await page.getByRole("link", { name: "Our timeline", exact: true }).click();
   await page.goto(`${origin}/#visit/wheel`);
   await interval.waitFor();
   assert.equal(await interval.inputValue(), "3");

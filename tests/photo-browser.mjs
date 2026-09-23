@@ -44,7 +44,7 @@ async function dropImage(locator) {
 }
 try {
   await page.goto(origin);
-  await page.getByRole("button", { name: "Workspace", exact: true }).waitFor();
+  await page.getByRole("link", { name: "Workspace", exact: true }).waitFor();
   assert.equal(
     await page.getByRole("button", { name: "Owner sign-in" }).count(),
     0,
@@ -114,10 +114,10 @@ try {
   assert.equal(visit.coverId, visit.photos[0].id);
   assert.equal(visit.photos[0].url, "https://photos.app.goo.gl/example");
   assert.match(visit.photos[0].previewUrl, /^data:image\/jpeg;base64,/);
-  await page.getByRole("button", { name: "Our timeline", exact: true }).click();
+  await page.getByRole("link", { name: "Our timeline", exact: true }).click();
   await page.locator(".visit-card img").evaluate((img) => img.decode());
   await page
-    .getByRole("button", { name: "Linked photo visit", exact: true })
+    .getByRole("link", { name: "Linked photo visit", exact: true })
     .click();
   await page
     .locator(".carousel-slide.is-active img")
@@ -128,7 +128,7 @@ try {
   });
   await page
     .getByRole("button", {
-      name: "View photo and comments: Visit photo",
+      name: "View photo and comments: photo 1 of 2",
       exact: true,
     })
     .first()

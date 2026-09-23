@@ -114,9 +114,9 @@ const save = async (name) => {
 };
 try {
   await page.goto(origin);
-  await page.getByRole("button", { name: "Our timeline", exact: true }).click();
+  await page.getByRole("link", { name: "Our timeline", exact: true }).click();
   await page.locator(".visit-card .boat-notice svg").waitFor();
-  await page.getByRole("button", { name: "Workspace", exact: true }).click();
+  await page.getByRole("link", { name: "Workspace", exact: true }).click();
   await section
     .getByLabel("Distances from", { exact: true })
     .selectOption(b.id);
@@ -212,13 +212,13 @@ try {
   );
   await page.route("**/data/history.json", (r) => r.fulfill({ json: journal }));
   await page.goto(origin);
-  await page.getByRole("button", { name: "Our timeline", exact: true }).click();
+  await page.getByRole("link", { name: "Our timeline", exact: true }).click();
   await page
     .locator(".visit-card .boat-notice")
     .getByText("Boat trip required", { exact: true })
     .waitFor();
   await page.screenshot({ path: join(tmpdir(), "everoutward-boat-visit.png") });
-  await page.getByRole("button", { name: "Map", exact: true }).click();
+  await page.getByRole("link", { name: "Map", exact: true }).click();
   await page.getByRole("button", { name: "Find a place", exact: true }).click();
   await page
     .getByLabel("Search National Trust places", { exact: true })

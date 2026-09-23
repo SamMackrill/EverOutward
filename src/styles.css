@@ -42,14 +42,6 @@
   padding: 8px 12px;
   color: var(--ink);
 }
-.visit-origin {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  font-size: 12px;
-  color: var(--muted);
-  overflow-wrap: anywhere;
-}
 .home-locations-section {
   display: grid;
   gap: 20px;
@@ -461,7 +453,8 @@ small,
   gap: 10px;
   align-self: stretch;
 }
-.site-header nav button {
+.site-header nav a {
+  text-decoration: none;
   display: flex;
   align-items: center;
   gap: 9px;
@@ -471,7 +464,7 @@ small,
   border-bottom: 3px solid transparent;
   color: var(--muted);
 }
-.site-header nav button.active {
+.site-header nav a.active {
   border-color: var(--green);
   color: var(--green);
 }
@@ -1137,6 +1130,8 @@ select {
   max-width: 330px;
 }
 .month-label {
+  font-family: inherit;
+  font-weight: 700;
   font-size: 12px;
   color: var(--muted);
   text-transform: uppercase;
@@ -1147,6 +1142,7 @@ select {
   margin-top: 20px;
 }
 .visit-card {
+  position: relative;
   display: grid;
   grid-template-columns: 230px 1fr;
   gap: 25px;
@@ -1177,13 +1173,97 @@ select {
   font-size: 24px;
   font-weight: 500;
 }
-.title-button {
-  text-align: left;
-  font: inherit;
-  padding: 0;
+/* One link per card; its hit area stretches over the whole card. */
+.visit-card-link {
+  color: inherit;
+  text-decoration: none;
 }
-.title-button:hover {
+.visit-card-link::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+}
+.visit-card:hover .visit-card-link,
+.visit-card-link:focus-visible {
   color: var(--green);
+}
+.visit-card:has(.visit-card-link:focus-visible) {
+  outline: 3px solid var(--blue);
+  outline-offset: 6px;
+  border-radius: 4px;
+}
+.visit-card-link:focus-visible {
+  outline: 0;
+}
+.visit-card .read-more {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--green);
+  font-size: 12px;
+  font-weight: 600;
+}
+.visit-card:hover .read-more {
+  text-decoration: underline;
+}
+.visit-card-rating {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.repeat-badge {
+  padding: 2px 8px;
+  border-radius: 10px;
+  background: var(--wash);
+  color: var(--green);
+  font-size: 12px;
+  font-weight: 600;
+}
+.visit-facts,
+.visit-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 14px;
+}
+.visit-facts span,
+.visit-meta span,
+.visit-meta .text-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.visit-meta {
+  font-size: 13px;
+  color: var(--muted);
+}
+.person-filter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: -8px 0 22px;
+}
+.chip {
+  padding: 6px 13px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--paper);
+  font-size: 13px;
+}
+.chip:hover {
+  border-color: var(--green);
+}
+.chip[aria-pressed="true"] {
+  border-color: var(--green);
+  background: var(--green);
+  color: var(--paper);
+  font-weight: 600;
+}
+.photo-unavailable {
+  margin-top: 12px;
+}
+.photo-gallery > .button {
+  margin-top: 14px;
 }
 .visit-card p:not(.eyebrow) {
   font-size: 12px;
@@ -1354,8 +1434,10 @@ select {
   font-size: 12px;
   color: var(--muted);
 }
-.location-line .stars {
-  margin-left: auto;
+.location-line > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
 }
 .visit-lead {
   font-family: "Lora Variable", serif;
@@ -1930,7 +2012,7 @@ select {
   .site-header nav {
     gap: 0;
   }
-  .site-header nav button {
+  .site-header nav a {
     padding-inline: 10px;
     font-size: 12px;
   }
@@ -2012,7 +2094,7 @@ select {
     border-top: 1px solid var(--line);
     box-shadow: 0 -4px 16px #0000000d;
   }
-  .site-header nav button {
+  .site-header nav a {
     flex: 1;
     flex-direction: column;
     justify-content: center;
@@ -2341,44 +2423,6 @@ select {
     top: 99px;
     max-width: calc(100% - 30px);
   }
-}
-
-.attendee-list {
-  display: flex;
-  gap: 7px;
-  align-items: center;
-  overflow-wrap: anywhere;
-}
-.visit-attendees {
-  display: grid;
-  gap: 10px;
-  padding: 16px;
-  background: var(--wash);
-  border-radius: 5px;
-}
-.visit-attendees h3 {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--muted);
-}
-.visit-attendees ul {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
-.visit-attendees li {
-  font-size: 12px;
-  padding: 6px 11px;
-  border-radius: 20px;
-  background: var(--paper);
-  border: 1px solid var(--line);
-  overflow-wrap: anywhere;
 }
 
 /* The next destination leads; discovery tools stay secondary. */
@@ -2784,7 +2828,7 @@ select {
   overflow: visible;
 }
 @media (max-width: 760px) {
-  .site-header nav button.active {
+  .site-header nav a.active {
     border-top-color: var(--green);
   }
   .journey-bar.journey-bar-slim {
