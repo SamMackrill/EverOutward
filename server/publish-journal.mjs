@@ -75,8 +75,10 @@ export function assertJournalUnchanged(path, expected) {
   }
 }
 
-// Link previews need absolute image URLs. The site's address is known once
-// it has been published, so later publishes fill it in.
+/**
+ * Makes link-preview image URLs absolute. The site's address is known once it
+ * has been published, so later publishes fill it in.
+ */
 export function withSiteUrl(html, siteUrl) {
   if (!siteUrl) return html;
   return html.replace(

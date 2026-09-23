@@ -70,6 +70,7 @@ export default function VisitDetail({
     ).length,
     gallery = showAll ? previewable : previewable.slice(0, GALLERY_START);
   const origin = visit.startingHomeLabel || visit.startingHomeSnapshot?.label;
+  /** Opens the share sheet, or copies the visit link where sharing isn't available. */
   const share = async () => {
     const title = document.title;
     try {

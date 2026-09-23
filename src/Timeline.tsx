@@ -8,10 +8,12 @@ import { photoSource } from "../server/photo-links.mjs";
 import { sortVisits } from "../server/domain.mjs";
 import type { Place, Visit } from "./types";
 
+/** The visit's chosen cover, or its first photo that has a preview. */
 const coverPhoto = (v: Visit) =>
   v.photos.find((p) => p.id === v.coverId && photoSource(p)) ||
   v.photos.find((p) => photoSource(p));
 
+/** A timeline card image that falls back to the place's photo if the cover fails. */
 function Cover({ visit, place }: { visit: Visit; place?: Place }) {
   const photo = coverPhoto(visit);
   // A cover that stops loading falls back to the place's licensed photo.
@@ -27,6 +29,7 @@ function Cover({ visit, place }: { visit: Visit; place?: Place }) {
   );
 }
 
+/** The visit history: search, person filter, month groups and repeat-visit badges. */
 export default function Timeline({
   hidden,
   visits,

@@ -4,10 +4,13 @@ const NavigateContext = createContext<(to: string) => void>((to) => {
   location.hash = to;
 });
 export const NavigationProvider = NavigateContext.Provider;
+/** Returns the app's in-place navigation function. */
 export const useNavigate = () => useContext(NavigateContext);
 
-// Real links to hash routes: they can be opened in a new tab, copied or
-// shared, while a plain click still navigates in place.
+/**
+ * A real link to a hash route: it can be opened in a new tab, copied or
+ * shared, while a plain click still navigates in place.
+ */
 export default function Link({
   to,
   onClick,
