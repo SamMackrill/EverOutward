@@ -106,6 +106,16 @@ try {
     .getByRole("button", { name: "Save home location", exact: true })
     .click();
   await card("Family base").waitFor();
+  assert.doesNotMatch(
+    await page.locator(".home-location-list").innerText(),
+    /0\.0 miles/,
+  );
+  assert.match(
+    await card("Family base")
+      .getByRole("button", { name: "Remove", exact: true })
+      .getAttribute("class"),
+    /danger/,
+  );
   const secondHome = store.list("homes").find((h) => h.label === "Family base");
   assert.equal(currentHome(store).id, firstHome.id);
   fillRoutes(secondHome, true);
@@ -236,6 +246,11 @@ try {
   await page
     .getByRole("button", { name: "Record a visit", exact: true })
     .click();
+  assert.match(
+    await page.locator("dialog .origin-line").innerText(),
+    /From\s+Family base/,
+  );
+  await page.getByRole("button", { name: "Change starting home" }).click();
   assert.equal(
     await page.getByLabel("Started from", { exact: true }).inputValue(),
     secondHome.id,
@@ -244,8 +259,13 @@ try {
     .getByLabel("Started from", { exact: true })
     .selectOption(firstHome.id);
   await page
-    .locator('dialog select[name="placeId"]')
-    .selectOption(catalogue[2].id);
+    .getByRole("combobox", { name: "National Trust place" })
+    .fill(catalogue[2].name);
+  await page
+    .getByRole("option")
+    .filter({ hasText: catalogue[2].name })
+    .first()
+    .click();
   await page
     .getByLabel("A title for the day", { exact: false })
     .fill("Trip from original home");

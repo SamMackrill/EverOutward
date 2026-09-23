@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import L from "leaflet";
 import Modal from "./Modal";
+import { HowItWorks } from "./shared";
 import type { Home, HomeJourney } from "./types";
 import * as api from "./api";
 
@@ -314,10 +315,19 @@ export default function HomeLocations({
       <div className="section-heading">
         <div>
           <h3>Home locations</h3>
-          <p>
-            Choose your current starting point. Every home keeps its own
-            distances and discovery circle; visited places are shared.
-          </p>
+          <p>Choose your current starting point.</p>
+          <HowItWorks>
+            <p>
+              Every home keeps its own distances and discovery circle; visited
+              places are shared.
+            </p>
+            <p>
+              Distances do not expire. Calculating sends this home’s coordinates
+              to OSRM / FOSSGIS. Each batch is saved; rerun an interrupted
+              calculation to finish the remaining places. Publishing reuses
+              saved distances.
+            </p>
+          </HowItWorks>
         </div>
         <button
           className="button primary"
@@ -365,9 +375,10 @@ export default function HomeLocations({
               <p className="small muted">
                 {saved} of {total} places have a saved driving distance.
                 {(journey?.range.confirmed ?? journey?.complete)
-                  ? journey!.range.radius > 0
+                  ? // Under a tenth of a mile would print as "0.0 miles".
+                    journey!.range.radius >= 161
                     ? ` Discovery circle: ${(journey!.range.radius / 1609.344).toFixed(1)} miles.`
-                    : " No visits inside this home’s next gate yet."
+                    : " No visits within range yet."
                   : " Circle pending: a missing driving distance could change its boundary."}
               </p>
               <div className="button-row">
@@ -397,7 +408,7 @@ export default function HomeLocations({
                   Edit
                 </button>
                 <button
-                  className="text-button"
+                  className="text-button danger remove-home"
                   disabled={!!busy}
                   onClick={() => {
                     setRemoving(home);
@@ -465,11 +476,6 @@ export default function HomeLocations({
           );
         })}
       </div>
-      <p className="small muted">
-        Distances do not expire. Calculating sends this home’s coordinates to
-        OSRM / FOSSGIS. Each batch is saved; rerun an interrupted calculation to
-        finish the remaining places. Publishing reuses saved distances.
-      </p>
       {editor && (
         <HomeEditor
           home={editor === "new" ? null : editor}

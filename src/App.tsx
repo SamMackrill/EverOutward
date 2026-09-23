@@ -21,9 +21,7 @@ import {
   LogOut,
   Check,
   MapPin,
-  Download,
   LoaderCircle,
-  Globe,
   Monitor,
   Sun,
   Moon,
@@ -31,10 +29,10 @@ import {
 import MapPanel, { type MapCommand } from "./MapPanel";
 import NextFive, { NextGateCompact } from "./NextFive";
 import JourneyBar from "./JourneyBar";
+import Workspace from "./Workspace";
+import { usePublish } from "./usePublish";
 import Timeline from "./Timeline";
 import Link, { NavigationProvider } from "./navigation";
-import HomeLocations from "./HomeLocations";
-import DistanceReview from "./DistanceReview";
 import BoatNotice from "./BoatNotice";
 import Modal from "./Modal";
 import VisitEditor from "./VisitEditor";
@@ -84,7 +82,8 @@ export default function App() {
   }, [cataloguePlaces, placeOverrides]);
   const [publicQueue, setPublicQueue] = useState<Route[]>([]),
     [publicComplete, setPublicComplete] = useState(false),
-    [publicPending, setPublicPending] = useState(0);
+    [publicPending, setPublicPending] = useState(0),
+    [unpublished, setUnpublished] = useState(0);
   const [loading, setLoading] = useState(true),
     [error, setError] = useState(""),
     [toast, setToast] = useState(""),
@@ -142,6 +141,7 @@ export default function App() {
     setPublicQueue(d.queue || []);
     setPublicComplete(!!d.complete);
     setPublicPending(d.pendingCount || 0);
+    setUnpublished(d.unpublishedChanges || 0);
   }, []);
   useEffect(() => {
     let alive = true;
@@ -347,6 +347,26 @@ export default function App() {
       "Visit saved to your local journal. Publish when you’re ready to share.",
     );
   };
+  const publisher = usePublish(session.owner, reload);
+  // Places and people the visit form offers first.
+  const editorSuggestions = useMemo(() => {
+    const byId = new globalThis.Map(places.map((p) => [p.id, p]));
+    const recent: Place[] = [];
+    const people = new globalThis.Map<string, number>();
+    for (const v of sortVisits(visits) as Visit[]) {
+      const p = byId.get(v.placeId);
+      if (p && !recent.includes(p) && recent.length < 5) recent.push(p);
+      for (const name of v.attendees || [])
+        people.set(name, (people.get(name) || 0) + 1);
+    }
+    return {
+      next: progress.ranked as Place[],
+      recent,
+      people: [...people]
+        .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+        .map(([name]) => name),
+    };
+  }, [places, visits, progress.ranked]);
   const placeVisits = selected
     ? sortVisits(visits.filter((v) => v.placeId === selected.id))
     : [];
@@ -486,6 +506,9 @@ export default function App() {
           range: mapRange,
         }}
         owner={session.owner}
+        publishing={
+          session.owner ? { changes: unpublished, publisher } : undefined
+        }
         onRecord={() => openEditor()}
         onNextGate={() => selectOnMap(progress.ranked[0])}
       />
@@ -637,8 +660,9 @@ export default function App() {
                 home={home}
                 homes={homes}
                 homeJourneys={homeJourneys}
-                routes={routes}
                 places={places}
+                changes={unpublished}
+                publisher={publisher}
                 onRefresh={reload}
                 notify={setToast}
               />
@@ -820,6 +844,7 @@ export default function App() {
         <VisitEditor
           visit={editor === "new" ? null : editor}
           defaultPlace={editorPlace}
+          suggestions={editorSuggestions}
           homes={homes}
           currentHome={home}
           focus={editorFocus}
@@ -930,278 +955,5 @@ function Login({
         </button>
       </form>
     </Modal>
-  );
-}
-
-type PublishJob = {
-  id: string;
-  status: "running" | "succeeded" | "failed";
-  message?: string;
-  error?: string;
-  result?: {
-    siteUrl: string;
-    publishedAt: string;
-    pendingLocalChanges?: boolean;
-    publishedVisitCount: number;
-    warnings?: string[];
-  };
-};
-function Workspace({
-  visits,
-  home,
-  homes,
-  homeJourneys,
-  routes,
-  places,
-  onRefresh,
-  notify,
-}: {
-  visits: Visit[];
-  home: Home | null;
-  homes: Home[];
-  homeJourneys: HomeJourney[];
-  routes: Route[];
-  places: Place[];
-  onRefresh: () => Promise<void>;
-  notify: (s: string) => void;
-}) {
-  const [error, setError] = useState(""),
-    [submitting, setSubmitting] = useState(false),
-    [job, setJob] = useState<PublishJob | null>(null),
-    [connectionError, setConnectionError] = useState(""),
-    [changingVisit, setChangingVisit] = useState(""),
-    [pendingSelection, setPendingSelection] = useState<{
-      id: string;
-      included: boolean;
-    } | null>(null),
-    [calculating, setCalculating] = useState(false),
-    [reviewSelection, setReviewSelection] = useState<{
-      homeId: string;
-      placeId: string;
-      serial: number;
-    } | null>(null),
-    [site, setSite] = useState<{
-      siteUrl: string | null;
-      publishedAt: string | null;
-    }>({ siteUrl: null, publishedAt: null });
-  const busy = submitting || job?.status === "running";
-  const finished = useRef("");
-  useEffect(() => {
-    api
-      .request<typeof site>("/api/site")
-      .then(setSite)
-      .catch(() => {});
-  }, []);
-  useEffect(() => {
-    let cancelled = false;
-    let timer: ReturnType<typeof setTimeout>;
-    const poll = async () => {
-      try {
-        const { job: current } = await api.request<{ job: PublishJob | null }>(
-          "/api/publish",
-        );
-        if (cancelled) return;
-        setJob(current);
-        setConnectionError("");
-        if (current?.status === "succeeded" && current.result) {
-          setSite(current.result);
-          if (finished.current !== current.id) {
-            finished.current = current.id;
-            await onRefresh();
-          }
-        }
-      } catch {
-        if (!cancelled)
-          setConnectionError(
-            "Cannot reach the local server. Reconnecting to check publishing status…",
-          );
-      } finally {
-        if (!cancelled) timer = setTimeout(poll, 1500);
-      }
-    };
-    void poll();
-    return () => {
-      cancelled = true;
-      clearTimeout(timer);
-    };
-  }, [onRefresh]);
-  async function publish() {
-    setSubmitting(true);
-    setError("");
-    try {
-      const result = await api.request<{ job: PublishJob }>("/api/publish", {
-        method: "POST",
-      });
-      setJob(result.job);
-    } catch (e) {
-      setError((e as Error).message);
-    } finally {
-      setSubmitting(false);
-    }
-  }
-  return (
-    <div className="content-scroll settings-view">
-      <div className="section-heading">
-        <div>
-          <p className="eyebrow">Local owner workspace</p>
-          <h1 className="view-title">A home for your adventures</h1>
-        </div>
-        <Settings size={26} />
-      </div>
-      <HomeLocations
-        homes={homes}
-        currentId={home?.id || null}
-        journeys={homeJourneys}
-        onRefresh={onRefresh}
-        notify={notify}
-        onBusy={setCalculating}
-        onReview={(homeId, placeId) =>
-          setReviewSelection({ homeId, placeId, serial: Date.now() })
-        }
-      />
-      <DistanceReview
-        homes={homes}
-        currentId={home?.id || null}
-        places={places}
-        selection={reviewSelection}
-        onRefresh={onRefresh}
-      />
-      <section className="settings-section">
-        <div>
-          <h3>Your public here.now site</h3>
-          <p>
-            Publish your selected visits, cover photos and summaries. New guest
-            comments appear immediately. Remove comments through the visit
-            detail in this workspace. Publishing keeps your local notes and
-            photos and makes a private backup first.
-          </p>
-          {site.siteUrl && (
-            <a href={site.siteUrl} target="_blank" rel="noreferrer">
-              Open public journal <ArrowUpRight size={15} />
-            </a>
-          )}
-          {site.publishedAt && (
-            <p className="small muted">
-              Last published{" "}
-              {new Date(site.publishedAt).toLocaleString("en-GB")}
-            </p>
-          )}
-        </div>
-        <div className="form-stack">
-          <button
-            className="button primary"
-            onClick={publish}
-            disabled={busy || calculating || !!changingVisit}
-          >
-            {busy ? (
-              <LoaderCircle className="spin" size={18} />
-            ) : (
-              <Globe size={18} />
-            )}{" "}
-            {busy ? "Publishing…" : "Publish journal to here.now"}
-          </button>
-          <div className="publish-status" role="status" aria-live="polite">
-            {busy && (
-              <p>
-                {job?.message || "Starting publication…"} You can leave this
-                page; publishing will continue.
-              </p>
-            )}
-            {!busy && job?.status === "succeeded" && (
-              <p>
-                {job.result?.publishedVisitCount} visits published successfully.
-                {job.result?.pendingLocalChanges
-                  ? " Newer local edits are waiting for another publish."
-                  : ""}
-              </p>
-            )}
-            {job?.result?.warnings?.map((warning, i) => (
-              <p key={i}>{warning}</p>
-            ))}
-            {connectionError && <p>{connectionError}</p>}
-          </div>
-          {(error || job?.status === "failed") && (
-            <p role="alert" className="form-error">
-              {error || job?.error} Your local visits are safe. You can retry
-              publishing.
-            </p>
-          )}
-          <p className="small">
-            {visits.filter((v) => v.published).length} visits included ·{" "}
-            {visits.filter((v) => !v.published).length} excluded from
-            publishing.
-          </p>
-          <details className="publish-selection">
-            <summary>Choose visits to publish</summary>
-            <p className="small muted">
-              Unchecked visits are kept on this computer. If a visit is already
-              public, unchecking it removes it from the website the next time
-              you publish.
-            </p>
-            {visits.map((visit) => (
-              <label className="checkbox" key={visit.id}>
-                <input
-                  type="checkbox"
-                  aria-label={`Include ${visit.title || places.find((p) => p.id === visit.placeId)?.name || "visit"} in next publish`}
-                  checked={
-                    pendingSelection?.id === visit.id
-                      ? pendingSelection.included
-                      : visit.published
-                  }
-                  disabled={busy || !!changingVisit}
-                  onChange={async (e) => {
-                    setChangingVisit(visit.id);
-                    setPendingSelection({
-                      id: visit.id,
-                      included: e.target.checked,
-                    });
-                    setError("");
-                    try {
-                      await api.request(`/api/visits/${visit.id}/publication`, {
-                        method: "PATCH",
-                        body: JSON.stringify({
-                          published: e.target.checked,
-                          updatedAt: visit.updatedAt,
-                        }),
-                      });
-                      await onRefresh();
-                    } catch (error) {
-                      setError((error as Error).message);
-                    } finally {
-                      setChangingVisit("");
-                      setPendingSelection(null);
-                    }
-                  }}
-                />
-                <span>
-                  {visit.title ||
-                    places.find((p) => p.id === visit.placeId)?.name}
-                  <small className="muted">
-                    {date(visit.date)} · {visit.publicationStatus}
-                  </small>
-                </span>
-              </label>
-            ))}
-          </details>
-          <p className="small muted">
-            Reuses this project’s dedicated site. Excluded visits, exact home
-            coordinates and account credentials stay local.
-          </p>
-        </div>
-      </section>
-      <section className="settings-section">
-        <div>
-          <h3>Keep a copy of your memories</h3>
-          <p>
-            Download your complete local history, photo links, comments, home
-            and routes. Keep this backup private.
-          </p>
-        </div>
-        <a className="button" href="/api/export">
-          <Download size={18} />
-          Export private backup
-        </a>
-      </section>
-    </div>
   );
 }

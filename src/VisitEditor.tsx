@@ -5,8 +5,9 @@ import {
   useState,
   type FormEvent,
 } from "react";
-import { Check, ImagePlus, LoaderCircle } from "lucide-react";
+import { Check, Home as HomeIcon, ImagePlus, LoaderCircle } from "lucide-react";
 import Modal from "./Modal";
+import { PeopleInput, PlacePicker, StarRating } from "./FormControls";
 import VisitPhotoEditor, { PhotoLibraries } from "./VisitPhotoEditor";
 import PhotoDropZone from "./PhotoDropZone";
 import AlbumImport from "./AlbumImport";
@@ -22,6 +23,7 @@ export default function VisitEditor({
   homes,
   currentHome,
   places,
+  suggestions,
   onClose,
   onSave,
 }: {
@@ -31,6 +33,7 @@ export default function VisitEditor({
   homes: Home[];
   currentHome: Home | null;
   places: Place[];
+  suggestions: { next: Place[]; recent: Place[]; people: string[] };
   onClose: () => void;
   onSave: (
     v: Omit<Visit, "id" | "createdAt" | "updatedAt"> & { updatedAt?: string },
@@ -40,6 +43,15 @@ export default function VisitEditor({
     id: visit?.startingHomeId || currentHome?.id || "",
     version: visit?.startingHomeVersion || currentHome?.version || "",
   }));
+  // The starting home rarely changes, so it stays collapsed unless it needs
+  // attention (for example a removed home).
+  const [editingOrigin, setEditingOrigin] = useState(
+    () => !homes.some((h) => h.id === origin.id),
+  );
+  const [placeId, setPlaceId] = useState(visit?.placeId || defaultPlace || ""),
+    [people, setPeople] = useState<string[]>(visit?.attendees || []),
+    [rating, setRating] = useState<number | null>(visit?.rating || null);
+  const originHome = homes.find((h) => h.id === origin.id);
   const [photos, setPhotos] = useState<Photo[]>(visit?.photos || []),
     [coverId, setCoverId] = useState<string | null>(visit?.coverId || null),
     [error, setError] = useState(""),
@@ -90,6 +102,11 @@ export default function VisitEditor({
   const submit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (photoJobs.size) return;
+    if (!placeId) {
+      setError("Choose the National Trust place you visited.");
+      form.current?.querySelector<HTMLInputElement>("[role=combobox]")?.focus();
+      return;
+    }
     if (JSON.stringify(photos).length > 8_000_000) {
       setError(
         "The display photos exceed 8 MB. Use shared links or fewer display copies.",
@@ -108,10 +125,15 @@ export default function VisitEditor({
         title: String(d.get("title")),
         summary: String(d.get("summary")),
         notes: String(d.get("notes")),
-        attendees: String(d.get("attendees") || "")
-          .split(/[,\n]/)
-          .map((name) => name.trim())
-          .filter(Boolean),
+        // Include a name still being typed when Save is pressed.
+        attendees: [
+          ...new Set(
+            `${d.get("attendees") || ""},${d.get("attendeeDraft") || ""}`
+              .split(/[,\n]/)
+              .map((name) => name.trim())
+              .filter(Boolean),
+          ),
+        ],
         rating: d.get("rating") ? Number(d.get("rating")) : null,
         published: d.get("published") === "on",
         photos,
@@ -133,61 +155,14 @@ export default function VisitEditor({
     >
       {(requestClose) => (
         <form className="form-stack" onSubmit={submit} ref={form}>
-          <label>
-            Started from
-            <select
-              aria-label="Started from"
-              required
-              value={origin.id}
-              onChange={(e) => {
-                const h = homes.find((h) => h.id === e.target.value);
-                if (h) setOrigin({ id: h.id, version: h.version });
-              }}
-            >
-              <option value="">Choose a starting home</option>
-              {homes.map((h) => (
-                <option value={h.id} key={h.id}>
-                  {h.label}
-                </option>
-              ))}
-              {visit?.startingHomeId &&
-                !homes.some((h) => h.id === visit.startingHomeId) && (
-                  <option value={visit.startingHomeId}>
-                    {visit.startingHomeLabel ||
-                      visit.startingHomeSnapshot?.label ||
-                      "Previous home"}{" "}
-                    (removed)
-                  </option>
-                )}
-            </select>
-            <span className="optional">
-              This trip keeps its starting location when the current home
-              changes.
-            </span>
-          </label>
-          {!homes.length && (
-            <p className="form-error">
-              Add a home location in Workspace before recording a visit.
-            </p>
-          )}
           <div className="form-grid">
-            <label>
-              National Trust place
-              <select
-                name="placeId"
-                defaultValue={visit?.placeId || defaultPlace || ""}
-                required
-              >
-                <option value="">Choose a place</option>
-                {[...places]
-                  .sort((a, b) => a.name.localeCompare(b.name))
-                  .map((p) => (
-                    <option value={p.id} key={p.id}>
-                      {p.name}
-                    </option>
-                  ))}
-              </select>
-            </label>
+            <PlacePicker
+              places={places}
+              value={placeId}
+              onChange={setPlaceId}
+              next={suggestions.next}
+              recent={suggestions.recent}
+            />
             <label>
               Visit date
               <input
@@ -200,18 +175,63 @@ export default function VisitEditor({
               />
             </label>
           </div>
-          <label>
-            Who came along?{" "}
-            <span className="optional">
-              optional · separate names with commas
-            </span>
-            <input
-              name="attendees"
-              defaultValue={visit?.attendees?.join(", ") || ""}
-              maxLength={2430}
-              placeholder="Ana, Sam, Ele"
-            />
-          </label>
+          {editingOrigin ? (
+            <label>
+              Started from
+              <select
+                aria-label="Started from"
+                required
+                value={origin.id}
+                onChange={(e) => {
+                  const h = homes.find((h) => h.id === e.target.value);
+                  if (h) setOrigin({ id: h.id, version: h.version });
+                }}
+              >
+                <option value="">Choose a starting home</option>
+                {homes.map((h) => (
+                  <option value={h.id} key={h.id}>
+                    {h.label}
+                  </option>
+                ))}
+                {visit?.startingHomeId &&
+                  !homes.some((h) => h.id === visit.startingHomeId) && (
+                    <option value={visit.startingHomeId}>
+                      {visit.startingHomeLabel ||
+                        visit.startingHomeSnapshot?.label ||
+                        "Previous home"}{" "}
+                      (removed)
+                    </option>
+                  )}
+              </select>
+              <span className="optional">
+                This trip keeps its starting location when the current home
+                changes.
+              </span>
+            </label>
+          ) : (
+            <p className="origin-line">
+              <HomeIcon size={15} aria-hidden="true" />
+              From <strong>{originHome?.label}</strong> ·{" "}
+              <button
+                type="button"
+                className="text-button"
+                aria-label="Change starting home"
+                onClick={() => setEditingOrigin(true)}
+              >
+                change
+              </button>
+            </p>
+          )}
+          {!homes.length && (
+            <p className="form-error">
+              Add a home location in Workspace before recording a visit.
+            </p>
+          )}
+          <PeopleInput
+            value={people}
+            onChange={setPeople}
+            suggestions={suggestions.people}
+          />
           <label>
             A title for the day <span className="optional">optional</span>
             <input
@@ -243,17 +263,7 @@ export default function VisitEditor({
             />
           </label>
           <div className="form-grid">
-            <label>
-              Your rating
-              <select name="rating" defaultValue={visit?.rating || ""}>
-                <option value="">Not rated</option>
-                {[5, 4, 3, 2, 1].map((n) => (
-                  <option key={n} value={n}>
-                    {"★".repeat(n)} · {n} / 5
-                  </option>
-                ))}
-              </select>
-            </label>
+            <StarRating value={rating} onChange={setRating} />
             <label className="checkbox">
               <input
                 name="published"
@@ -262,12 +272,11 @@ export default function VisitEditor({
               />
               Include in the public journal when published
             </label>
-            <p className="small muted">
-              Saving keeps this visit on this computer until you press Publish
-              in Workspace. Uncheck this option to keep it private and exclude
-              it from publishing.
-            </p>
           </div>
+          <p className="small muted">
+            Saving keeps this visit on this computer until you publish. Uncheck
+            the option above to keep it private.
+          </p>
           <div className="section-heading" ref={photoSection} tabIndex={-1}>
             <h3>Photo links</h3>
             <button

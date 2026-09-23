@@ -1,5 +1,5 @@
 import { useEffect, useState, type ReactNode } from "react";
-import { Camera, Star } from "lucide-react";
+import { Camera, Info, Star } from "lucide-react";
 import {
   photoSource,
   providerFor,
@@ -112,4 +112,17 @@ export function PhotoCredit({ place }: { place: Place }) {
       </a>
     </p>
   ) : null;
+}
+
+/** Keeps longer explanations one click away so the actions stay visible. */
+export function HowItWorks({ children }: { children: ReactNode }) {
+  return (
+    <details className="how-it-works">
+      <summary>
+        <Info size={15} aria-hidden="true" />
+        How this works
+      </summary>
+      {children}
+    </details>
+  );
 }

@@ -111,17 +111,67 @@ try {
       exact: true,
     })
     .waitFor();
+  // The header shows the public journal is behind.
+  await page
+    .getByRole("button", { name: "1 change not published · Publish" })
+    .waitFor();
   await page.getByText("Choose visits to publish", { exact: true }).click();
+  const row = (name) => page.locator(".publish-row").filter({ hasText: name });
+  assert.equal(
+    await row("My Fair Lady").locator(".status-pill").innerText(),
+    "Private",
+  );
+  assert.equal(
+    await row("The Wind in the Willows").locator(".status-pill").innerText(),
+    "New",
+  );
+  await page.getByLabel("Show visits").selectOption("private");
+  assert.equal(await page.locator(".publish-row").count(), 1);
+  await page.getByLabel("Show visits").selectOption("all");
+  // Only the row being saved is locked.
+  let releaseSave;
+  const saving = new Promise((r) => (releaseSave = r));
+  await page.route("**/api/visits/*/publication", async (route) => {
+    await saving;
+    await route.continue();
+  });
   await page
     .getByRole("checkbox", {
-      name: "Include My Fair Lady in next publish",
+      name: "Include The Wind in the Willows in next publish",
       exact: true,
     })
-    .check();
+    .uncheck();
+  assert.equal(
+    await page
+      .getByRole("checkbox", {
+        name: "Include The Wind in the Willows in next publish",
+      })
+      .isDisabled(),
+    true,
+  );
+  assert.equal(
+    await page
+      .getByRole("checkbox", { name: "Include My Fair Lady in next publish" })
+      .isDisabled(),
+    false,
+  );
+  releaseSave();
+  await page
+    .getByText("0 visits included · 2 excluded from publishing.", {
+      exact: true,
+    })
+    .waitFor();
+  await page.unroute("**/api/visits/*/publication");
+  await page
+    .getByRole("button", { name: "Include all 2 private visits" })
+    .click();
   await page
     .getByText("2 visits included · 0 excluded from publishing.", {
       exact: true,
     })
+    .waitFor();
+  await page
+    .getByRole("button", { name: "2 changes not published · Publish" })
     .waitFor();
   await page
     .getByRole("button", { name: "Publish journal to here.now", exact: true })
@@ -159,6 +209,11 @@ try {
   await page
     .getByText("2 visits published successfully.", { exact: true })
     .waitFor();
+  await page.getByText("Journal up to date", { exact: true }).waitFor();
+  assert.equal(
+    await row("My Fair Lady").locator(".status-pill").textContent(),
+    "Published",
+  );
   await page.getByRole("link", { name: "Our timeline", exact: true }).click();
   assert.match(
     await page
@@ -178,7 +233,7 @@ try {
   );
   assert.deepEqual(errors, []);
   console.log(
-    "PASS: publication selection, included-by-default visits, renamed home labels, persistent progress across refresh, visible failure, retry, and confirmed live statuses.",
+    "PASS: publication selection, header change count and up-to-date pill, status pills and filter, per-row locking, bulk include, included-by-default visits, renamed home labels, persistent progress across refresh, visible failure, retry, and confirmed live statuses.",
   );
 } finally {
   release?.();

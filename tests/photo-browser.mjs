@@ -55,8 +55,13 @@ try {
     .getByRole("button", { name: "Record a visit", exact: true })
     .click();
   await page
-    .locator("dialog select[name=placeId]")
-    .selectOption(catalogue.places[0].id);
+    .getByRole("combobox", { name: "National Trust place" })
+    .fill(catalogue.places[0].name);
+  await page
+    .getByRole("option")
+    .filter({ hasText: catalogue.places[0].name })
+    .first()
+    .click();
   await page
     .getByLabel("A title for the day", { exact: false })
     .fill("Linked photo visit");
@@ -150,23 +155,32 @@ try {
     .getByRole("button", { name: "Add the story of this day", exact: true })
     .click();
   await page.getByLabel("The full story").waitFor();
-  assert.equal(
-    await page.evaluate(() => document.activeElement?.getAttribute("name")),
-    "notes",
+  await page.waitForFunction(
+    () => document.activeElement?.getAttribute("name") === "notes",
+    null,
+    { timeout: 5000 },
   );
   await page.getByRole("button", { name: "Cancel", exact: true }).click();
   await page.getByRole("button", { name: "Add photos", exact: true }).click();
   await page
     .getByRole("heading", { name: "Photo links", exact: true })
     .waitFor();
-  assert.ok(await page.locator("dialog").evaluate((el) => el.scrollTop > 0));
+  await page.waitForFunction(
+    () => document.querySelector("dialog")?.scrollTop > 0,
+    null,
+    { timeout: 5000 },
+  );
   await page.getByRole("button", { name: "Cancel", exact: true }).click();
   await page.context().clearCookies();
   await page.goto(`${origin}/?addPhotos=${visit.id}#visit/${visit.id}`);
   await page
     .getByRole("heading", { name: "Photo links", exact: true })
     .waitFor();
-  assert.ok(await page.locator("dialog").evaluate((el) => el.scrollTop > 0));
+  await page.waitForFunction(
+    () => document.querySelector("dialog")?.scrollTop > 0,
+    null,
+    { timeout: 5000 },
+  );
   await page.setViewportSize({ width: 390, height: 844 });
   await page.route("**/api/photo-links/album", (r) =>
     r.fulfill({

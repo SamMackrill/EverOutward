@@ -186,8 +186,14 @@ try {
   await page.getByRole("heading", { name: "Record a visit" }).waitFor();
   assert.equal(await page.locator("dialog").count(), 1);
   assert.equal(
-    await page.locator("dialog select[name=placeId]").inputValue(),
+    await page.locator("dialog input[name=placeId]").inputValue(),
     catalogue.places[0].id,
+  );
+  assert.equal(
+    await page
+      .getByRole("combobox", { name: "National Trust place" })
+      .inputValue(),
+    catalogue.places[0].name,
   );
   await page.keyboard.press("Escape");
   await page.locator("dialog").waitFor({ state: "detached" });
@@ -219,9 +225,20 @@ try {
   await page
     .getByRole("button", { name: "Record a visit", exact: true })
     .click();
+  // With no search text the picker offers recently visited places first.
+  await page.getByRole("combobox", { name: "National Trust place" }).focus();
+  await page.getByText("Recently visited", { exact: true }).waitFor();
+  await page.keyboard.press("Escape");
+  assert.equal(await page.locator("dialog").count(), 1);
   await page
-    .locator("dialog select[name=placeId]")
-    .selectOption(catalogue.places[50].id);
+    .getByRole("combobox", { name: "National Trust place" })
+    .fill(catalogue.places[50].name);
+  await page
+    .getByRole("option")
+    .filter({ hasText: catalogue.places[50].name })
+    .first()
+    .click();
+  await page.getByRole("radio", { name: "5 stars" }).check({ force: true });
   await page
     .getByLabel("A title for the day", { exact: false })
     .fill("Saved through browser");
@@ -237,9 +254,16 @@ try {
   await page
     .getByLabel("Include in the public journal when published")
     .uncheck();
-  await page
-    .getByLabel("Who came along?", { exact: false })
-    .fill("Ana, Sam, Ele");
+  await page.getByLabel("Who came along?", { exact: false }).fill("Ana, Sam,");
+  await page.getByLabel("Who came along?", { exact: false }).fill("Ele");
+  await page.keyboard.press("Enter");
+  assert.deepEqual(await page.locator("dialog .chip-token").allInnerTexts(), [
+    "Ana",
+    "Sam",
+    "Ele",
+  ]);
+  await page.getByRole("button", { name: "Remove Sam" }).click();
+  await page.getByLabel("Who came along?", { exact: false }).fill("Sam");
   await page.getByRole("button", { name: "Save visit", exact: true }).click();
   await page
     .getByText("Visit saved to your local journal.", { exact: false })
@@ -255,12 +279,17 @@ try {
     .click();
   assert.match(
     await page.locator(".visit-meta").innerText(),
-    /With Ana, Sam, Ele/,
+    /With Ana, Ele, Sam/,
   );
   await page.getByRole("button", { name: "Edit visit", exact: true }).click();
+  assert.deepEqual(await page.locator("dialog .chip-token").allInnerTexts(), [
+    "Ana",
+    "Ele",
+    "Sam",
+  ]);
   assert.equal(
-    await page.getByLabel("Who came along?", { exact: false }).inputValue(),
-    "Ana, Sam, Ele",
+    await page.getByRole("radio", { name: "5 stars" }).isChecked(),
+    true,
   );
   await page.getByRole("button", { name: "Cancel", exact: true }).click();
   await page.getByRole("link", { name: "Our timeline", exact: true }).click();
