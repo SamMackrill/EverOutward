@@ -1,12 +1,14 @@
 import { createHash, randomUUID } from "node:crypto";
 import { routeKey } from "./homes.mjs";
 import { routeMatchesPlace, isReviewedRoute } from "./domain.mjs";
-import { boatAccess } from "./access-rules.mjs";
+import { boatAccess, applyAccessRules } from "./access-rules.mjs";
 
 export function applyPlaceCorrections(places, corrections = []) {
   const byId = new Map(corrections.map((c) => [c.placeId, c]));
   return places.map((p) => {
-    if (boatAccess[p.id]) p = { ...p, boatRequired: true, accessNote: boatAccess[p.id].note };
+    p = applyAccessRules(p);
+    if (boatAccess[p.id])
+      p = { ...p, boatRequired: true, accessNote: boatAccess[p.id].note };
     const c = byId.get(p.id);
     return c
       ? {

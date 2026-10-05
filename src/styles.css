@@ -808,6 +808,12 @@ select {
 .dot.done {
   background: var(--green);
 }
+.dot.limited-access-dot {
+  width: 12px;
+  height: 12px;
+  border: 2px dotted var(--muted);
+  background: var(--wash);
+}
 .range-swatch {
   width: 13px;
   height: 13px;
@@ -2544,6 +2550,13 @@ select {
   color: var(--muted);
   font-weight: 400;
 }
+.destination-road-distance {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 5px;
+  line-height: 1.5;
+}
 .destination-description {
   font-size: 12px;
   color: var(--muted);
@@ -2738,6 +2751,134 @@ select {
 .rank-marker.selected .rank-pin {
   border-color: #dcb956;
   outline: 4px solid #dcb95655;
+}
+.limited-access-marker .rank-pin,
+.place-marker.limited-access-marker {
+  background: #e4ecdf;
+  border: 2px dotted #526a54;
+  color: #324d35;
+}
+.limited-access-marker .rank-pin b {
+  color: #324d35;
+}
+.limited-access-marker .rank-label {
+  background: #e4ecdf;
+  border: 1px dotted #526a54;
+  color: #324d35;
+}
+.access-important-marker .rank-pin,
+.place-marker.access-important-marker {
+  border-color: #936314;
+  box-shadow: 0 0 0 3px #f1c86980;
+}
+.limited-access-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 100%;
+  padding: 5px 8px;
+  border: 1px dotted var(--muted);
+  border-radius: 5px;
+  background: var(--wash);
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.5;
+}
+.limited-access-badge.important {
+  border-style: solid;
+  border-color: var(--gold);
+  background: color-mix(in srgb, var(--gold) 12%, var(--paper));
+}
+.limited-access-detail {
+  display: grid;
+  gap: 12px;
+  padding: 18px;
+  margin-block: 16px;
+  border: 1px dotted var(--muted);
+  border-radius: 6px;
+  background: var(--wash);
+}
+.limited-access-detail.important {
+  border-style: solid;
+  border-color: var(--gold);
+}
+.limited-access-detail p {
+  margin: 0;
+}
+.limited-access-detail h3 {
+  font-size: 16px;
+  margin: 4px 0 0;
+}
+.access-date-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+.access-date-list li {
+  display: grid;
+  gap: 2px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--line);
+}
+.access-date-list li > span {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.access-new {
+  padding: 1px 6px;
+  border-radius: 3px;
+  color: var(--ink);
+  background: color-mix(in srgb, var(--gold) 20%, var(--paper));
+  font-size: 11px;
+}
+.access-check-warning {
+  border-left: 3px solid var(--gold);
+  padding-left: 10px;
+  font-size: 13px;
+}
+.access-updates {
+  display: flex;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 10px 24px;
+  padding: 14px 24px;
+  margin: 0 24px 16px;
+  border: 1px solid var(--gold);
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--gold) 10%, var(--paper));
+}
+.access-updates > strong {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+}
+.access-updates > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 20px;
+}
+.access-updates button {
+  text-align: left;
+  overflow-wrap: anywhere;
+}
+.limited-access-card .destination-number {
+  background: #e4ecdf;
+  border: 1px dotted #526a54;
+  color: #324d35;
+}
+@media (max-width: 760px) {
+  .access-updates {
+    margin-inline: 12px;
+    padding: 12px;
+  }
+  .limited-access-detail {
+    padding: 14px;
+  }
 }
 .rank-label {
   position: absolute;
@@ -2942,6 +3083,37 @@ button.publish-pill:hover {
 .publish-pill.failed {
   border-color: #b34935;
   background: color-mix(in srgb, #b34935 10%, var(--paper));
+}
+.preview-notice {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--line);
+  background: var(--wash);
+  color: var(--ink);
+  text-align: center;
+  font-size: 13px;
+}
+.preview-notice span {
+  color: var(--muted);
+}
+.publish-pill.unavailable,
+.publishing-unavailable:disabled {
+  cursor: not-allowed;
+  opacity: 1;
+  border-color: var(--line);
+  background: var(--wash);
+  color: var(--muted);
+}
+.publishing-disabled-reason {
+  margin: 0;
+  padding: 12px 14px;
+  border-left: 3px solid var(--green);
+  background: var(--wash);
+  color: var(--ink);
+  font-size: 13px;
 }
 .publish-changes {
   font-weight: 600;

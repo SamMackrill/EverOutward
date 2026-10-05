@@ -8,18 +8,42 @@ import {
   Route as RouteIcon,
 } from "lucide-react";
 import BoatNotice from "./BoatNotice";
+import AccessNotice from "./AccessNotice";
 import { PhotoCredit, WalkingEstimate } from "./shared";
 import { duration, miles } from "./format";
 import { haversine, wazeLink } from "../server/domain.mjs";
 import type { Home, Place, Route } from "./types";
 
-export type Ranked = Place & Route;
+export type Ranked = Place &
+  Partial<Route> & {
+    geographicMetres?: number;
+    geographicApproximate?: boolean;
+  };
 export type Progress = {
   ranked: Ranked[];
   complete: boolean;
   blockingPendingCount: number;
   remainingCount: number;
 };
+
+function DestinationDistances({ place }: { place: Ranked }) {
+  return (
+    <>
+      <p className="destination-distance">
+        <Compass size={13} aria-hidden="true" />
+        {typeof place.geographicMetres === "number"
+          ? `${place.geographicApproximate ? "≈" : ""}${miles(place.geographicMetres)} mi straight line`
+          : "Straight-line distance unavailable"}
+      </p>
+      <p className="destination-road-distance small muted">
+        <RouteIcon size={13} aria-hidden="true" />
+        {typeof place.metres === "number" && typeof place.seconds === "number"
+          ? `${miles(place.metres)} mi by road · ${duration(place.seconds)}`
+          : "Driving estimate not saved"}
+      </p>
+    </>
+  );
+}
 
 /** A destination's licensed photo that can be retried when it fails to load. */
 function DestinationPhoto({
@@ -92,27 +116,28 @@ function DestinationCard({
 }) {
   return (
     <article
-      className={`destination-card ${index === 0 ? "first-destination" : ""}`}
+      className={`destination-card ${index === 0 ? "first-destination" : ""} ${place.limitedAccess ? "limited-access-card" : ""}`}
     >
       <DestinationPhoto place={place} eager={index === 0} onSelect={onSelect}>
         <span className="destination-number">{index + 1}</span>
-        {index === 0 && <span className="next-gate-label">Your next gate</span>}
+        {index === 0 && (
+          <span className="next-gate-label">
+            {place.limitedAccess ? "Special open days" : "Your next gate"}
+          </span>
+        )}
       </DestinationPhoto>
       <div className="destination-copy">
         <h3>
           <button onClick={onSelect}>{place.name}</button>
         </h3>
-        <p className="destination-distance">
-          <RouteIcon size={13} />
-          {miles(place.metres)} mi by road{" "}
-          <span>· {duration(place.seconds)}</span>
-        </p>
+        <DestinationDistances place={place} />
         <p className="destination-description">
           {place.description ||
             `Discover this National Trust place in ${place.region}.`}
         </p>
         <WalkingEstimate route={place} />
         <BoatNotice place={place} />
+        <AccessNotice place={place} />
       </div>
       <PhotoCredit place={place} />
       {index === 0 && (
@@ -152,12 +177,9 @@ export function NextGateCompact({
         <span className="destination-number">1</span>
       </DestinationPhoto>
       <div>
-        <p className="destination-distance">
-          <RouteIcon size={13} />
-          {miles(place.metres)} mi by road{" "}
-          <span>· {duration(place.seconds)}</span>
-        </p>
+        <DestinationDistances place={place} />
         <BoatNotice place={place} />
+        <AccessNotice place={place} />
         <div className="next-gate-actions">
           <a
             className="button primary"
@@ -220,11 +242,11 @@ export default function NextFive({
               <div
                 className={`route-status ${progress.complete ? "ready" : ""}`}
               >
-                <RouteIcon size={17} />
+                <Compass size={17} />
                 <span>
                   {progress.complete
-                    ? "Ranked by driving distance"
-                    : "Saved routes · order still provisional"}
+                    ? "Ranked by straight-line distance"
+                    : "Set home to order nearby places"}
                 </span>
               </div>
               <div className="next-list destination-list">
@@ -237,6 +259,12 @@ export default function NextFive({
                   />
                 ))}
               </div>
+              {progress.ranked.some((p) => p.geographicApproximate) && (
+                <p className="route-note">
+                  Public straight-line distances are approximate; order is saved
+                  from the exact home location.
+                </p>
+              )}
               <p className="route-note">
                 Estimated car routes ·{" "}
                 <a
@@ -271,23 +299,16 @@ export default function NextFive({
               <RouteIcon size={25} />
               <h3>Your next gate is waiting</h3>
               <p>
-                Calculate free driving estimates to find the nearest unvisited
-                places.
+                Set your home location to find the nearest unvisited places in a
+                straight line.
               </p>
               <button
                 className="text-button"
                 onClick={() => onNavigate("settings")}
               >
-                Set up driving distances <ChevronRight size={15} />
+                Set home location <ChevronRight size={15} />
               </button>
             </div>
-          )}
-          {!progress.complete && (
-            <p className="route-note">
-              {progress.blockingPendingCount} nearby unvisited places still need
-              a route. We won’t call a place “nearest” until the ranking is
-              complete.
-            </p>
           )}
         </>
       ) : (
@@ -307,7 +328,7 @@ export default function NextFive({
         <div className="nearby">
           <h3>Around your home</h3>
           <p className="small muted">
-            Straight-line discovery · not the driving queue
+            Straight-line distances · same order as the next five
           </p>
           {nearby.map((p) => (
             <button key={p.id} onClick={() => onSelect(p)}>

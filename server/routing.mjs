@@ -126,7 +126,7 @@ export async function refreshDrivingRoutes({
         }
         failures.delete(p.id);
         // OSRM's snap gap is a straight-line distance, not a pedestrian route.
-        // Keep it separate from the driving distance used to order the next five.
+        // Keep walking advice separate from the saved driving estimate.
         const walking =
           destination.distance > 1000
             ? {

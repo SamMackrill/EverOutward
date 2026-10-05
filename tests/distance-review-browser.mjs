@@ -17,7 +17,7 @@ const { places } = JSON.parse(
 );
 const catalogue = places
   .slice(0, 8)
-  .map((p, i) => ({ ...p, lat: 52 + i * 0.001, lng: 0.02 }));
+  .map((p, i) => ({ ...p, lat: i === 0 ? 52.03 : 52 + i * 0.001, lng: 0.02 }));
 const boatPlace = places.find(
   (p) => p.id === "c5ab4c3d-40f4-416f-be3e-6c8c6d0ecf5c",
 );

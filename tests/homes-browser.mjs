@@ -14,7 +14,7 @@ const store = createStore(":memory:");
 // Synthetic nearby catalogue entries ensure two independently visible circles.
 const catalogue = places
   .slice(0, 7)
-  .map((p, i) => ({ ...p, lat: 52 + i * 0.015, lng: 0.02 }));
+  .map((p, i) => ({ ...p, lat: i === 0 ? 52.2 : 52 + i * 0.015, lng: 0.02 }));
 const app = createApp({
   store,
   places: catalogue,
@@ -58,7 +58,7 @@ function fillRoutes(home, reverse = false) {
       source: "Test",
     }),
   );
-  // The nearest unvisited place by road must sit beyond the visited point.
+  // Driving estimates can differ from the geographic challenge order.
   store.put("routes", routeKey(home, catalogue[0].id), {
     homeId: home.id,
     homeVersion: home.version,
@@ -119,7 +119,7 @@ try {
   const secondHome = store.list("homes").find((h) => h.label === "Family base");
   assert.equal(currentHome(store).id, firstHome.id);
   fillRoutes(secondHome, true);
-  // One missing distance can affect the queue without changing either circle.
+  // A missing driving estimate cannot change the queue or either circle.
   store.delete("routes", routeKey(firstHome, catalogue[6].id));
   await page.reload();
   await card("Family base")
@@ -172,7 +172,19 @@ try {
   );
   assert.equal(
     twoHomes.homes.find((h) => h.id === firstHome.id).complete,
-    false,
+    true,
+  );
+  assert.equal(
+    twoHomes.homes.find((h) => h.id === firstHome.id).pendingCount,
+    0,
+  );
+  assert.ok(
+    twoHomes.homes
+      .find((h) => h.id === firstHome.id)
+      .queue.some(
+        (entry) =>
+          entry.placeId === catalogue[6].id && entry.metres === undefined,
+      ),
   );
   assert.equal(
     twoHomes.homes.find((h) => h.id === firstHome.id).range.confirmed,

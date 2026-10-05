@@ -1,4 +1,5 @@
 import express from "express";
+import { createAccessMonitor } from "./access-dates.mjs";
 import { z } from "zod";
 import {
   randomBytes,
@@ -138,15 +139,31 @@ export function createApp({
   initialHome = null,
   enableCloud = true,
   localOwner = false,
+  temporaryPreview = false,
   publisher,
   autoPublish = enableCloud,
   routeFetcher = fetch,
+  accessFetcher = fetch,
 }) {
   const app = express(),
     sessions = new Map(),
     limits = new Map();
+  const preview =
+    temporaryPreview || (!publisher && store.filename === ":memory:");
+  const publishing = {
+    enabled: !preview,
+    disabledReason: preview
+      ? "Publishing is disabled in this temporary preview. Changes here stay in this preview; publish permanent changes from your usual journal workspace."
+      : null,
+  };
   const placeIds = new Set(places.map((p) => p.id));
   const cataloguePlaces = places;
+  const accessMonitor = createAccessMonitor({
+    store,
+    places,
+    fetcher: accessFetcher,
+  });
+  app.locals.accessMonitor = accessMonitor;
   const correctedPlaces = () =>
     applyPlaceCorrections(cataloguePlaces, store.list("placeCorrections"));
   if (
@@ -156,9 +173,11 @@ export function createApp({
   )
     store.put("settings", "home", initialHome);
   migrateHomes(store);
-  const publishJobs = publisher || createPublishJobs({ store });
+  const publishJobs = preview
+    ? { status: () => null }
+    : publisher || createPublishJobs({ store });
   const publishCorrection = () =>
-    autoPublish
+    autoPublish && publishing.enabled
       ? publishJobs.enqueue
         ? publishJobs.enqueue()
         : publishJobs.start()
@@ -213,12 +232,28 @@ export function createApp({
         { status: 429 },
       );
   };
+  app.get("/api/access-dates", (req, res) =>
+    res.json({ entries: accessMonitor.entries() }),
+  );
+  app.post("/api/access-dates/check", owner, async (req, res) => {
+    rateLimit(`access-check:${req.ip}`, 5, 60_000);
+    res.json({ entries: await accessMonitor.check(true) });
+  });
+  app.post("/api/access-dates/:placeId/acknowledge", owner, (req, res) => {
+    const dates = z
+      .array(z.string().regex(/^\d{4}-\d{2}-\d{2}$/))
+      .max(600)
+      .parse(req.body.dates);
+    res.json({ entries: accessMonitor.acknowledge(req.params.placeId, dates) });
+  });
   app.get("/api/session", (req, res) =>
     res.json({
       local: true,
       localOwner,
       owner: req.owner,
       passwordConfigured: !!store.get("settings", "owner"),
+      temporaryPreview: preview,
+      publishing,
     }),
   );
   app.post("/api/login", (req, res) => {
@@ -279,6 +314,7 @@ export function createApp({
     const home = currentHome(store);
     const homes = liveHomes(store);
     const allHomes = store.list("homes");
+    const publication = store.get("settings", "lastPublication");
     const routes = store.list("routes");
     const shared = publicJournal(
       places,
@@ -290,6 +326,7 @@ export function createApp({
     if (!req.owner)
       return res.json({
         ...shared,
+        accessDates: accessMonitor.entries(),
         placeOverrides: publicPlaceOverrides(store.list("placeCorrections")),
         home: null,
         routes: [],
@@ -298,9 +335,18 @@ export function createApp({
       });
     res.json({
       ...shared,
+      accessDates: accessMonitor.entries(),
       placeOverrides: publicPlaceOverrides(store.list("placeCorrections")),
       visits: visits.map((visit) => ({
         ...visit,
+        shareUrl:
+          visit.published &&
+          publication?.visits?.[visit.id] &&
+          publication.siteUrl &&
+          publication.sharePaths?.[visit.id]
+            ? new URL(publication.sharePaths[visit.id], publication.siteUrl)
+                .href
+            : undefined,
         startingHomeLabel: publicVisit(visit, allHomes).startingHomeLabel,
         publicationStatus: visitPublicationStatus(
           visit,
@@ -727,6 +773,7 @@ export function createApp({
       routeReports: store.list("routeReports"),
       legacyRoutes: store.list("legacyRoutes"),
       placeCorrections: store.list("placeCorrections"),
+      accessDates: store.list("accessDates"),
       routeReviews: store.list("routeReviews"),
       routeHistory: store.list("routeHistory"),
       placeCorrectionHistory: store.list("placeCorrectionHistory"),
@@ -934,6 +981,8 @@ export function createApp({
     },
   );
   app.post("/api/publish", owner, (req, res) => {
+    if (!publishing.enabled)
+      return res.status(409).json({ error: publishing.disabledReason });
     if (routing)
       return res.status(409).json({
         error: "Wait for the distance calculation to finish before publishing.",

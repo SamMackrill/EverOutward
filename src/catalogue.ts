@@ -1,6 +1,6 @@
 import details from "../scripts/place-details.json";
 import type { Place } from "./types";
-import { boatAccess } from "../server/access-rules.mjs";
+import { boatAccess, applyAccessRules } from "../server/access-rules.mjs";
 
 // Bundle reviewed details and fingerprinted photographs with each app release.
 // A cached catalogue must not replace newly supplied photos with empty fields.
@@ -16,7 +16,7 @@ const photos: Record<string, string> = Object.fromEntries(
 export function enrichCatalogue(places: Place[]): Place[] {
   return places.map((place) => {
     const current = {
-      ...place,
+      ...applyAccessRules(place),
       ...(details as Record<string, Partial<Place>>)[place.id],
       ...(boatAccess[place.id]
         ? {
