@@ -42,13 +42,31 @@ export function journalSnapshot(store) {
       row.kind === "homes" ||
       row.kind === "placeCorrections" ||
       row.kind === "routeReviews" ||
+      row.kind === "accessDates" ||
       (row.kind === "settings" && ["home", "activeHomeId"].includes(row.id)),
   );
+  // Background calendar timestamps and errors must not abort an upload.
+  // Unread-date changes, including owner acknowledgements, still invalidate it.
+  const validationRecords = records.filter((row) => row.kind !== "accessDates");
+  for (const row of records.filter((row) => row.kind === "accessDates")) {
+    const newDates = [
+      ...new Set(JSON.parse(row.payload).newDates || []),
+    ].sort();
+    if (newDates.length)
+      validationRecords.push({
+        kind: row.kind,
+        id: row.id,
+        payload: JSON.stringify({ newDates }),
+      });
+  }
   const fingerprint = createHash("sha256")
-    .update(JSON.stringify(records))
+    .update(JSON.stringify(validationRecords))
     .digest("hex");
   return {
     fingerprint,
+    accessDates: records
+      .filter((r) => r.kind === "accessDates")
+      .map((r) => JSON.parse(r.payload)),
     visits: records
       .filter((r) => r.kind === "visits")
       .map((r) => JSON.parse(r.payload)),

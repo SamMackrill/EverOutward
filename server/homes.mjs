@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import { dirname, join } from "node:path";
 import {
   outward,
+  haversine,
   publicRange,
   publicVisit,
   routeMatchesPlace,
@@ -94,18 +95,19 @@ export function homeJourneys(
           places.some((p) => p.id === r.placeId && routeMatchesPlace(r, p)),
       );
       const journey = outward(places, visits, home, saved);
+      const range = approximate
+        ? publicRange(places, visits, home, journey)
+        : {
+            centre: { lat: home.lat, lng: home.lng },
+            radius: journey.radius,
+            confirmed: journey.rangeComplete,
+            approximate: false,
+          };
       return {
         id: home.id,
         label: home.label,
         colour: home.colour,
-        range: approximate
-          ? publicRange(places, visits, home, journey)
-          : {
-              centre: { lat: home.lat, lng: home.lng },
-              radius: journey.radius,
-              confirmed: journey.rangeComplete,
-              approximate: false,
-            },
+        range,
         queue: journey.ranked.map(
           ({
             id,
@@ -114,8 +116,19 @@ export function homeJourneys(
             walkingMetres,
             walkingSeconds,
             walkingNote,
+            geographicMetres,
           }) => ({
             placeId: id,
+            // The public order is the owner's saved order. Display approximate
+            // geographic distances from the rounded public centre, never exact
+            // radii that could reveal a private home's precise coordinates.
+            geographicMetres: approximate
+              ? haversine(
+                  range.centre,
+                  places.find((p) => p.id === id),
+                )
+              : geographicMetres,
+            geographicApproximate: approximate,
             metres,
             seconds,
             walkingMetres,
@@ -169,6 +182,7 @@ export function publicJournal(places, visits, homes, routes, activeHomeId) {
   const current = journeys.find((h) => h.id === activeHomeId);
   return {
     version: 2,
+    ordering: "straight-line",
     visits: published.map((visit) => publicVisit(visit, homes)),
     homes: journeys,
     activeHomeId,

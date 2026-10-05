@@ -11,6 +11,7 @@ import { createStore } from "../server/store.mjs";
 import { migrateHomes, publicJournal } from "../server/homes.mjs";
 import { sortVisits } from "../server/domain.mjs";
 import { visitSharePaths, writeVisitPages } from "../server/visit-sharing.mjs";
+import { accessEntries } from "../server/access-dates.mjs";
 import {
   applyPlaceCorrections,
   publicPlaceOverrides,
@@ -67,6 +68,7 @@ export async function publishWebsite(progress = () => {}) {
     sharePath: sharePaths[visit.id],
   }));
   journal.placeOverrides = publicPlaceOverrides(snapshot.placeCorrections);
+  journal.accessDates = accessEntries(snapshot.accessDates, correctedPlaces);
   db.close();
   await writeFile(
     "dist/data/places.json",

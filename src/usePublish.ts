@@ -21,7 +21,12 @@ export type Publisher = ReturnType<typeof usePublish>;
  * Follows the owner's here.now publishing job so the header and Workspace
  * share one status, and starts new publishes.
  */
-export function usePublish(enabled: boolean, onFinished: () => Promise<void>) {
+export function usePublish(
+  enabled: boolean,
+  onFinished: () => Promise<void>,
+  disabledReason = "",
+) {
+  const available = enabled && !disabledReason;
   const [job, setJob] = useState<PublishJob | null>(null),
     [site, setSite] = useState<SiteInfo>({ siteUrl: null, publishedAt: null }),
     [submitting, setSubmitting] = useState(false),
@@ -31,14 +36,14 @@ export function usePublish(enabled: boolean, onFinished: () => Promise<void>) {
     refresh = useRef(onFinished);
   refresh.current = onFinished;
   useEffect(() => {
-    if (!enabled) return;
+    if (!available) return;
     api
       .request<SiteInfo>("/api/site")
       .then(setSite)
       .catch(() => {});
-  }, [enabled]);
+  }, [available]);
   useEffect(() => {
-    if (!enabled) return;
+    if (!available) return;
     let cancelled = false;
     let timer: ReturnType<typeof setTimeout>;
     /** Reads the latest job, refreshing the journal once a new publish succeeds. */
@@ -71,9 +76,10 @@ export function usePublish(enabled: boolean, onFinished: () => Promise<void>) {
       cancelled = true;
       clearTimeout(timer);
     };
-  }, [enabled]);
+  }, [available]);
   /** Starts a publish; progress arrives through polling. */
   const publish = useCallback(async () => {
+    if (!available) return;
     setSubmitting(true);
     setError("");
     try {
@@ -86,14 +92,16 @@ export function usePublish(enabled: boolean, onFinished: () => Promise<void>) {
     } finally {
       setSubmitting(false);
     }
-  }, []);
+  }, [available]);
   return {
-    job,
+    available,
+    disabledReason,
+    job: available ? job : null,
     site,
-    busy: submitting || job?.status === "running",
-    failed: !!error || job?.status === "failed",
-    error: error || job?.error || "",
-    connectionError,
+    busy: available && (submitting || job?.status === "running"),
+    failed: available && (!!error || job?.status === "failed"),
+    error: available ? error || job?.error || "" : "",
+    connectionError: available ? connectionError : "",
     publish,
   };
 }

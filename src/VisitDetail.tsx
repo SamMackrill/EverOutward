@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import Modal from "./Modal";
 import BoatNotice from "./BoatNotice";
+import AccessNotice from "./AccessNotice";
 import VisitCarousel from "./VisitCarousel";
 import { PhotoImage, Stars } from "./shared";
 import { date } from "./format";
@@ -152,6 +153,7 @@ export default function VisitDetail({
           </p>
         )}
         <BoatNotice place={place} />
+        <AccessNotice place={place} />
         {(!!visit.attendees?.length || origin || visit.published) && (
           <p className="visit-meta">
             {!!visit.attendees?.length && (

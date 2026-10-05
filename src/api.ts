@@ -1,8 +1,10 @@
 import type {
   Comment,
+  AccessDates,
   Home,
   HomeJourney,
   Place,
+  QueueEntry,
   Route,
   Session,
   Visit,
@@ -45,6 +47,7 @@ export async function session(): Promise<Session> {
   }
 }
 export async function state(): Promise<{
+  accessDates?: AccessDates[];
   visits: Visit[];
   placeOverrides?: (Partial<Place> & { id: string })[];
   home: Home | null;
@@ -53,7 +56,7 @@ export async function state(): Promise<{
   homeJourneys?: HomeJourney[];
   routes: Route[];
   range?: VisitRange | null;
-  queue?: Route[];
+  queue?: QueueEntry[];
   pendingCount?: number;
   complete?: boolean;
   unpublishedChanges?: number;
@@ -65,6 +68,7 @@ export async function state(): Promise<{
   const data = await response.json();
   return {
     visits: data.visits || [],
+    accessDates: data.accessDates || [],
     placeOverrides: data.placeOverrides || [],
     home: null,
     homes: [],

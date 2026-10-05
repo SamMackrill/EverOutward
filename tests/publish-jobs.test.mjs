@@ -219,6 +219,9 @@ test("publish API acknowledges a job immediately and safely changes just a visit
       ...(body ? { body: JSON.stringify(body) } : {}),
     });
   const first = await call("/api/publish", "POST");
+  const session = await (await call("/api/session", "GET")).json();
+  assert.equal(session.temporaryPreview, false);
+  assert.equal(session.publishing.enabled, true);
   assert.equal(first.status, 202);
   const id = (await first.json()).job.id;
   assert.equal((await (await call("/api/publish", "POST")).json()).job.id, id);
@@ -257,3 +260,88 @@ test("publish API acknowledges a job immediately and safely changes just a visit
   const { published: oldPublished, updatedAt: oldUpdated, ...original } = visit;
   assert.deepEqual(rest, original);
 });
+
+for (const explicit of [false, true]) {
+  test(`temporary previews reject publishing without launching or replacing saved jobs (explicit: ${explicit})`, async (t) => {
+    const store = createStore(":memory:");
+    const savedJob = {
+      id: "copied-job",
+      status: "failed",
+      error: "Old upload error",
+    };
+    store.put("settings", "publishJob", savedJob);
+    let launches = 0;
+    const app = createApp({
+      store,
+      places: [{ id: "place", lat: 52.01, lng: 0 }],
+      initialHome: {
+        lat: 52,
+        lng: 0,
+        label: "Preview",
+        version: "preview-home",
+      },
+      localOwner: true,
+      enableCloud: false,
+      autoPublish: true,
+      temporaryPreview: explicit,
+      ...(explicit
+        ? {
+            publisher: {
+              status: () => savedJob,
+              start: () => launches++,
+              enqueue: () => launches++,
+            },
+          }
+        : {}),
+    });
+    const server = app.listen(0, "127.0.0.1");
+    await new Promise((resolve) => server.once("listening", resolve));
+    t.after(() => {
+      server.close();
+      store.close();
+    });
+    const base = `http://127.0.0.1:${server.address().port}`;
+    const session = await (await fetch(base + "/api/session")).json();
+    assert.equal(session.temporaryPreview, true);
+    assert.equal(session.publishing.enabled, false);
+    assert.match(
+      session.publishing.disabledReason,
+      /temporary preview.*usual journal workspace/,
+    );
+    assert.deepEqual(await (await fetch(base + "/api/publish")).json(), {
+      job: null,
+    });
+    const headers = {
+      Origin: "http://127.0.0.1:5173",
+      "X-EverOutward": "1",
+      "Content-Type": "application/json",
+    };
+    const blocked = await fetch(base + "/api/publish", {
+      method: "POST",
+      headers,
+    });
+    assert.equal(blocked.status, 409);
+    assert.equal(
+      (await blocked.json()).error,
+      session.publishing.disabledReason,
+    );
+    const imported = await fetch(base + "/api/routes", {
+      method: "PUT",
+      headers,
+      body: JSON.stringify({
+        routes: [
+          {
+            placeId: "place",
+            metres: 2000,
+            seconds: 300,
+            homeVersion: "preview-home",
+          },
+        ],
+      }),
+    });
+    assert.equal(imported.status, 200);
+    assert.equal((await imported.json()).job, null);
+    assert.equal(launches, 0);
+    assert.deepEqual(store.get("settings", "publishJob"), savedJob);
+  });
+}

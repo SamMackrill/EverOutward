@@ -50,9 +50,9 @@ test("distances include visited places and are saved for reuse", async () => {
     assert.equal(result.catalogueComplete, true);
     assert.deepEqual(
       result.ranked.map((p) => p.id),
-      ["5", "4", "3", "2", "1"],
+      ["1", "2", "3", "4", "5"],
     );
-    assert.equal(result.ranked[0].seconds, 500);
+    assert.equal(result.ranked[0].seconds, 900);
     assert.equal(result.complete, true);
     for (const route of store.list("routes"))
       store.put("routes", routeKey(currentHome(store), route.placeId), {
@@ -78,7 +78,7 @@ test("distances include visited places and are saved for reuse", async () => {
     store.close();
   }
 });
-test("distant unknown places cannot change the next five; nearby unknowns remain provisional", () => {
+test("places without driving routes are still ranked by straight-line distance", () => {
   const known = places.slice(0, 5),
     routes = known.map((p, i) => ({
       placeId: p.id,
@@ -88,11 +88,15 @@ test("distant unknown places cannot change the next five; nearby unknowns remain
     }));
   const far = { id: "far", lat: 55, lng: 0 };
   assert.equal(outward([...known, far], [], home, routes).complete, true);
-  assert.equal(
-    outward([...known, { id: "near", lat: 52.01, lng: 0 }], [], home, routes)
-      .complete,
-    false,
+  const result = outward(
+    [...known, { id: "near", lat: 52.005, lng: 0 }],
+    [],
+    home,
+    routes,
   );
+  assert.equal(result.complete, true);
+  assert.equal(result.ranked[0].id, "near");
+  assert.equal(result.ranked[0].metres, undefined);
 });
 test("long walks resolve with separate estimates; missing driving routes stay unresolved", async () => {
   const store = createStore(":memory:");
@@ -118,7 +122,9 @@ test("long walks resolve with separate estimates; missing driving routes stay un
     assert.equal(result.remaining, 1);
     assert.equal(result.catalogueComplete, false);
     assert.match(result.unavailablePlaces[0].reason, /visitor entrance/);
-    assert.equal(result.complete, false);
+    assert.equal(result.complete, true);
+    assert.equal(result.ranked[1].id, "1");
+    assert.equal(result.ranked[1].metres, undefined);
     const [route] = store.list("routes");
     assert.equal(route.metres, 12000);
     assert.equal(route.seconds, 900);

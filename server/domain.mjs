@@ -1,3 +1,5 @@
+import { hasLimitedAccess } from "./access-rules.mjs";
+
 export function haversine(a, b) {
   const rad = (value) => (value * Math.PI) / 180;
   const lat = rad(b.lat - a.lat),
@@ -31,37 +33,35 @@ export function outward(places, visits, home, routes = []) {
       .map((r) => [r.placeId, r]),
   );
   const candidates = places.filter((p) => !visited.has(p.id));
-  const ranked = candidates
-    .filter((p) => routeMap.has(p.id))
-    .map((p) => ({ ...p, ...routeMap.get(p.id) }))
-    .sort((a, b) => a.metres - b.metres || a.id.localeCompare(b.id));
+  // Challenge order and circle boundaries use the same catalogue point.
+  // Corrected road entrances and saved routes affect travel advice only.
+  const ranked = home
+    ? candidates
+        .map((p) => ({
+          ...p,
+          ...routeMap.get(p.id),
+          placeId: p.id,
+          geographicMetres: haversine(home, p),
+        }))
+        .sort(
+          (a, b) =>
+            a.geographicMetres - b.geographicMetres || a.id.localeCompare(b.id),
+        )
+    : [];
   const pending = candidates.filter((p) => !routeMap.has(p.id));
-  // An unrouted place cannot displace the fifth route when even its geographic
-  // lower bound is longer. Allow 1 km of road snapping at each endpoint.
-  const cutoff = ranked.length >= 5 ? ranked[4].metres : Infinity;
-  const blockingPendingCount = home
-    ? pending.filter((p) => haversine(home, p.entrance || p) - 2000 <= cutoff)
-        .length
-    : pending.length;
-  const complete = !!home && !blockingPendingCount;
-  // Circle certainty is separate from certainty about the full next-five order.
-  // Every unrouted place that could beat the first known road route is a possible
-  // next gate. A circle is safe when all those gates give the same visited extent.
-  const rangeCandidates =
-    home && ranked.length
-      ? [
-          ranked[0],
-          ...pending.filter(
-            (p) => haversine(home, p.entrance || p) - 2000 <= ranked[0].metres,
-          ),
-        ]
-      : [];
+  const blockingPendingCount = 0;
+  const complete = !!home;
+  const regularRanked = ranked.filter((p) => !hasLimitedAccess(p));
+  const rangeRemainingCount = candidates.filter(
+    (p) => !hasLimitedAccess(p),
+  ).length;
+  const rangeCandidates = regularRanked.length ? [regularRanked[0]] : [];
   const circle = confirmedVisitRange(
     places,
     visits,
     home,
     rangeCandidates,
-    candidates.length === 0,
+    rangeRemainingCount === 0,
   );
   return {
     ranked: ranked.slice(0, 5),
@@ -70,6 +70,7 @@ export function outward(places, visits, home, routes = []) {
     complete,
     visitedCount: visited.size,
     remainingCount: candidates.length,
+    rangeRemainingCount,
     radius: circle.radius,
     rangeComplete: circle.confirmed,
     rangeCandidates,
@@ -88,7 +89,7 @@ export function outward(places, visits, home, routes = []) {
   };
 }
 
-// A geographic circle, bounded by the next destination selected by road.
+// A geographic circle, bounded by the nearest unvisited ordinary-access place.
 // Out-of-order visits beyond that boundary do not expand local progress.
 export function visitRange(places, visits, centre, next, allVisited = false) {
   if (!centre || (!next && !allVisited)) return 0;
@@ -130,7 +131,7 @@ export function publicRange(places, visits, home, journey) {
     centre,
     journey.rangeCandidates ||
       (journey.complete && journey.ranked[0] ? [journey.ranked[0]] : []),
-    journey.remainingCount === 0,
+    (journey.rangeRemainingCount ?? journey.remainingCount) === 0,
   );
   return {
     centre,

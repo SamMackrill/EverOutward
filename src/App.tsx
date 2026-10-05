@@ -10,6 +10,7 @@ import {
   Map,
   Route as RouteIcon,
   Clock3,
+  Compass,
   BookOpen,
   ArrowUpRight,
   ChevronRight,
@@ -35,6 +36,7 @@ import Timeline from "./Timeline";
 import Link, { NavigationProvider } from "./navigation";
 import { currentView } from "./visitRoute";
 import BoatNotice from "./BoatNotice";
+import AccessNotice, { AccessAlerts, AccessDetail } from "./AccessNotice";
 import Modal from "./Modal";
 import VisitEditor from "./VisitEditor";
 import VisitDetail from "./VisitDetail";
@@ -43,11 +45,19 @@ import { PhotoCredit, Stars, WalkingEstimate } from "./shared";
 import { date, duration, miles, shortDate } from "./format";
 import { enrichCatalogue } from "./catalogue";
 import * as api from "./api";
-import { haversine, outward, sortVisits, wazeLink } from "../server/domain.mjs";
+import {
+  haversine,
+  outward,
+  routeMatchesPlace,
+  sortVisits,
+  wazeLink,
+} from "../server/domain.mjs";
 import type {
   Home,
+  AccessDates,
   HomeJourney,
   Place,
+  QueueEntry,
   Route,
   Session,
   Visit,
@@ -60,6 +70,7 @@ const official = (p: Place) =>
 /** Renders the owner workspace or public journal and coordinates application state. */
 export default function App() {
   const [cataloguePlaces, setPlaces] = useState<Place[]>([]),
+    [accessDates, setAccessDates] = useState<AccessDates[]>([]),
     [placeOverrides, setPlaceOverrides] = useState<
       (Partial<Place> & { id: string })[]
     >([]),
@@ -79,9 +90,14 @@ export default function App() {
     const corrections = new globalThis.Map(
       placeOverrides.map((p) => [p.id, p]),
     );
-    return cataloguePlaces.map((p) => ({ ...p, ...corrections.get(p.id) }));
-  }, [cataloguePlaces, placeOverrides]);
-  const [publicQueue, setPublicQueue] = useState<Route[]>([]),
+    const access = new globalThis.Map(accessDates.map((a) => [a.placeId, a]));
+    return cataloguePlaces.map((p) => ({
+      ...p,
+      ...corrections.get(p.id),
+      accessDates: access.get(p.id),
+    }));
+  }, [cataloguePlaces, placeOverrides, accessDates]);
+  const [publicQueue, setPublicQueue] = useState<QueueEntry[]>([]),
     [publicComplete, setPublicComplete] = useState(false),
     [publicPending, setPublicPending] = useState(0),
     [unpublished, setUnpublished] = useState(0);
@@ -90,7 +106,7 @@ export default function App() {
     [toast, setToast] = useState(""),
     [placeQuery, setPlaceQuery] = useState("");
   const [view, setView] = useState(() => currentView()),
-    [selected, setSelected] = useState<Place | null>(null),
+    [selection, setSelected] = useState<Place | null>(null),
     [editor, setEditor] = useState<Visit | "new" | null>(null),
     [editorPlace, setEditorPlace] = useState<string>(),
     [showLogin, setShowLogin] = useState(false),
@@ -99,6 +115,7 @@ export default function App() {
     ),
     [editorFocus, setEditorFocus] = useState<"photos" | "story">(),
     [routePlace, setRoutePlace] = useState<Place | null>(null);
+  const selected = places.find((p) => p.id === selection?.id) || selection;
   const [themeChoice, setThemeChoice] = useState(() => {
       try {
         return localStorage.getItem("eo-theme") || "system";
@@ -132,6 +149,7 @@ export default function App() {
     setSession(s);
     const d = await api.state();
     setVisits(d.visits);
+    setAccessDates(d.accessDates || []);
     setPlaceOverrides(d.placeOverrides || []);
     setHome(d.home);
     setHomes(d.homes || []);
@@ -165,6 +183,42 @@ export default function App() {
       alive = false;
     };
   }, [reload]);
+  useEffect(() => {
+    if (loading || !session.local) return;
+    let cancelled = false,
+      polling = false;
+    const refreshAccess = async () => {
+      if (document.hidden || polling) return;
+      polling = true;
+      try {
+        const data = await api.request<{ entries: AccessDates[] }>(
+          "/api/access-dates",
+        );
+        if (!cancelled)
+          setAccessDates((current) =>
+            JSON.stringify(current) === JSON.stringify(data.entries)
+              ? current
+              : data.entries,
+          );
+      } catch {
+        /* Keep the last successful check when the local server is offline. */
+      } finally {
+        polling = false;
+      }
+    };
+    void refreshAccess();
+    const timer = setInterval(() => {
+      void refreshAccess();
+    }, 60_000);
+    window.addEventListener("focus", refreshAccess);
+    document.addEventListener("visibilitychange", refreshAccess);
+    return () => {
+      cancelled = true;
+      clearInterval(timer);
+      window.removeEventListener("focus", refreshAccess);
+      document.removeEventListener("visibilitychange", refreshAccess);
+    };
+  }, [loading, session.local]);
   useEffect(() => {
     if (loading || !session.local || !pendingPhotoVisit) return;
     if (!session.owner) {
@@ -231,7 +285,13 @@ export default function App() {
     () =>
       session.owner
         ? allRoutes.filter(
-            (r) => r.homeId === home?.id && r.homeVersion === home?.version,
+            (r) =>
+              r.homeId === home?.id &&
+              r.homeVersion === home?.version &&
+              routeMatchesPlace(
+                r,
+                places.find((p) => p.id === r.placeId),
+              ),
           )
         : [
             ...new globalThis.Map(
@@ -241,8 +301,19 @@ export default function App() {
                   ?.reviewedRoutes || []),
               ].map((r) => [r.placeId, r]),
             ).values(),
-          ],
-    [allRoutes, home, session.owner, homeJourneys, activeHomeId, publicQueue],
+          ].filter(
+            (r): r is Route =>
+              typeof r.metres === "number" && typeof r.seconds === "number",
+          ),
+    [
+      allRoutes,
+      home,
+      session.owner,
+      homeJourneys,
+      activeHomeId,
+      publicQueue,
+      places,
+    ],
   );
   async function chooseHome(id: string) {
     try {
@@ -291,6 +362,18 @@ export default function App() {
     publicComplete,
     publicPending,
   ]);
+  const selectedQueueEntry = progress.ranked.find(
+    (p: Place) => p.id === selected?.id,
+  );
+  const selectedGeographicMetres =
+    home && selected
+      ? haversine(home, selected)
+      : selected && publicRange
+        ? haversine(publicRange.centre, selected)
+        : selectedQueueEntry?.geographicMetres;
+  const selectedGeographicApproximate =
+    !home &&
+    !!(publicRange?.approximate || selectedQueueEntry?.geographicApproximate);
   const mapRange: VisitRange | null =
     session.owner && home
       ? {
@@ -357,7 +440,14 @@ export default function App() {
       "Visit saved to your local journal. Publish when you’re ready to share.",
     );
   };
-  const publisher = usePublish(session.owner, reload);
+  const publisher = usePublish(
+    session.owner,
+    reload,
+    session.publishing?.enabled === false
+      ? session.publishing.disabledReason ||
+          "Publishing is disabled in this workspace."
+      : "",
+  );
   /** Places and people the visit form offers first. */
   const editorSuggestions = useMemo(() => {
     const byId = new globalThis.Map(places.map((p) => [p.id, p]));
@@ -413,6 +503,15 @@ export default function App() {
       >
         Skip to content
       </a>
+      {session.temporaryPreview && (
+        <aside className="preview-notice" aria-label="Temporary preview">
+          <strong>Temporary preview · Publishing disabled</strong>
+          <span>
+            Changes here stay in this preview. Publish permanent changes from
+            your usual journal workspace.
+          </span>
+        </aside>
+      )}
       <header className="site-header">
         <Link className="brand" to="map">
           <img src="/icons/gate.svg" alt="" />
@@ -528,6 +627,7 @@ export default function App() {
           <button onClick={() => location.reload()}>Retry</button>
         </div>
       )}
+      <AccessAlerts places={places} onSelect={onSelect} />
       <main
         id="main"
         tabIndex={-1}
@@ -612,6 +712,7 @@ export default function App() {
                     <span>
                       <strong>{p.name}</strong>
                       <small>{p.region}</small>
+                      <AccessNotice place={p} />
                     </span>
                     <ChevronRight size={16} />
                   </button>
@@ -733,6 +834,11 @@ export default function App() {
               </p>
             )}
             <BoatNotice place={selected} />
+            <AccessDetail
+              place={selected}
+              owner={session.owner}
+              onChange={setAccessDates}
+            />
             <p>
               {selected.description ||
                 `Explore this National Trust place in ${selected.region}. Check the official visitor information for facilities, access and seasonal arrangements.`}
@@ -747,6 +853,20 @@ export default function App() {
                 </small>
               </span>
             </div>
+            {typeof selectedGeographicMetres === "number" && (
+              <div className="info-row">
+                <Compass size={18} />
+                <span>
+                  {selectedGeographicApproximate ? "≈" : ""}
+                  {miles(selectedGeographicMetres)} mi straight line from home
+                  <small>
+                    {selectedGeographicApproximate
+                      ? "Approximate public distance; order is saved from the exact home location."
+                      : "Straight-line distance determines the next-five order and discovery circle."}
+                  </small>
+                </span>
+              </div>
+            )}
             {(home || routes.some((r) => r.placeId === selected.id)) && (
               <div className="info-row">
                 <RouteIcon size={18} />
@@ -754,12 +874,7 @@ export default function App() {
                   {routes.find((r) => r.placeId === selected.id)
                     ? `${miles(routes.find((r) => r.placeId === selected.id)!.metres)} mi by road · ${duration(routes.find((r) => r.placeId === selected.id)!.seconds)}`
                     : "Driving distance and time not saved yet"}
-                  {home && (
-                    <small>
-                      {miles(haversine(home, selected))} mi geographic distance
-                      from home
-                    </small>
-                  )}
+                  <small>Driving estimates are for planning the journey.</small>
                 </span>
               </div>
             )}

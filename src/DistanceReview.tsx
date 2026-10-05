@@ -318,8 +318,8 @@ function ReviewDialog({
               />
             </label>
             <p className="small muted">
-              The old value is retained for review and stops contributing to
-              route ordering until resolved.
+              The old value is retained for review and hidden from travel
+              estimates until resolved. The place keeps its straight-line rank.
             </p>
           </>
         )}
