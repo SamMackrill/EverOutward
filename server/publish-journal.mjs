@@ -42,6 +42,7 @@ export function journalSnapshot(store) {
       row.kind === "homes" ||
       row.kind === "placeCorrections" ||
       row.kind === "routeReviews" ||
+      row.kind === "accessDates" ||
       (row.kind === "settings" && ["home", "activeHomeId"].includes(row.id)),
   );
   const fingerprint = createHash("sha256")
@@ -49,6 +50,9 @@ export function journalSnapshot(store) {
     .digest("hex");
   return {
     fingerprint,
+    accessDates: records
+      .filter((r) => r.kind === "accessDates")
+      .map((r) => JSON.parse(r.payload)),
     visits: records
       .filter((r) => r.kind === "visits")
       .map((r) => JSON.parse(r.payload)),

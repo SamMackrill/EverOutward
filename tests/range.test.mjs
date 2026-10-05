@@ -6,8 +6,112 @@ import {
   outward,
   publicRange,
 } from "../server/domain.mjs";
+import { publicJournal, homeJourneys } from "../server/homes.mjs";
 
-test("range reaches the outermost visited place inside the next road-ranked gate", () => {
+test("special open days stay ranked but cannot bound any home's private or public circle", () => {
+  const homes = [
+    { id: "a", lat: 52, lng: 0, version: "v1" },
+    { id: "b", lat: 52.1, lng: 0, version: "v2" },
+  ];
+  const places = [
+    // Use a reviewed ID without a flag to cover unenriched server catalogues.
+    { id: "207a7c87-e721-49cf-a5a9-f9d14cb7c821", lat: 52.02, lng: 0 },
+    { id: "visited", lat: 52.2, lng: 0 },
+    { id: "regular", lat: 52.4, lng: 0 },
+  ];
+  const visits = [{ id: "v", placeId: "visited", published: true }];
+  const routes = homes.flatMap((home) =>
+    places.map((p, i) => ({
+      homeId: home.id,
+      homeVersion: home.version,
+      placeId: p.id,
+      metres: (i + 1) * 30000,
+      seconds: 1800,
+    })),
+  );
+  for (const home of homes) {
+    const progress = outward(places, visits, home, routes);
+    assert.equal(progress.ranked[0].id, places[0].id);
+    assert.equal(progress.radius, haversine(home, places[1]));
+    assert.deepEqual(
+      progress.rangeCandidates.map((p) => p.id),
+      ["regular"],
+    );
+  }
+  for (const home of homeJourneys(places, visits, homes, routes))
+    assert.equal(home.range.radius, haversine(home.range.centre, places[1]));
+  for (const home of publicJournal(places, visits, homes, routes, "a").homes) {
+    assert.equal(home.queue[0].placeId, places[0].id);
+    assert.equal(home.range.radius, haversine(home.range.centre, places[1]));
+  }
+});
+
+test("a missing limited-access route does not hide the circle, and only special places remaining allows the farthest visit", () => {
+  const home = { lat: 52, lng: 0, version: "v1" };
+  const places = [
+    { id: "special", limitedAccess: true, lat: 52.01, lng: 0 },
+    { id: "visited", lat: 52.2, lng: 0 },
+    { id: "regular", lat: 52.4, lng: 0 },
+  ];
+  const routes = [{ placeId: "regular", metres: 60000, homeVersion: "v1" }];
+  const visits = [{ placeId: "visited" }];
+  const progress = outward(places, visits, home, routes);
+  assert.equal(progress.complete, true);
+  assert.equal(progress.rangeComplete, true);
+  assert.equal(progress.radius, haversine(home, places[1]));
+  visits.push({ placeId: "regular" });
+  const finished = outward(places, visits, home, routes);
+  assert.equal(finished.remainingCount, 1);
+  assert.equal(finished.rangeComplete, true);
+  assert.equal(finished.radius, haversine(home, places[2]));
+  assert.equal(
+    publicRange(places, visits, home, finished).radius,
+    finished.radius,
+  );
+  // Visiting a special place still extends progress within the ordinary gate.
+  const visitedSpecial = {
+    id: "other-special",
+    limitedAccess: true,
+    lat: 52.3,
+    lng: 0,
+  };
+  assert.equal(
+    outward(
+      [...places, visitedSpecial],
+      [{ placeId: "visited" }, { placeId: "other-special" }],
+      home,
+      routes,
+    ).radius,
+    haversine(home, visitedSpecial),
+  );
+});
+
+test("the circle searches beyond five special destinations for an ordinary gate", () => {
+  const home = { lat: 52, lng: 0, version: "v1" };
+  const places = Array.from({ length: 6 }, (_, i) => ({
+    id: String(i),
+    limitedAccess: true,
+    lat: 52 + (i + 1) / 100,
+    lng: 0,
+  }));
+  const visited = { id: "visited", lat: 52.1, lng: 0 };
+  const gate = { id: "ordinary", lat: 52.2, lng: 0 };
+  const catalogue = [...places, visited, gate];
+  const routes = catalogue.map((p, i) => ({
+    placeId: p.id,
+    metres: (i + 1) * 5000,
+    homeVersion: "v1",
+  }));
+  const result = outward(catalogue, [{ placeId: visited.id }], home, routes);
+  assert.equal(result.ranked.length, 5);
+  assert.equal(
+    result.ranked.every((p) => p.limitedAccess),
+    true,
+  );
+  assert.equal(result.radius, haversine(home, visited));
+});
+
+test("range reaches the outermost visited place inside the nearest straight-line gate", () => {
   const home = { lat: 52, lng: 0, version: "v1" };
   const places = [
     { id: "near", lat: 52.01, lng: 0 },
@@ -47,7 +151,7 @@ test("range reaches the outermost visited place inside the next road-ranked gate
   );
   assert.equal(
     outward(places, visits, { ...home, version: "v2" }, routes).radius,
-    0,
+    haversine(home, places[1]),
   );
 });
 
@@ -76,7 +180,7 @@ test("public range uses rounded coordinates and recalculates its radius from tha
   assert.equal(publicRange(places, visits, null, {}), null);
 });
 
-test("a provisional road queue cannot suppress a circle whose visited extent is already certain", () => {
+test("missing and changed road routes cannot change the queue or expand the circle", () => {
   const home = { lat: 54.3, lng: -5.6, version: "v1" };
   const places = [
     { id: "castle", lat: 54.4, lng: -5.6 },
@@ -97,21 +201,26 @@ test("a provisional road queue cannot suppress a circle whose visited extent is 
     },
   ];
   const result = outward(places, visits, home, routes);
-  assert.equal(result.complete, false);
-  assert.equal(result.blockingPendingCount, 1);
+  assert.equal(result.complete, true);
+  assert.equal(result.blockingPendingCount, 0);
+  assert.equal(result.pendingCount, 1);
   assert.equal(result.rangeComplete, true);
   assert.equal(result.radius, haversine(home, places[1]));
   assert.equal(publicRange(places, visits, home, result).confirmed, true);
   assert.equal(publicRange(places, visits, home, result).radius, result.radius);
-  // If this missing distance later changes the road winner, the circle stays put.
+  // A shorter road route does not change the challenge order or its circle.
   const resolved = outward(places, visits, home, [
     ...routes,
     { placeId: "unrouted", metres: 24000, homeVersion: home.version },
   ]);
   assert.equal(resolved.complete, true);
-  assert.equal(resolved.ranked[0].id, "unrouted");
+  assert.equal(resolved.ranked[0].id, "next");
+  assert.deepEqual(
+    resolved.ranked.map((p) => p.id),
+    result.ranked.map((p) => p.id),
+  );
   assert.equal(resolved.radius, result.radius);
-  // A visit between the two possible gates makes the circle genuinely uncertain.
+  // A visit beyond the nearest unvisited place cannot expand the circle.
   const between = { id: "between", lat: 54.46, lng: -5.6 };
   const uncertain = outward(
     [...places, between],
@@ -119,8 +228,8 @@ test("a provisional road queue cannot suppress a circle whose visited extent is 
     home,
     routes,
   );
-  assert.equal(uncertain.rangeComplete, false);
-  assert.equal(uncertain.radius, 0);
+  assert.equal(uncertain.rangeComplete, true);
+  assert.equal(uncertain.radius, result.radius);
   assert.equal(
     publicRange(
       [...places, between],
@@ -128,7 +237,7 @@ test("a provisional road queue cannot suppress a circle whose visited extent is 
       home,
       uncertain,
     ).confirmed,
-    false,
+    true,
   );
 });
 
@@ -143,17 +252,17 @@ test("missing routes affecting only later queue positions do not hold up the cir
   const result = outward(places, visits, home, [
     { placeId: "next", metres: 5000, homeVersion: home.version },
   ]);
-  assert.equal(result.complete, false);
+  assert.equal(result.complete, true);
   assert.equal(result.rangeComplete, true);
   assert.equal(result.radius, haversine(home, places[0]));
   const moved = outward(places, visits, { ...home, version: "v2" }, [
     { placeId: "next", metres: 5000, homeVersion: home.version },
   ]);
-  assert.equal(moved.rangeComplete, false);
-  assert.equal(moved.radius, 0);
+  assert.equal(moved.rangeComplete, true);
+  assert.equal(moved.radius, result.radius);
 });
 
-test("public circle confirmation is recomputed after rounding the home centre", () => {
+test("public circle uses the saved straight-line gate with distances recomputed from its rounded centre", () => {
   const home = { lat: 52.049, lng: 0, version: "v1" };
   const places = [
     { id: "visited", lat: 52.05, lng: 0 },
@@ -166,6 +275,8 @@ test("public circle confirmation is recomputed after rounding the home centre", 
   ]);
   assert.equal(result.rangeComplete, true);
   const published = publicRange(places, visits, home, result);
-  assert.equal(published.confirmed, false);
-  assert.equal(published.radius, 0);
+  assert.equal(result.ranked[0].id, "known");
+  assert.equal(published.confirmed, true);
+  assert.equal(published.radius, haversine(published.centre, places[0]));
+  assert.notEqual(published.radius, result.radius);
 });

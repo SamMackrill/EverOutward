@@ -232,6 +232,12 @@ export default function MapPanel({
             <i className="dot unvisited" />
             Still to explore
           </span>
+          {places.some((p) => p.limitedAccess) && (
+            <span>
+              <i className="dot limited-access-dot" />
+              Special open days · circle can pass
+            </span>
+          )}
           <span>
             <i className="dot done" />
             Visited

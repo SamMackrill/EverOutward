@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import L from "leaflet";
 import { X } from "lucide-react";
+import { availableAccess } from "./AccessNotice";
 import "leaflet.markercluster";
 import "leaflet.markercluster/dist/MarkerCluster.css";
 import type {
@@ -12,6 +13,7 @@ import type {
   VisitRange,
 } from "./types";
 import type { GeoJsonObject } from "geojson";
+import { haversine } from "../server/domain.mjs";
 
 type Basemap = {
   countries: GeoJsonObject;
@@ -19,11 +21,17 @@ type Basemap = {
 };
 
 /** Builds a numbered brand-green pin for a ranked place; the first can carry its label. */
-function rankPin(rank: number, labelled: boolean, selected: boolean) {
+function rankPin(
+  rank: number,
+  labelled: boolean,
+  selected: boolean,
+  limited = false,
+  important = false,
+) {
   const size = rank === 1 ? 34 : 26;
   return L.divIcon({
-    className: `rank-marker ${rank === 1 ? "rank-first" : ""} ${selected ? "selected" : ""}`,
-    html: `<span class="rank-pin"><b>${rank}</b></span>${labelled ? '<span class="rank-label">Next gate</span>' : ""}`,
+    className: `rank-marker ${rank === 1 ? "rank-first" : ""} ${selected ? "selected" : ""} ${limited ? "limited-access-marker" : ""} ${important ? "access-important-marker" : ""}`,
+    html: `<span class="rank-pin"><b>${rank}</b></span>${labelled ? `<span class="rank-label">${limited ? "Special open days" : "Next gate"}</span>` : ""}`,
     iconSize: [size, size],
     iconAnchor: [size / 2, Math.round(size * 1.21)],
   });
@@ -337,11 +345,33 @@ export default function MapView({
       node.className = "map-tooltip";
       const heading = document.createElement("strong");
       heading.textContent = p.name;
+      const queueEntry = homeJourneys
+        .find((h) => h.id === activeHomeId)
+        ?.queue.find((entry) => entry.placeId === p.id);
+      const geographicMetres = home
+        ? haversine(home, p)
+        : queueEntry?.geographicMetres;
+      const geographic = document.createElement("small");
+      geographic.textContent =
+        typeof geographicMetres === "number"
+          ? `${!home && queueEntry?.geographicApproximate ? "≈" : ""}${(geographicMetres / 1609.344).toFixed(1)} mi straight line`
+          : "Straight-line distance unavailable";
       const route = document.createElement("small");
       route.textContent = r
         ? `${(r.metres / 1609.344).toFixed(1)} mi by road`
         : "Road distance unavailable";
-      node.append(heading, route);
+      node.append(heading, geographic, route);
+      const opening = availableAccess(p);
+      if (p.limitedAccess) {
+        const access = document.createElement("small");
+        access.className = "limited-access-badge";
+        access.textContent = opening.newDates.length
+          ? "Important · new opening dates"
+          : "Limited access · special open days";
+        const note = document.createElement("small");
+        note.textContent = "Does not hold back the discovery circle";
+        node.append(access, note);
+      }
       if (p.boatRequired) {
         const boat = document.createElement("small");
         boat.className = "boat-notice";
@@ -378,13 +408,19 @@ export default function MapView({
       const rank = next ? Math.max(1, nextIds.indexOf(p.id) + 1) : 0;
       const marker = L.marker([p.lat, p.lng], {
         icon: rank
-          ? rankPin(rank, p.id === nextId, selected)
+          ? rankPin(
+              rank,
+              p.id === nextId,
+              selected,
+              p.limitedAccess,
+              opening.newDates.length > 0,
+            )
           : L.divIcon({
-              className: `place-marker ${done ? "visited" : ""} ${selected ? "selected" : ""}`,
+              className: `place-marker ${done ? "visited" : ""} ${selected ? "selected" : ""} ${p.limitedAccess ? "limited-access-marker" : ""} ${opening.newDates.length ? "access-important-marker" : ""}`,
               html: done ? "✓" : "",
               iconSize: selected ? [24, 24] : [14, 14],
             }),
-        title: rank ? `${rank}. ${p.name}` : p.name,
+        title: `${rank ? `${rank}. ` : ""}${p.name}${p.limitedAccess ? " · Limited access" : ""}${opening.newDates.length ? " · New opening dates" : ""}`,
         keyboard: true,
         zIndexOffset: selected ? 1000 : next ? 500 : done ? 100 : 0,
       });

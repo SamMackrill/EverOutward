@@ -82,7 +82,7 @@ export default function JourneyBar({
       {title && (
         <div className="journey-title">
           <span className="eyebrow">
-            Your next gate · nearest unvisited by road
+            Your next gate · nearest unvisited in a straight line
           </span>
           <h1>{title}</h1>
         </div>

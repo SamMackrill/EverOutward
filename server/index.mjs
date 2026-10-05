@@ -13,6 +13,9 @@ try {
 } catch {}
 // Access to this local server grants editing access without a password.
 const app = createApp({ store, places, initialHome, localOwner: true });
+// Checks resume from the saved timestamps; only the local server contacts NT.
+const stopAccessChecks = app.locals.accessMonitor.start();
+process.once("exit", stopAccessChecks);
 app.use(express.static(resolve("dist")));
 app.get("/{*path}", (req, res) => res.sendFile(resolve("dist/index.html")));
 const port = Number(process.env.PORT || 3001);

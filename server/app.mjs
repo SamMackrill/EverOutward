@@ -1,4 +1,5 @@
 import express from "express";
+import { createAccessMonitor } from "./access-dates.mjs";
 import { z } from "zod";
 import {
   randomBytes,
@@ -141,12 +142,19 @@ export function createApp({
   publisher,
   autoPublish = enableCloud,
   routeFetcher = fetch,
+  accessFetcher = fetch,
 }) {
   const app = express(),
     sessions = new Map(),
     limits = new Map();
   const placeIds = new Set(places.map((p) => p.id));
   const cataloguePlaces = places;
+  const accessMonitor = createAccessMonitor({
+    store,
+    places,
+    fetcher: accessFetcher,
+  });
+  app.locals.accessMonitor = accessMonitor;
   const correctedPlaces = () =>
     applyPlaceCorrections(cataloguePlaces, store.list("placeCorrections"));
   if (
@@ -213,6 +221,20 @@ export function createApp({
         { status: 429 },
       );
   };
+  app.get("/api/access-dates", (req, res) =>
+    res.json({ entries: accessMonitor.entries() }),
+  );
+  app.post("/api/access-dates/check", owner, async (req, res) => {
+    rateLimit(`access-check:${req.ip}`, 5, 60_000);
+    res.json({ entries: await accessMonitor.check(true) });
+  });
+  app.post("/api/access-dates/:placeId/acknowledge", owner, (req, res) => {
+    const dates = z
+      .array(z.string().regex(/^\d{4}-\d{2}-\d{2}$/))
+      .max(600)
+      .parse(req.body.dates);
+    res.json({ entries: accessMonitor.acknowledge(req.params.placeId, dates) });
+  });
   app.get("/api/session", (req, res) =>
     res.json({
       local: true,
@@ -290,6 +312,7 @@ export function createApp({
     if (!req.owner)
       return res.json({
         ...shared,
+        accessDates: accessMonitor.entries(),
         placeOverrides: publicPlaceOverrides(store.list("placeCorrections")),
         home: null,
         routes: [],
@@ -298,6 +321,7 @@ export function createApp({
       });
     res.json({
       ...shared,
+      accessDates: accessMonitor.entries(),
       placeOverrides: publicPlaceOverrides(store.list("placeCorrections")),
       visits: visits.map((visit) => ({
         ...visit,
@@ -727,6 +751,7 @@ export function createApp({
       routeReports: store.list("routeReports"),
       legacyRoutes: store.list("legacyRoutes"),
       placeCorrections: store.list("placeCorrections"),
+      accessDates: store.list("accessDates"),
       routeReviews: store.list("routeReviews"),
       routeHistory: store.list("routeHistory"),
       placeCorrectionHistory: store.list("placeCorrectionHistory"),

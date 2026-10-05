@@ -379,7 +379,7 @@ export default function HomeLocations({
                     journey!.range.radius >= 161
                     ? ` Discovery circle: ${(journey!.range.radius / 1609.344).toFixed(1)} miles.`
                     : " No visits within range yet."
-                  : " Circle pending: a missing driving distance could change its boundary."}
+                  : " Circle pending: set this home's map location."}
               </p>
               <div className="button-row">
                 {home.id !== currentId && (
