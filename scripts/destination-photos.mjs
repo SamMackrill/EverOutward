@@ -47,6 +47,7 @@ function searchNames(place) {
   return [
     ...new Set([
       place.name,
+      ...(place.photoAliases || []),
       place.name.replace(/\s*\([^)]*\)/g, ""),
       subjectName,
       subjectName.split(",")[0].trim(),
@@ -113,13 +114,15 @@ export function photoLicence(metadata) {
 export function assessCandidate(
   place,
   page,
-  { reviewed = false, identified = false } = {},
+  { reviewed = false, identified = false, reviewedAuthor = "" } = {},
 ) {
   const info = page.imageinfo?.[0];
   if (!info) return { accepted: false, reason: "No file metadata" };
   const meta = info.extmetadata || {};
   const licence = photoLicence(meta);
-  const author = metadataText(meta.Artist?.value);
+  const author =
+    metadataText(meta.Artist?.value) ||
+    (reviewed ? metadataText(reviewedAuthor) : "");
   const source = safeUrl(info.descriptionurl, ["commons.wikimedia.org"]);
   const download = safeUrl(info.thumburl || info.url, [
     "upload.wikimedia.org",

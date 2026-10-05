@@ -105,9 +105,32 @@ if (args.includes("--status")) {
 const selected = value("--place");
 if (selected && !places.some((place) => place.id === selected))
   throw new Error("Unknown --place ID");
-const reviewed = value("--reviewed")
+const matches = value("--reviewed")
   ? JSON.parse(await readFile(value("--reviewed"), "utf8"))
-  : {};
+  : await optionalJson(resolve("scripts/destination-photo-matches.json"), {});
+for (const [id, match] of Object.entries(matches)) {
+  if (!places.some((place) => place.id === id))
+    throw new Error(`Unknown destination photo match: ${id}`);
+  if (typeof match === "string") continue;
+  if (
+    !match ||
+    typeof match !== "object" ||
+    (match.alt !== undefined && typeof match.alt !== "string") ||
+    (match.author !== undefined && typeof match.author !== "string") ||
+    (match.aliases !== undefined &&
+      (!Array.isArray(match.aliases) ||
+        match.aliases.some((alias) => typeof alias !== "string")))
+  )
+    throw new Error(`Invalid destination photo match: ${id}`);
+}
+const reviewed = Object.fromEntries(
+  Object.entries(matches)
+    .map(([id, match]) => [
+      id,
+      typeof match === "string" ? match : match.fileTitle,
+    ])
+    .filter(([, title]) => title !== undefined),
+);
 for (const [id, title] of Object.entries(reviewed))
   if (
     !places.some((place) => place.id === id) ||
@@ -128,6 +151,10 @@ const priorities = new Set(
 );
 const ordered = places
   .filter((place) => !selected || place.id === selected)
+  .map((place) => ({
+    ...place,
+    photoAliases: matches[place.id]?.aliases || [],
+  }))
   .sort((a, b) => Number(priorities.has(b.id)) - Number(priorities.has(a.id)));
 const lockPath = `${root}/import.lock`;
 let lock;
@@ -272,7 +299,11 @@ try {
           ? { identity: identity.entity }
           : {}),
         ...assessCandidate(place, page, {
-          reviewed: !!reviewed[place.id],
+          reviewed:
+            !!reviewed[place.id] &&
+            page.title.replace(/_/g, " ") ===
+              reviewed[place.id].replace(/_/g, " "),
+          reviewedAuthor: matches[place.id]?.author,
           identified: matchesIdentityCategory(page, identity),
         }),
       }));
@@ -346,7 +377,7 @@ try {
             imageSource: candidate.source,
             imageLicence: candidate.licence.label,
             imageLicenceUrl: candidate.licence.url,
-            imageAlt: candidate.title,
+            imageAlt: matches[place.id]?.alt || candidate.title,
             ...(candidate.attribution &&
             candidate.attribution !== candidate.author
               ? { imageAttribution: candidate.attribution }
@@ -402,6 +433,12 @@ try {
       id: place.id,
       name: place.name,
       status: entry?.status || "not-searched",
+      ...(matches[place.id]?.note
+        ? {
+            reviewNote: matches[place.id].note,
+            evidence: matches[place.id].evidence || [],
+          }
+        : {}),
       ...(entry?.error ? { error: entry.error } : {}),
       reasons: [
         ...new Set(

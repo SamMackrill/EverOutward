@@ -281,7 +281,16 @@
     "imageLicenceUrl": "https://creativecommons.org/licenses/by-sa/2.0",
     "imageAlt": "The Terrace, Trengwainton Garden - geograph.org.uk - 236468"
   },
-  "5c400bc3-0280-438c-b6ba-4804189f5979": {},
+  "5c400bc3-0280-438c-b6ba-4804189f5979": {
+    "image": "/photos/library-5c400bc3-0280-438c-b6ba-4804189f5979.jpg",
+    "imageAuthor": "David Medcalf",
+    "imageSource": "https://commons.wikimedia.org/wiki/File:Looking_towards_Bosigran_headland_-_geograph.org.uk_-_7997576.jpg",
+    "imageLicence": "CC BY-SA 2.0",
+    "imageLicenceUrl": "https://creativecommons.org/licenses/by-sa/2.0",
+    "imageAlt": "Bosigran headland on the St Ives to Pendeen coast",
+    "imageAttribution": "Looking towards Bosigran headland by David Medcalf",
+    "imageChanges": "Resized for display."
+  },
   "e8eb273a-d137-4658-af21-33b87180c609": {
     "image": "/photos/library-e8eb273a-d137-4658-af21-33b87180c609.jpg",
     "imageAuthor": "cisko66",
@@ -5471,6 +5480,410 @@
     "imageLicenceUrl": "https://creativecommons.org/licenses/by-sa/2.0",
     "imageAlt": "The White Cliffs of Dover (2) - geograph.org.uk - 7099105",
     "imageAttribution": "The White Cliffs of Dover [2] by Michael Dibb",
+    "imageChanges": "Resized for display."
+  },
+  "cd076b79-3e82-468d-8074-8b163af6e2b9": {
+    "image": "/photos/library-cd076b79-3e82-468d-8074-8b163af6e2b9.jpg",
+    "imageAuthor": "Jeremy Bolwell",
+    "imageSource": "https://commons.wikimedia.org/wiki/File:Solva_harbour_from_Gribin_-_geograph.org.uk_-_2396474.jpg",
+    "imageLicence": "CC BY-SA 2.0",
+    "imageLicenceUrl": "https://creativecommons.org/licenses/by-sa/2.0",
+    "imageAlt": "Solva harbour viewed from the Gribin",
+    "imageAttribution": "Solva harbour from Gribin by Jeremy Bolwell"
+  },
+  "12a1f89f-e0f8-405f-858c-c61a93974fad": {
+    "image": "/photos/library-12a1f89f-e0f8-405f-858c-c61a93974fad.jpg",
+    "imageAuthor": "David Boness",
+    "imageSource": "https://commons.wikimedia.org/wiki/File:Bedruthan_Steps_-_geograph.org.uk_-_3390699.jpg",
+    "imageLicence": "CC BY-SA 2.0",
+    "imageLicenceUrl": "https://creativecommons.org/licenses/by-sa/2.0",
+    "imageAlt": "Bedruthan Steps viewed from Carnewas",
+    "imageAttribution": "Bedruthan Steps by David Boness",
+    "imageChanges": "Resized for display."
+  },
+  "6948d3a5-5d13-4023-8907-584b01aa4231": {
+    "image": "/photos/library-6948d3a5-5d13-4023-8907-584b01aa4231.jpg",
+    "imageAuthor": "David Medcalf",
+    "imageSource": "https://commons.wikimedia.org/wiki/File:The_Landsker_Borderlands_Trail_near_Lawrenny_Quay_-_geograph.org.uk_-_3621940.jpg",
+    "imageLicence": "CC BY-SA 2.0",
+    "imageLicenceUrl": "https://creativecommons.org/licenses/by-sa/2.0",
+    "imageAlt": "Woodland trail near Lawrenny Quay in the Cleddau Woodlands",
+    "imageAttribution": "The Landsker Borderlands Trail near Lawrenny Quay by David Medcalf",
+    "imageChanges": "Resized for display."
+  },
+  "6ecc194d-3825-43b2-a0f8-7da670fbc975": {
+    "image": "/photos/library-6ecc194d-3825-43b2-a0f8-7da670fbc975.jpg",
+    "imageAuthor": "Derek Harper",
+    "imageSource": "https://commons.wikimedia.org/wiki/File:Coast_path_on_Bodigga_Cliff_-_geograph.org.uk_-_2642167.jpg",
+    "imageLicence": "CC BY-SA 2.0",
+    "imageLicenceUrl": "https://creativecommons.org/licenses/by-sa/2.0",
+    "imageAlt": "Coast path on Bodigga Cliff near Looe",
+    "imageAttribution": "Coast path on Bodigga Cliff by Derek Harper"
+  },
+  "ba5a9a74-ee3a-4e5f-b0c7-fdeb063c11c9": {
+    "image": "/photos/library-ba5a9a74-ee3a-4e5f-b0c7-fdeb063c11c9.jpg",
+    "imageAuthor": "David Hillas",
+    "imageSource": "https://commons.wikimedia.org/wiki/File:Rhossili_Bay_from_Rhossili_-_geograph.org.uk_-_4904492.jpg",
+    "imageLicence": "CC BY-SA 2.0",
+    "imageLicenceUrl": "https://creativecommons.org/licenses/by-sa/2.0",
+    "imageAlt": "Rhossili Bay viewed from the South Gower Coast",
+    "imageAttribution": "Rhossili Bay from Rhossili by David Hillas",
+    "imageChanges": "Resized for display."
+  },
+  "2fb1a6e5-ac9e-40fe-b5df-a7a09ba00141": {
+    "image": "/photos/library-2fb1a6e5-ac9e-40fe-b5df-a7a09ba00141.jpg",
+    "imageAuthor": "Eirian Evans",
+    "imageSource": "https://commons.wikimedia.org/wiki/File:Site_of_Dinas_Dinlle_hill_fort_-_geograph.org.uk_-_7728366.jpg",
+    "imageLicence": "CC BY-SA 2.0",
+    "imageLicenceUrl": "https://creativecommons.org/licenses/by-sa/2.0",
+    "imageAlt": "Grassy earthworks of Dinas Dinlle hillfort",
+    "imageAttribution": "Site of Dinas Dinlle hill fort by Eirian Evans",
+    "imageChanges": "Resized for display."
+  },
+  "e23f39f7-35bf-4105-973e-b4802a684d72": {
+    "image": "/photos/library-e23f39f7-35bf-4105-973e-b4802a684d72.jpg",
+    "imageAuthor": "Sterim64",
+    "imageSource": "https://commons.wikimedia.org/wiki/File:Plas_Newydd_and_Strait.jpg",
+    "imageLicence": "CC BY-SA 4.0",
+    "imageLicenceUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "imageAlt": "Plas Newydd house beside the Menai Strait on Anglesey",
+    "imageChanges": "Resized for display."
+  },
+  "6c660726-5f74-46c0-b0d1-26774e4fdd83": {
+    "image": "/photos/library-6c660726-5f74-46c0-b0d1-26774e4fdd83.jpg",
+    "imageAuthor": "David Medcalf",
+    "imageSource": "https://commons.wikimedia.org/wiki/File:Dolmelynllyn_ornamental_lake_-_geograph.org.uk_-_7955117.jpg",
+    "imageLicence": "CC BY-SA 2.0",
+    "imageLicenceUrl": "https://creativecommons.org/licenses/by-sa/2.0",
+    "imageAlt": "Ornamental lake on the Dolmelynllyn Estate in South Snowdonia",
+    "imageAttribution": "Dolmelynllyn ornamental lake by David Medcalf",
+    "imageChanges": "Resized for display."
+  },
+  "4cb1ea78-89df-4727-94cc-a73ac27f851f": {
+    "image": "/photos/library-4cb1ea78-89df-4727-94cc-a73ac27f851f.jpg",
+    "imageAuthor": "Ruth Sharville",
+    "imageSource": "https://commons.wikimedia.org/wiki/File:Malmsmead_Bridge_over_Badgworthy_Water_(geograph_3002984).jpg",
+    "imageLicence": "CC BY-SA 2.0",
+    "imageLicenceUrl": "https://creativecommons.org/licenses/by-sa/2.0",
+    "imageAlt": "Malmsmead Bridge over Badgworthy Water in the Lorna Doone Valley",
+    "imageChanges": "Resized for display."
+  },
+  "df04d29e-f4b4-472a-b4f1-df2c3ca935b0": {
+    "image": "/photos/library-df04d29e-f4b4-472a-b4f1-df2c3ca935b0.jpg",
+    "imageAuthor": "Derek Harper",
+    "imageSource": "https://commons.wikimedia.org/wiki/File:Bow_Creek_-_geograph.org.uk_-_5223250.jpg",
+    "imageLicence": "CC BY-SA 2.0",
+    "imageLicenceUrl": "https://creativecommons.org/licenses/by-sa/2.0",
+    "imageAlt": "Wooded banks of Bow Creek at Crownley Woods, Tuckenhay",
+    "imageAttribution": "Bow Creek by Derek Harper",
+    "imageChanges": "Resized for display."
+  },
+  "5d828304-492a-4db1-9579-2635259b2756": {
+    "image": "/photos/library-5d828304-492a-4db1-9579-2635259b2756.jpg",
+    "imageAuthor": "Trevor Littlewood",
+    "imageSource": "https://commons.wikimedia.org/wiki/File:Peat_bog_west-south-west_of_Gorllwyn_-_geograph.org.uk_-_2111130.jpg",
+    "imageLicence": "CC BY-SA 2.0",
+    "imageLicenceUrl": "https://creativecommons.org/licenses/by-sa/2.0",
+    "imageAlt": "Peat bog south-west of Gorllwyn on Abergwesyn Common",
+    "imageAttribution": "Peat bog west-south-west of Gorllwyn by Trevor Littlewood",
+    "imageChanges": "Resized for display."
+  },
+  "ab063811-c6ac-4c87-803d-e92f0dc62ebc": {
+    "image": "/photos/library-ab063811-c6ac-4c87-803d-e92f0dc62ebc.jpg",
+    "imageAuthor": "Russel Wills",
+    "imageSource": "https://commons.wikimedia.org/wiki/File:Looking_south_along_the_England_Coast_Path_-_geograph.org.uk_-_5802199.jpg",
+    "imageLicence": "CC BY-SA 2.0",
+    "imageLicenceUrl": "https://creativecommons.org/licenses/by-sa/2.0",
+    "imageAlt": "Coastal path south of Whitehaven overlooking the sea",
+    "imageAttribution": "Looking south along the England Coast Path by Russel Wills",
+    "imageChanges": "Resized for display."
+  },
+  "9f27ff42-bdfa-463a-bbb5-5cf3d8daa3b9": {
+    "image": "/photos/library-9f27ff42-bdfa-463a-bbb5-5cf3d8daa3b9.jpg",
+    "imageAuthor": "Richard Cooke",
+    "imageSource": "https://commons.wikimedia.org/wiki/File:Roanhead_Beach_-_geograph.org.uk_-_7889177.jpg",
+    "imageLicence": "CC BY-SA 2.0",
+    "imageLicenceUrl": "https://creativecommons.org/licenses/by-sa/2.0",
+    "imageAlt": "Roanhead beach beside Sandscale Haws",
+    "imageAttribution": "Roanhead Beach by Richard Cooke",
+    "imageChanges": "Resized for display."
+  },
+  "c0c28f77-695c-44de-8055-ce20d640e94d": {
+    "image": "/photos/library-c0c28f77-695c-44de-8055-ce20d640e94d.jpg",
+    "imageAuthor": "Derek Harper",
+    "imageSource": "https://commons.wikimedia.org/wiki/File:Musbury_Castle_-_geograph.org.uk_-_3149521.jpg",
+    "imageLicence": "CC BY-SA 2.0",
+    "imageLicenceUrl": "https://creativecommons.org/licenses/by-sa/2.0",
+    "imageAlt": "Earthworks and grassy slopes of Musbury Castle hillfort",
+    "imageAttribution": "Musbury Castle by Derek Harper"
+  },
+  "16493d07-7826-406b-a1cb-1a6ff2b123b0": {
+    "image": "/photos/library-16493d07-7826-406b-a1cb-1a6ff2b123b0.jpg",
+    "imageAuthor": "Boing! said Zebedee",
+    "imageSource": "https://commons.wikimedia.org/wiki/File:HardmanRodneyStreetOM.jpg",
+    "imageLicence": "Public domain",
+    "imageLicenceUrl": "https://commons.wikimedia.org/wiki/Commons:Public_domain",
+    "imageAlt": "Entrance to E. Chambre Hardman's house at 59 Rodney Street, Liverpool",
+    "imageChanges": "Resized for display."
+  },
+  "387c91ec-46bf-4aa1-813a-a32a6d26404b": {
+    "image": "/photos/library-387c91ec-46bf-4aa1-813a-a32a6d26404b.jpg",
+    "imageAuthor": "Martin Dawes",
+    "imageSource": "https://commons.wikimedia.org/wiki/File:Mendips_251_Menlove_Avenue_-_geograph.org.uk_-_4596182.jpg",
+    "imageLicence": "CC BY-SA 2.0",
+    "imageLicenceUrl": "https://creativecommons.org/licenses/by-sa/2.0",
+    "imageAlt": "Mendips, John Lennon's childhood home at 251 Menlove Avenue",
+    "imageAttribution": "Mendips 251 Menlove Avenue by Martin Dawes",
+    "imageChanges": "Resized for display."
+  },
+  "1d5e7c31-1fef-48f1-9ad4-017a73fff8d5": {
+    "image": "/photos/library-1d5e7c31-1fef-48f1-9ad4-017a73fff8d5.jpg",
+    "imageAuthor": "George Evans",
+    "imageSource": "https://commons.wikimedia.org/wiki/File:West_Mendip_Way_to_Wavering_Down.jpg",
+    "imageLicence": "CC BY-SA 2.0",
+    "imageLicenceUrl": "https://creativecommons.org/licenses/by-sa/2.0",
+    "imageAlt": "West Mendip Way looking towards Wavering Down"
+  },
+  "f9501822-2b2a-45d5-b0cc-4fb5aced99ac": {
+    "image": "/photos/library-f9501822-2b2a-45d5-b0cc-4fb5aced99ac.jpg",
+    "imageAuthor": "Carroll Pierce",
+    "imageSource": "https://commons.wikimedia.org/wiki/File:Tarn_Moss_to_Malham_Tarn_-_geograph.org.uk_-_5472692.jpg",
+    "imageLicence": "CC BY-SA 2.0",
+    "imageLicenceUrl": "https://creativecommons.org/licenses/by-sa/2.0",
+    "imageAlt": "Tarn Moss and the boardwalk near Malham Tarn in the Yorkshire Dales",
+    "imageAttribution": "Tarn Moss to Malham Tarn by Carroll Pierce",
+    "imageChanges": "Resized for display."
+  },
+  "854ec2c8-1c12-47eb-8bb2-e104593b9a03": {
+    "image": "/photos/library-854ec2c8-1c12-47eb-8bb2-e104593b9a03.jpg",
+    "imageAuthor": "kitmasterbloke",
+    "imageSource": "https://commons.wikimedia.org/wiki/File:Letocetum_-_Wall_Roman_Site_(31340852044).jpg",
+    "imageLicence": "CC BY 2.0",
+    "imageLicenceUrl": "https://creativecommons.org/licenses/by/2.0",
+    "imageAlt": "Roman bath house remains at Letocetum, Wall",
+    "imageChanges": "Resized for display."
+  },
+  "8103396d-6a4a-4e84-87ac-cd3a6d41edf6": {
+    "image": "/photos/library-8103396d-6a4a-4e84-87ac-cd3a6d41edf6.jpg",
+    "imageAuthor": "Chris Wimbush",
+    "imageSource": "https://commons.wikimedia.org/wiki/File:Mam_Tor_from_Rushup_Edge_-_geograph.org.uk_-_1036721.jpg",
+    "imageLicence": "CC BY-SA 2.0",
+    "imageLicenceUrl": "https://creativecommons.org/licenses/by-sa/2.0",
+    "imageAlt": "Mam Tor viewed from Rushup Edge in the High Peak"
+  },
+  "91f07028-5512-466e-b057-f93046d7714e": {
+    "image": "/photos/library-91f07028-5512-466e-b057-f93046d7714e.jpg",
+    "imageAuthor": "Alan Walker",
+    "imageSource": "https://commons.wikimedia.org/wiki/File:Norbury_church_and_hall_046773_50c8b955.jpg",
+    "imageLicence": "CC BY-SA 2.0",
+    "imageLicenceUrl": "https://creativecommons.org/licenses/by-sa/2.0",
+    "imageAlt": "The medieval Old Manor hall beside Norbury parish church"
+  },
+  "eeb80c09-4376-48e6-9b7d-e4b547eacc48": {
+    "image": "/photos/library-eeb80c09-4376-48e6-9b7d-e4b547eacc48.jpg",
+    "imageAuthor": "Richard Humphrey",
+    "imageSource": "https://commons.wikimedia.org/wiki/File:Fishing_boats_at_low_tide,_Brancaster_Staithe_-_geograph.org.uk_-_2651064.jpg",
+    "imageLicence": "CC BY-SA 2.0",
+    "imageLicenceUrl": "https://creativecommons.org/licenses/by-sa/2.0",
+    "imageAlt": "Fishing boats at low tide in Brancaster Staithe harbour",
+    "imageAttribution": "Fishing boats at low tide, Brancaster Staithe by Richard Humphrey",
+    "imageChanges": "Resized for display."
+  },
+  "917ea7c0-b9a7-4ac3-ab6b-839388115a5d": {
+    "image": "/photos/library-917ea7c0-b9a7-4ac3-ab6b-839388115a5d.jpg",
+    "imageAuthor": "Chris Gunns",
+    "imageSource": "https://commons.wikimedia.org/wiki/File:Marker%27s_Cottage_Broadclyst_-_geograph.org.uk_-_4040065.jpg",
+    "imageLicence": "CC BY-SA 2.0",
+    "imageLicenceUrl": "https://creativecommons.org/licenses/by-sa/2.0",
+    "imageAlt": "Historic painted wall inside Marker's Cottage, Broadclyst",
+    "imageAttribution": "Marker's Cottage Broadclyst by Chris Gunns",
+    "imageChanges": "Resized for display."
+  },
+  "22bd2779-4059-4270-81c0-0587d070a7b7": {
+    "image": "/photos/library-22bd2779-4059-4270-81c0-0587d070a7b7.jpg",
+    "imageAuthor": "Jeff Buck",
+    "imageSource": "https://commons.wikimedia.org/wiki/File:View_towards_Cemlyn_Bay_from_the_Anglesey_Coastal_Path_-_geograph.org.uk_-_6214825.jpg",
+    "imageLicence": "CC BY-SA 2.0",
+    "imageLicenceUrl": "https://creativecommons.org/licenses/by-sa/2.0",
+    "imageAlt": "Cemlyn Bay viewed from the Anglesey Coastal Path",
+    "imageAttribution": "View towards Cemlyn Bay from the Anglesey Coastal Path by Jeff Buck",
+    "imageChanges": "Resized for display."
+  },
+  "b62c81bc-4a23-4ea9-a114-afced34b4e64": {
+    "image": "/photos/library-b62c81bc-4a23-4ea9-a114-afced34b4e64.jpg",
+    "imageAuthor": "Rod Grealish",
+    "imageSource": "https://commons.wikimedia.org/wiki/File:Sudbury_Hall_from_rear_gardens_-_geograph.org.uk_-_7655285.jpg",
+    "imageLicence": "CC BY-SA 2.0",
+    "imageLicenceUrl": "https://creativecommons.org/licenses/by-sa/2.0",
+    "imageAlt": "Sudbury Hall viewed from the rear gardens",
+    "imageAttribution": "Sudbury Hall from rear gardens by Rod Grealish",
+    "imageChanges": "Resized for display."
+  },
+  "bb22fc55-8a9c-4803-b737-5ec0a681466b": {
+    "image": "/photos/library-bb22fc55-8a9c-4803-b737-5ec0a681466b.jpg",
+    "imageAuthor": "Jim Champion",
+    "imageSource": "https://commons.wikimedia.org/wiki/File:Ponies_grazing_Rockford_Common,_New_Forest_-_geograph.org.uk_-_313001.jpg",
+    "imageLicence": "CC BY-SA 2.0",
+    "imageLicenceUrl": "https://creativecommons.org/licenses/by-sa/2.0",
+    "imageAlt": "Ponies grazing heathland on Rockford Common in the New Forest"
+  },
+  "706e912e-025f-4fa7-a591-a2f8c2ca8f3b": {
+    "image": "/photos/library-706e912e-025f-4fa7-a591-a2f8c2ca8f3b.jpg",
+    "imageAuthor": "habiloid",
+    "imageSource": "https://commons.wikimedia.org/wiki/File:Beach,_Seahouses_-_geograph.org.uk_-_6575864.jpg",
+    "imageLicence": "CC BY-SA 2.0",
+    "imageLicenceUrl": "https://creativecommons.org/licenses/by-sa/2.0",
+    "imageAlt": "Beach at Seahouses on the Northumberland Coast",
+    "imageAttribution": "Beach, Seahouses by habiloid",
+    "imageChanges": "Resized for display."
+  },
+  "08771ce4-94c2-4a12-8f60-a404f47fe58f": {
+    "image": "/photos/library-08771ce4-94c2-4a12-8f60-a404f47fe58f.jpg",
+    "imageAuthor": "Michael Dibb",
+    "imageSource": "https://commons.wikimedia.org/wiki/File:The_Old_Parsonage_(2)_-_geograph.org.uk_-_6121529.jpg",
+    "imageLicence": "CC BY-SA 2.0",
+    "imageLicenceUrl": "https://creativecommons.org/licenses/by-sa/2.0",
+    "imageAlt": "The Old Parsonage beside the church at Buscot",
+    "imageAttribution": "The Old Parsonage [2] by Michael Dibb",
+    "imageChanges": "Resized for display."
+  },
+  "c58bf368-60fb-40c4-a72f-aa305e517d77": {
+    "image": "/photos/library-c58bf368-60fb-40c4-a72f-aa305e517d77.jpg",
+    "imageAuthor": "Paul Buckingham",
+    "imageSource": "https://commons.wikimedia.org/wiki/File:The_Shack,_Mottistone_Manor_Gardens_-_geograph.org.uk_-_3649547.jpg",
+    "imageLicence": "CC BY-SA 2.0",
+    "imageLicenceUrl": "https://creativecommons.org/licenses/by-sa/2.0",
+    "imageAlt": "The Shack in Mottistone Manor Gardens",
+    "imageAttribution": "The Shack, Mottistone Manor Gardens by Paul Buckingham",
+    "imageChanges": "Resized for display."
+  },
+  "462da5aa-9d20-479c-a92a-f844ff84f445": {
+    "image": "/photos/library-462da5aa-9d20-479c-a92a-f844ff84f445.jpg",
+    "imageAuthor": "Steve Daniels",
+    "imageSource": "https://commons.wikimedia.org/wiki/File:Priory_Cottages,_Steventon,_Berkshire_-_geograph-3725708.jpg",
+    "imageLicence": "CC BY-SA 2.0",
+    "imageLicenceUrl": "https://creativecommons.org/licenses/by-sa/2.0",
+    "imageAlt": "Priory Cottages on the Causeway in Steventon",
+    "imageChanges": "Resized for display."
+  },
+  "366ee6b4-b7ac-4f8d-a61f-0aadc581b094": {
+    "image": "/photos/library-366ee6b4-b7ac-4f8d-a61f-0aadc581b094.jpg",
+    "imageAuthor": "Peter Facey",
+    "imageSource": "https://commons.wikimedia.org/wiki/File:River_Hamble,_looking_upstream_near_Curbridge_-_geograph.org.uk_-_220128.jpg",
+    "imageLicence": "CC BY-SA 2.0",
+    "imageLicenceUrl": "https://creativecommons.org/licenses/by-sa/2.0",
+    "imageAlt": "River Hamble and wooded banks near Curbridge Nature Reserve"
+  },
+  "e6991207-328c-449c-ad2c-56e45f41ad50": {
+    "image": "/photos/library-e6991207-328c-449c-ad2c-56e45f41ad50.jpg",
+    "imageAuthor": "Lewis Clarke",
+    "imageSource": "https://commons.wikimedia.org/wiki/File:Ventnor_,_Wroxall_Down_-_geograph.org.uk_-_6732456.jpg",
+    "imageLicence": "CC BY-SA 2.0",
+    "imageLicenceUrl": "https://creativecommons.org/licenses/by-sa/2.0",
+    "imageAlt": "View from Wroxall Down in the Ventnor Downs",
+    "imageAttribution": "Ventnor : Wroxall Down by Lewis Clarke",
+    "imageChanges": "Resized for display."
+  },
+  "658fc379-17be-4bfe-90a4-569cfe769e26": {
+    "image": "/photos/library-658fc379-17be-4bfe-90a4-569cfe769e26.jpg",
+    "imageAuthor": "Robert Eva",
+    "imageSource": "https://commons.wikimedia.org/wiki/File:Coombe_Hill,_trees_and_monument_-_geograph.org.uk_-_5684464.jpg",
+    "imageLicence": "CC BY-SA 2.0",
+    "imageLicenceUrl": "https://creativecommons.org/licenses/by-sa/2.0",
+    "imageAlt": "Coombe Hill monument and surrounding trees in the Chilterns",
+    "imageAttribution": "Coombe Hill, trees and monument by Robert Eva",
+    "imageChanges": "Resized for display."
+  },
+  "d69bdb31-d640-43fd-bb1e-1b9479eb94d0": {
+    "image": "/photos/library-d69bdb31-d640-43fd-bb1e-1b9479eb94d0.jpg",
+    "imageAuthor": "Colin Smith",
+    "imageSource": "https://commons.wikimedia.org/wiki/File:Ludshott_Common_-_geograph.org.uk_-_7812392.jpg",
+    "imageLicence": "CC BY-SA 2.0",
+    "imageLicenceUrl": "https://creativecommons.org/licenses/by-sa/2.0",
+    "imageAlt": "Heathland and trees on Ludshott Common",
+    "imageAttribution": "Ludshott Common by Colin Smith",
+    "imageChanges": "Resized for display."
+  },
+  "f7d0d958-e989-42fa-9b92-b784b5c91290": {
+    "image": "/photos/library-f7d0d958-e989-42fa-9b92-b784b5c91290.jpg",
+    "imageAuthor": "Graham Horn",
+    "imageSource": "https://commons.wikimedia.org/wiki/File:View_from_Woolbeding_Common_-_geograph.org.uk_-_2001744.jpg",
+    "imageLicence": "CC BY-SA 2.0",
+    "imageLicenceUrl": "https://creativecommons.org/licenses/by-sa/2.0",
+    "imageAlt": "View across the countryside from Woolbeding Common",
+    "imageAttribution": "View from Woolbeding Common by Graham Horn"
+  },
+  "9d2d83e6-1649-4e7a-946b-ccaeef8c651c": {
+    "image": "/photos/library-9d2d83e6-1649-4e7a-946b-ccaeef8c651c.jpg",
+    "imageAuthor": "Andrew Davidson",
+    "imageSource": "https://commons.wikimedia.org/wiki/File:Dorneywood_grounds.jpg",
+    "imageLicence": "CC BY-SA 4.0",
+    "imageLicenceUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+    "imageAlt": "Garden and grounds at Dorneywood",
+    "imageChanges": "Resized for display."
+  },
+  "0e3a4f5d-5e03-425c-abcf-fd6a6d671834": {
+    "image": "/photos/library-0e3a4f5d-5e03-425c-abcf-fd6a6d671834.jpg",
+    "imageAuthor": "Graham Horn",
+    "imageSource": "https://commons.wikimedia.org/wiki/File:The_coast_at_Ravenscar_-_geograph.org.uk_-_587742.jpg",
+    "imageLicence": "CC BY-SA 2.0",
+    "imageLicenceUrl": "https://creativecommons.org/licenses/by-sa/2.0",
+    "imageAlt": "The Yorkshire coastline viewed from Ravenscar"
+  },
+  "f8d13899-ab13-40e8-a2c7-42c80aeef189": {
+    "image": "/photos/library-f8d13899-ab13-40e8-a2c7-42c80aeef189.jpg",
+    "imageAuthor": "Tjandspallan at English Wikipedia",
+    "imageSource": "https://commons.wikimedia.org/wiki/File:The_Homewood_and_garden.jpg",
+    "imageLicence": "Public domain",
+    "imageLicenceUrl": "https://commons.wikimedia.org/wiki/Commons:Public_domain",
+    "imageAlt": "The Homewood house and garden in Esher",
+    "imageChanges": "Resized for display."
+  },
+  "2551fb36-996a-41ae-b588-7d9409e9a9f3": {
+    "image": "/photos/library-2551fb36-996a-41ae-b588-7d9409e9a9f3.jpg",
+    "imageAuthor": "Chris",
+    "imageSource": "https://commons.wikimedia.org/wiki/File:Monksthorpe_Baptist_chapel_and_baptistry_-_geograph.org.uk_-_3071005.jpg",
+    "imageLicence": "CC BY-SA 2.0",
+    "imageLicenceUrl": "https://creativecommons.org/licenses/by-sa/2.0",
+    "imageAlt": "Monksthorpe Baptist chapel and its outdoor baptistry",
+    "imageAttribution": "Monksthorpe Baptist chapel and baptistry by Chris"
+  },
+  "ab64fba8-5da5-46c2-b3e5-4ce003c5f010": {
+    "image": "/photos/library-ab64fba8-5da5-46c2-b3e5-4ce003c5f010.jpg",
+    "imageAuthor": "kitmasterbloke",
+    "imageSource": "https://commons.wikimedia.org/wiki/File:Oxburgh_Hall_and_Gardens,_Norfolk_NT_(32781697637).jpg",
+    "imageLicence": "CC BY 2.0",
+    "imageLicenceUrl": "https://creativecommons.org/licenses/by/2.0",
+    "imageAlt": "Oxburgh Hall and moat in Norfolk",
+    "imageChanges": "Resized for display."
+  },
+  "5987c9f5-bdfb-47bd-bdc4-80431d48e003": {
+    "image": "/photos/library-5987c9f5-bdfb-47bd-bdc4-80431d48e003.jpg",
+    "imageAuthor": "Amanda Slater",
+    "imageSource": "https://commons.wikimedia.org/wiki/File:Orford_Ness_-_Marshes_View_(14328141700).jpg",
+    "imageLicence": "CC BY-SA 2.0",
+    "imageLicenceUrl": "https://creativecommons.org/licenses/by-sa/2.0",
+    "imageAlt": "Marshes and former research buildings at Orford Ness",
+    "imageChanges": "Resized for display."
+  },
+  "7f9c9105-8d70-4696-938a-fcd72d987a7f": {
+    "image": "/photos/library-7f9c9105-8d70-4696-938a-fcd72d987a7f.jpg",
+    "imageAuthor": "Kenneth Allen",
+    "imageSource": "https://commons.wikimedia.org/wiki/File:Gray,_Printer,_Main_Street,_Strabane_-_geograph.org.uk_-_8350268.jpg",
+    "imageLicence": "CC BY-SA 2.0",
+    "imageLicenceUrl": "https://creativecommons.org/licenses/by-sa/2.0",
+    "imageAlt": "Gray's printing museum on Main Street in Strabane",
+    "imageAttribution": "Gray, Printer, Main Street, Strabane by Kenneth Allen",
+    "imageChanges": "Resized for display."
+  },
+  "490e78f6-0089-4a9d-88cb-3115474b3a1b": {
+    "image": "/photos/library-490e78f6-0089-4a9d-88cb-3115474b3a1b.jpg",
+    "imageAuthor": "Gareth James",
+    "imageSource": "https://commons.wikimedia.org/wiki/File:The_granary_at_Coleshill_Model_Farm_-_geograph.org.uk_-_7878869.jpg",
+    "imageLicence": "CC BY-SA 2.0",
+    "imageLicenceUrl": "https://creativecommons.org/licenses/by-sa/2.0",
+    "imageAlt": "The granary at Coleshill Model Farm, home to the Heritage and Rural Skills Centre",
+    "imageAttribution": "The granary at Coleshill Model Farm by Gareth James",
     "imageChanges": "Resized for display."
   }
 }

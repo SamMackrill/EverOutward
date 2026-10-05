@@ -1,425 +1,28 @@
 {
-  "checkedAt": "2026-10-05T15:13:42.270Z",
+  "checkedAt": "2026-10-05T19:01:41.348Z",
   "summary": {
     "total": 643,
-    "withPhoto": 596,
-    "missing": 47,
+    "withPhoto": 640,
+    "missing": 3,
     "searched": 623,
-    "needsReview": 47,
+    "needsReview": 3,
     "unavailable": 0,
     "errors": 0
   },
   "missing": [
     {
-      "id": "5c400bc3-0280-438c-b6ba-4804189f5979",
-      "name": "St Ives to Pendeen",
-      "status": "needs-review",
-      "reasons": [
-        "Needs subject/location review",
-        "Incidental subject needs review",
-        "Photograph is more than 5 km from the catalogue destination",
-        "Not a suitable JPEG photograph"
-      ]
-    },
-    {
-      "id": "cd076b79-3e82-468d-8074-8b163af6e2b9",
-      "name": "Solva Coast",
-      "status": "needs-review",
-      "reasons": [
-        "Needs subject/location review"
-      ]
-    },
-    {
-      "id": "12a1f89f-e0f8-405f-858c-c61a93974fad",
-      "name": "Carnewas at Bedruthan",
-      "status": "needs-review",
-      "reasons": [
-        "Needs subject/location review",
-        "Not a suitable JPEG photograph"
-      ]
-    },
-    {
-      "id": "6948d3a5-5d13-4023-8907-584b01aa4231",
-      "name": "Cleddau Woodlands",
-      "status": "needs-review",
-      "reasons": [
-        "Needs subject/location review",
-        "Not a suitable JPEG photograph"
-      ]
-    },
-    {
-      "id": "6ecc194d-3825-43b2-a0f8-7da670fbc975",
-      "name": "Polperro, Looe and Whitsand Bay",
-      "status": "needs-review",
-      "reasons": [
-        "Needs subject/location review",
-        "Photograph is more than 5 km from the catalogue destination",
-        "Historical photograph needs review",
-        "Not a suitable JPEG photograph"
-      ]
-    },
-    {
       "id": "398d525c-1506-42d0-a4e3-831a5d12c118",
       "name": "Lawrence House",
       "status": "needs-review",
+      "reviewNote": "Reviewed Commons search, nearby images and the museum category. The category contains three collection paintings, not photographs of Lawrence House. Nearby castle and church images depict other attractions. No verified reusable photograph of the house found in the sources checked.",
+      "evidence": [
+        "https://commons.wikimedia.org/wiki/Category:Lawrence_House_Museum",
+        "https://lawrencehousemuseum.org.uk/discover/lawrence-house-gardens/"
+      ],
       "reasons": [
         "Needs subject/location review",
         "Photograph is more than 5 km from the catalogue destination",
         "Missing compatible licence, author or trusted source URL",
-        "Not a suitable JPEG photograph"
-      ]
-    },
-    {
-      "id": "ba5a9a74-ee3a-4e5f-b0c7-fdeb063c11c9",
-      "name": "Rhosili and South Gower Coast",
-      "status": "needs-review",
-      "reasons": [
-        "Needs subject/location review",
-        "Incidental subject needs review"
-      ]
-    },
-    {
-      "id": "2fb1a6e5-ac9e-40fe-b5df-a7a09ba00141",
-      "name": "Eifionydd",
-      "status": "needs-review",
-      "reasons": [
-        "Needs subject/location review",
-        "Photograph is more than 5 km from the catalogue destination",
-        "Historical photograph needs review",
-        "Not a suitable JPEG photograph",
-        "Missing compatible licence, author or trusted source URL"
-      ]
-    },
-    {
-      "id": "e23f39f7-35bf-4105-973e-b4802a684d72",
-      "name": "Plas Newydd House and Garden",
-      "status": "needs-review",
-      "reasons": [
-        "Needs subject/location review",
-        "Missing compatible licence, author or trusted source URL",
-        "Historical photograph needs review",
-        "Not a suitable JPEG photograph"
-      ]
-    },
-    {
-      "id": "6c660726-5f74-46c0-b0d1-26774e4fdd83",
-      "name": "South Snowdonia",
-      "status": "needs-review",
-      "reasons": [
-        "Needs subject/location review",
-        "Photograph is more than 5 km from the catalogue destination",
-        "Missing compatible licence, author or trusted source URL",
-        "Not a suitable JPEG photograph"
-      ]
-    },
-    {
-      "id": "4cb1ea78-89df-4727-94cc-a73ac27f851f",
-      "name": "Lorna Doone Valley",
-      "status": "needs-review",
-      "reasons": [
-        "Photograph is more than 5 km from the catalogue destination",
-        "Not a suitable JPEG photograph",
-        "Historical photograph needs review",
-        "Needs subject/location review"
-      ]
-    },
-    {
-      "id": "df04d29e-f4b4-472a-b4f1-df2c3ca935b0",
-      "name": "Crownley Woods",
-      "status": "needs-review",
-      "reasons": [
-        "Needs subject/location review",
-        "Missing compatible licence, author or trusted source URL"
-      ]
-    },
-    {
-      "id": "5d828304-492a-4db1-9579-2635259b2756",
-      "name": "Abergwesyn Common",
-      "status": "needs-review",
-      "reasons": [
-        "Photograph is more than 5 km from the catalogue destination",
-        "Needs subject/location review"
-      ]
-    },
-    {
-      "id": "ab063811-c6ac-4c87-803d-e92f0dc62ebc",
-      "name": "Whitehaven Coast",
-      "status": "needs-review",
-      "reasons": [
-        "Photograph is more than 5 km from the catalogue destination",
-        "Not a suitable JPEG photograph",
-        "Needs subject/location review"
-      ]
-    },
-    {
-      "id": "9f27ff42-bdfa-463a-bbb5-5cf3d8daa3b9",
-      "name": "Sandscale Haws National Nature Reserve",
-      "status": "needs-review",
-      "reasons": [
-        "Needs subject/location review",
-        "Missing compatible licence, author or trusted source URL"
-      ]
-    },
-    {
-      "id": "c0c28f77-695c-44de-8055-ce20d640e94d",
-      "name": "Musbury Hill Fort",
-      "status": "needs-review",
-      "reasons": [
-        "Needs subject/location review",
-        "Missing compatible licence, author or trusted source URL"
-      ]
-    },
-    {
-      "id": "16493d07-7826-406b-a1cb-1a6ff2b123b0",
-      "name": "The Hardmans' House",
-      "status": "needs-review",
-      "reasons": [
-        "Needs subject/location review",
-        "Not a suitable JPEG photograph"
-      ]
-    },
-    {
-      "id": "387c91ec-46bf-4aa1-813a-a32a6d26404b",
-      "name": "The Beatles' Childhood Homes",
-      "status": "needs-review",
-      "reasons": [
-        "Needs subject/location review",
-        "Not a suitable JPEG photograph",
-        "Historical photograph needs review",
-        "Missing compatible licence, author or trusted source URL"
-      ]
-    },
-    {
-      "id": "1d5e7c31-1fef-48f1-9ad4-017a73fff8d5",
-      "name": "Mendip Hills",
-      "status": "needs-review",
-      "reasons": [
-        "Not a suitable JPEG photograph",
-        "Missing compatible licence, author or trusted source URL",
-        "Photograph is more than 5 km from the catalogue destination",
-        "Needs subject/location review",
-        "Historical photograph needs review"
-      ]
-    },
-    {
-      "id": "f9501822-2b2a-45d5-b0cc-4fb5aced99ac",
-      "name": "Yorkshire Dales",
-      "status": "needs-review",
-      "reasons": [
-        "Missing compatible licence, author or trusted source URL",
-        "Needs subject/location review",
-        "Photograph is more than 5 km from the catalogue destination",
-        "Not a suitable JPEG photograph"
-      ]
-    },
-    {
-      "id": "854ec2c8-1c12-47eb-8bb2-e104593b9a03",
-      "name": "Letocetum Roman Baths and Museum",
-      "status": "needs-review",
-      "reasons": [
-        "Needs subject/location review",
-        "Photograph is more than 5 km from the catalogue destination",
-        "Missing compatible licence, author or trusted source URL",
-        "Historical photograph needs review",
-        "Not a suitable JPEG photograph"
-      ]
-    },
-    {
-      "id": "8103396d-6a4a-4e84-87ac-cd3a6d41edf6",
-      "name": "Kinder, Edale and the High Peak",
-      "status": "needs-review",
-      "reasons": [
-        "Needs subject/location review",
-        "Missing compatible licence, author or trusted source URL",
-        "Not a suitable JPEG photograph"
-      ]
-    },
-    {
-      "id": "91f07028-5512-466e-b057-f93046d7714e",
-      "name": "The Old Manor",
-      "status": "needs-review",
-      "reasons": [
-        "Missing compatible licence, author or trusted source URL",
-        "Needs subject/location review",
-        "Photograph is more than 5 km from the catalogue destination",
-        "Not a suitable JPEG photograph"
-      ]
-    },
-    {
-      "id": "eeb80c09-4376-48e6-9b7d-e4b547eacc48",
-      "name": "Brancaster Estate",
-      "status": "needs-review",
-      "reasons": [
-        "Needs subject/location review"
-      ]
-    },
-    {
-      "id": "917ea7c0-b9a7-4ac3-ab6b-839388115a5d",
-      "name": "Marker's",
-      "status": "needs-review",
-      "reasons": [
-        "Incidental subject needs review",
-        "Needs subject/location review",
-        "Not a suitable JPEG photograph",
-        "Photograph is more than 5 km from the catalogue destination",
-        "Historical photograph needs review",
-        "Missing compatible licence, author or trusted source URL"
-      ]
-    },
-    {
-      "id": "22bd2779-4059-4270-81c0-0587d070a7b7",
-      "name": "Ynys Môn Coast and Countryside",
-      "status": "needs-review",
-      "reasons": [
-        "Needs subject/location review",
-        "Photograph is more than 5 km from the catalogue destination",
-        "Missing compatible licence, author or trusted source URL",
-        "Historical photograph needs review",
-        "Not a suitable JPEG photograph"
-      ]
-    },
-    {
-      "id": "b62c81bc-4a23-4ea9-a114-afced34b4e64",
-      "name": "The Children's Country House at Sudbury",
-      "status": "needs-review",
-      "reasons": [
-        "Needs subject/location review",
-        "Not a suitable JPEG photograph"
-      ]
-    },
-    {
-      "id": "bb22fc55-8a9c-4803-b737-5ec0a681466b",
-      "name": "New Forest Northern Commons",
-      "status": "needs-review",
-      "reasons": [
-        "Needs subject/location review",
-        "Not a suitable JPEG photograph"
-      ]
-    },
-    {
-      "id": "706e912e-025f-4fa7-a591-a2f8c2ca8f3b",
-      "name": "Northumberland Coast",
-      "status": "needs-review",
-      "reasons": [
-        "Photograph is more than 5 km from the catalogue destination",
-        "Needs subject/location review",
-        "Missing compatible licence, author or trusted source URL",
-        "Not a suitable JPEG photograph"
-      ]
-    },
-    {
-      "id": "08771ce4-94c2-4a12-8f60-a404f47fe58f",
-      "name": "Buscot Old Parsonage",
-      "status": "needs-review",
-      "reasons": [
-        "Needs subject/location review"
-      ]
-    },
-    {
-      "id": "c58bf368-60fb-40c4-a72f-aa305e517d77",
-      "name": "Mottistone Gardens and Estate",
-      "status": "needs-review",
-      "reasons": [
-        "Needs subject/location review",
-        "Missing compatible licence, author or trusted source URL"
-      ]
-    },
-    {
-      "id": "462da5aa-9d20-479c-a92a-f844ff84f445",
-      "name": "Priory Cottage",
-      "status": "needs-review",
-      "reasons": [
-        "Photograph is more than 5 km from the catalogue destination",
-        "Needs subject/location review",
-        "Historical photograph needs review",
-        "Not a suitable JPEG photograph",
-        "Missing compatible licence, author or trusted source URL"
-      ]
-    },
-    {
-      "id": "366ee6b4-b7ac-4f8d-a61f-0aadc581b094",
-      "name": "Curbridge Nature Reserve",
-      "status": "needs-review",
-      "reasons": [
-        "Needs subject/location review"
-      ]
-    },
-    {
-      "id": "e6991207-328c-449c-ad2c-56e45f41ad50",
-      "name": "Ventnor Downs",
-      "status": "needs-review",
-      "reasons": [
-        "Needs subject/location review",
-        "Not a suitable JPEG photograph",
-        "Missing compatible licence, author or trusted source URL"
-      ]
-    },
-    {
-      "id": "658fc379-17be-4bfe-90a4-569cfe769e26",
-      "name": "Chilterns Countryside",
-      "status": "needs-review",
-      "reasons": [
-        "Needs subject/location review",
-        "Photograph is more than 5 km from the catalogue destination"
-      ]
-    },
-    {
-      "id": "d69bdb31-d640-43fd-bb1e-1b9479eb94d0",
-      "name": "Ludshott Commons",
-      "status": "needs-review",
-      "reasons": [
-        "Needs subject/location review",
-        "Not a suitable JPEG photograph"
-      ]
-    },
-    {
-      "id": "f7d0d958-e989-42fa-9b92-b784b5c91290",
-      "name": "Woolbeding Countryside",
-      "status": "needs-review",
-      "reasons": [
-        "Needs subject/location review",
-        "Not a suitable JPEG photograph"
-      ]
-    },
-    {
-      "id": "9d2d83e6-1649-4e7a-946b-ccaeef8c651c",
-      "name": "Dorneywood Garden",
-      "status": "needs-review",
-      "reasons": [
-        "Missing compatible licence, author or trusted source URL",
-        "Needs subject/location review"
-      ]
-    },
-    {
-      "id": "0e3a4f5d-5e03-425c-abcf-fd6a6d671834",
-      "name": "Yorkshire Coast",
-      "status": "needs-review",
-      "reasons": [
-        "Missing compatible licence, author or trusted source URL",
-        "Historical photograph needs review",
-        "Needs subject/location review",
-        "Photograph is more than 5 km from the catalogue destination",
-        "Not a suitable JPEG photograph"
-      ]
-    },
-    {
-      "id": "f8d13899-ab13-40e8-a2c7-42c80aeef189",
-      "name": "The Homewood",
-      "status": "needs-review",
-      "reasons": [
-        "Needs subject/location review",
-        "Not a suitable JPEG photograph",
-        "Missing compatible licence, author or trusted source URL",
-        "Photograph is more than 5 km from the catalogue destination",
-        "Historical photograph needs review"
-      ]
-    },
-    {
-      "id": "2551fb36-996a-41ae-b588-7d9409e9a9f3",
-      "name": "Gunby Hall Estate: Monksthorpe Chapel",
-      "status": "needs-review",
-      "reasons": [
-        "Needs subject/location review",
         "Not a suitable JPEG photograph"
       ]
     },
@@ -427,60 +30,26 @@
       "id": "58f6bee7-0aaf-4c11-bf7e-1013d5250091",
       "name": "The Royal Oak Foundation Conservation Studio",
       "status": "needs-review",
+      "reviewNote": "The official page identifies the studio in a medieval barn accessed via the Brewhouse courtyard. Reviewed Commons studio/barn searches and nearby Knole photographs; those show the main house, park or courtyards without identifying the studio. Official photographs have National Trust credits, with no reusable licence verified. No verified reusable studio photograph found.",
+      "evidence": [
+        "https://www.nationaltrust.org.uk/visit/kent/the-royal-oak-foundation-conservation-studio/what-to-see-at-royal-oak-foundation-conservation-studio"
+      ],
       "reasons": [
         "Needs subject/location review",
         "Historical photograph needs review"
       ]
     },
     {
-      "id": "ab64fba8-5da5-46c2-b3e5-4ce003c5f010",
-      "name": "Oxburgh Estate",
-      "status": "needs-review",
-      "reasons": [
-        "Needs subject/location review",
-        "Missing compatible licence, author or trusted source URL",
-        "Historical photograph needs review",
-        "Not a suitable JPEG photograph"
-      ]
-    },
-    {
       "id": "fb14e848-f903-4a7a-94b4-9dd9fefde5c6",
       "name": "The Textile Conservation Studio",
       "status": "needs-review",
+      "reviewNote": "The official page locates the studio off New Road in Oulton Street, Norfolk. Reviewed studio-specific and nearby searches; results depict unrelated RAF buildings, village houses or conservation work elsewhere. Photos exist on the official site and a visitor blog, but no reusable licence for those photos was verified. No verified reusable studio photograph found.",
+      "evidence": [
+        "https://www.nationaltrust.org.uk/visit/norfolk/the-textile-conservation-studio",
+        "https://www.graceleesmaffei.org/home/2020/1/28/behind-the-scenes-at-the-textile-conservation-studio"
+      ],
       "reasons": [
         "Needs subject/location review"
-      ]
-    },
-    {
-      "id": "5987c9f5-bdfb-47bd-bdc4-80431d48e003",
-      "name": "Orford Ness National Nature Reserve",
-      "status": "needs-review",
-      "reasons": [
-        "Missing compatible licence, author or trusted source URL",
-        "Needs subject/location review",
-        "Historical photograph needs review",
-        "Photograph is more than 5 km from the catalogue destination"
-      ]
-    },
-    {
-      "id": "7f9c9105-8d70-4696-938a-fcd72d987a7f",
-      "name": "Gray's Printing Press",
-      "status": "needs-review",
-      "reasons": [
-        "Needs subject/location review"
-      ]
-    },
-    {
-      "id": "490e78f6-0089-4a9d-88cb-3115474b3a1b",
-      "name": "Heritage and Rural Skills Centre",
-      "status": "needs-review",
-      "reasons": [
-        "Needs subject/location review",
-        "Historical photograph needs review",
-        "Not a suitable JPEG photograph",
-        "Photograph is more than 5 km from the catalogue destination",
-        "File has additional restrictions requiring review",
-        "Missing compatible licence, author or trusted source URL"
       ]
     }
   ]

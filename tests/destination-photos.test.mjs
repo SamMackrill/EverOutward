@@ -4,7 +4,7 @@ import { mkdtemp, mkdir, writeFile, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { execFileSync } from "node:child_process";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import {
   assessCandidate,
   metadataText,
@@ -152,6 +152,54 @@ test("only downloads from trusted HTTPS hosts and creates destination-only searc
       Copyrighted: { value: "True" },
     }),
     null,
+  );
+  const aliased = {
+    ...place,
+    name: "Lyveden Estate",
+    photoAliases: ["Lyveden New Bield"],
+  };
+  assert.equal(assessCandidate(aliased, page()).accepted, true);
+  assert.match(
+    searchUrl(aliased).searchParams.get("gsrsearch"),
+    /Lyveden New Bield/,
+  );
+  assert.equal(
+    assessCandidate(aliased, page({ GPSLatitude: { value: "51.5" } })).accepted,
+    false,
+  );
+});
+
+test("only a reviewed selection can supply a missing photographer credit", () => {
+  const missing = page({ Artist: { value: "" } });
+  assert.equal(
+    assessCandidate(place, missing, { reviewedAuthor: "Verified author" })
+      .accepted,
+    false,
+  );
+  assert.equal(
+    assessCandidate(place, missing, {
+      reviewed: true,
+      reviewedAuthor: "Verified author",
+    }).author,
+    "Verified author",
+  );
+  assert.equal(
+    assessCandidate(place, page(), {
+      reviewed: true,
+      reviewedAuthor: "Replacement author",
+    }).author,
+    "Keith & Jane",
+  );
+  assert.equal(
+    assessCandidate(
+      place,
+      page({
+        Artist: { value: "" },
+        LicenseShortName: { value: "All rights reserved" },
+      }),
+      { reviewed: true, reviewedAuthor: "Verified author" },
+    ).accepted,
+    false,
   );
 });
 test("bounds photo downloads and rejects HTML or corrupt JPEG responses", async () => {
@@ -336,6 +384,85 @@ test("resumes cached searches, preserves existing editorial content and reports 
       exitedPid,
     );
     assert.doesNotThrow(run);
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
+test("imports the checked-in exact match with its alt text and verified missing credit", async () => {
+  const root = await mkdtemp(join(tmpdir(), "everoutward-photo-match-"));
+  const script = fileURLToPath(
+    new URL("../scripts/import-destination-photos.mjs", import.meta.url),
+  );
+  try {
+    for (const path of [
+      "public/data",
+      "scripts",
+      "src/assets/destinations",
+      ".local/destination-photos",
+    ])
+      await mkdir(join(root, path), { recursive: true });
+    const chosen = page({ Artist: { value: "" } });
+    delete chosen.imageinfo[0].extmetadata.GPSLatitude;
+    delete chosen.imageinfo[0].extmetadata.GPSLongitude;
+    const unrelated = structuredClone(chosen);
+    unrelated.title = "File:Lyveden neighbouring house.jpg";
+    await writeFile(
+      join(root, "public/data/places.json"),
+      JSON.stringify({ places: [place] }),
+    );
+    await writeFile(
+      join(root, "scripts/place-details.json"),
+      JSON.stringify({ lyveden: { description: "Reviewed editorial text" } }),
+    );
+    await writeFile(
+      join(root, "scripts/destination-photo-matches.json"),
+      JSON.stringify({
+        lyveden: {
+          fileTitle: chosen.title,
+          alt: "The unfinished Lyveden New Bield",
+          aliases: ["Lyveden New Bield"],
+          author: "Verified photographer",
+          evidence: [chosen.imageinfo[0].descriptionurl],
+        },
+      }),
+    );
+    // Source responses and download bytes are fixtures; no real network or journal.
+    const preload = join(root, "source-fixture.mjs");
+    await writeFile(
+      preload,
+      `globalThis.fetch = async url => new URL(url).hostname === 'commons.wikimedia.org' ? new Response(${JSON.stringify(JSON.stringify({ query: { pages: [unrelated, chosen] } }))}, { headers: { 'content-type': 'application/json' } }) : new Response(Uint8Array.from([255,216,255,217]), { headers: { 'content-type': 'image/jpeg' } });`,
+    );
+    execFileSync(
+      process.execPath,
+      ["--import", pathToFileURL(preload).href, script],
+      {
+        cwd: root,
+        stdio: ["ignore", "pipe", "pipe"],
+      },
+    );
+    const details = JSON.parse(
+      await readFile(join(root, "scripts/place-details.json")),
+    );
+    assert.equal(details.lyveden.description, "Reviewed editorial text");
+    assert.equal(details.lyveden.imageAuthor, "Verified photographer");
+    assert.equal(details.lyveden.imageAlt, "The unfinished Lyveden New Bield");
+    const report = JSON.parse(
+      await readFile(join(root, ".local/destination-photos/report.json")),
+    );
+    assert.equal(report.places.lyveden.selected, chosen.title);
+    assert.equal(
+      report.places.lyveden.candidates.find(
+        (c) => c.fileTitle === unrelated.title,
+      ).accepted,
+      false,
+    );
+    assert.equal(
+      JSON.parse(
+        await readFile(join(root, "scripts/destination-photo-coverage.json")),
+      ).summary.missing,
+      0,
+    );
   } finally {
     await rm(root, { recursive: true, force: true });
   }
