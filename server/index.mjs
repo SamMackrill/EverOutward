@@ -12,7 +12,13 @@ try {
   initialHome = JSON.parse(readFileSync(".local/initial-home.json", "utf8"));
 } catch {}
 // Access to this local server grants editing access without a password.
-const app = createApp({ store, places, initialHome, localOwner: true });
+const app = createApp({
+  store,
+  places,
+  initialHome,
+  localOwner: true,
+  temporaryPreview: process.env.TEMPORARY_PREVIEW === "1",
+});
 // Checks resume from the saved timestamps; only the local server contacts NT.
 const stopAccessChecks = app.locals.accessMonitor.start();
 process.once("exit", stopAccessChecks);

@@ -3,6 +3,7 @@ import {
   ChevronRight,
   Globe,
   LoaderCircle,
+  LockKeyhole,
   Plus,
   TriangleAlert,
 } from "lucide-react";
@@ -116,6 +117,17 @@ function PublishPill({
   changes: number;
   publisher: Publisher;
 }) {
+  if (!publisher.available)
+    return (
+      <button
+        className="publish-pill unavailable"
+        disabled
+        title={publisher.disabledReason}
+      >
+        <LockKeyhole size={15} aria-hidden="true" />
+        Publishing disabled · Preview
+      </button>
+    );
   if (publisher.busy)
     return (
       <span className="publish-pill busy" role="status">
@@ -125,7 +137,11 @@ function PublishPill({
     );
   if (publisher.failed)
     return (
-      <button className="publish-pill failed" onClick={publisher.publish}>
+      <button
+        className="publish-pill failed"
+        onClick={publisher.publish}
+        title={publisher.error}
+      >
         <TriangleAlert size={15} aria-hidden="true" />
         Publish failed · Retry
       </button>

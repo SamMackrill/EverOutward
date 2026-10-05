@@ -118,6 +118,8 @@ export type Comment = {
   createdAt: string;
 };
 export type Session = {
+  temporaryPreview?: boolean;
+  publishing?: { enabled: boolean; disabledReason: string | null };
   localOwner?: boolean;
   local: boolean;
   owner: boolean;

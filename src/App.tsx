@@ -425,7 +425,14 @@ export default function App() {
       "Visit saved to your local journal. Publish when you’re ready to share.",
     );
   };
-  const publisher = usePublish(session.owner, reload);
+  const publisher = usePublish(
+    session.owner,
+    reload,
+    session.publishing?.enabled === false
+      ? session.publishing.disabledReason ||
+          "Publishing is disabled in this workspace."
+      : "",
+  );
   /** Places and people the visit form offers first. */
   const editorSuggestions = useMemo(() => {
     const byId = new globalThis.Map(places.map((p) => [p.id, p]));
@@ -481,6 +488,15 @@ export default function App() {
       >
         Skip to content
       </a>
+      {session.temporaryPreview && (
+        <aside className="preview-notice" aria-label="Temporary preview">
+          <strong>Temporary preview · Publishing disabled</strong>
+          <span>
+            Changes here stay in this preview. Publish permanent changes from
+            your usual journal workspace.
+          </span>
+        </aside>
+      )}
       <header className="site-header">
         <Link className="brand" to="map">
           <img src="/icons/gate.svg" alt="" />

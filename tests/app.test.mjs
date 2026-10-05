@@ -120,12 +120,15 @@ for (const passwordConfigured of [false, true]) {
     });
     const base = `http://127.0.0.1:${server.address().port}`;
     const session = await fetch(base + "/api/session");
-    assert.deepEqual(await session.json(), {
+    const { temporaryPreview, publishing, ...auth } = await session.json();
+    assert.deepEqual(auth, {
       local: true,
       localOwner: true,
       owner: true,
       passwordConfigured,
     });
+    assert.equal(temporaryPreview, true);
+    assert.equal(publishing.enabled, false);
     assert.equal(session.headers.get("set-cookie"), null);
     const headers = {
       "Content-Type": "application/json",

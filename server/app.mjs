@@ -139,6 +139,7 @@ export function createApp({
   initialHome = null,
   enableCloud = true,
   localOwner = false,
+  temporaryPreview = false,
   publisher,
   autoPublish = enableCloud,
   routeFetcher = fetch,
@@ -147,6 +148,14 @@ export function createApp({
   const app = express(),
     sessions = new Map(),
     limits = new Map();
+  const preview =
+    temporaryPreview || (!publisher && store.filename === ":memory:");
+  const publishing = {
+    enabled: !preview,
+    disabledReason: preview
+      ? "Publishing is disabled in this temporary preview. Changes here stay in this preview; publish permanent changes from your usual journal workspace."
+      : null,
+  };
   const placeIds = new Set(places.map((p) => p.id));
   const cataloguePlaces = places;
   const accessMonitor = createAccessMonitor({
@@ -164,9 +173,11 @@ export function createApp({
   )
     store.put("settings", "home", initialHome);
   migrateHomes(store);
-  const publishJobs = publisher || createPublishJobs({ store });
+  const publishJobs = preview
+    ? { status: () => null }
+    : publisher || createPublishJobs({ store });
   const publishCorrection = () =>
-    autoPublish
+    autoPublish && publishing.enabled
       ? publishJobs.enqueue
         ? publishJobs.enqueue()
         : publishJobs.start()
@@ -241,6 +252,8 @@ export function createApp({
       localOwner,
       owner: req.owner,
       passwordConfigured: !!store.get("settings", "owner"),
+      temporaryPreview: preview,
+      publishing,
     }),
   );
   app.post("/api/login", (req, res) => {
@@ -959,6 +972,8 @@ export function createApp({
     },
   );
   app.post("/api/publish", owner, (req, res) => {
+    if (!publishing.enabled)
+      return res.status(409).json({ error: publishing.disabledReason });
     if (routing)
       return res.status(409).json({
         error: "Wait for the distance calculation to finish before publishing.",
