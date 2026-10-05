@@ -1,4 +1,5 @@
 import { hasLimitedAccess } from "./access-rules.mjs";
+import { placesForHome } from "./home-destinations.mjs";
 
 export function haversine(a, b) {
   const rad = (value) => (value * Math.PI) / 180;
@@ -20,14 +21,18 @@ export function routeMatchesPlace(route, place) {
 export const isReviewedRoute = (route) =>
   !!route?.reviewed || /^Owner-(entered|verified)/.test(route?.source || "");
 export function outward(places, visits, home, routes = []) {
+  places = placesForHome(places, home);
   const byId = new Map(places.map((p) => [p.id, p]));
-  const visited = new Set(visits.map((v) => v.placeId));
+  const visited = new Set(
+    visits.filter((v) => byId.has(v.placeId)).map((v) => v.placeId),
+  );
   const routeMap = new Map(
     routes
       .filter(
         (r) =>
           r.homeVersion === home?.version &&
           (!home?.id || r.homeId === home.id) &&
+          byId.has(r.placeId) &&
           routeMatchesPlace(r, byId.get(r.placeId)),
       )
       .map((r) => [r.placeId, r]),
@@ -122,6 +127,7 @@ function confirmedVisitRange(places, visits, centre, candidates, allVisited) {
 
 export function publicRange(places, visits, home, journey) {
   if (!home) return null;
+  places = placesForHome(places, home);
   const centre = {
     lat: Math.round(home.lat * 10) / 10,
     lng: Math.round(home.lng * 10) / 10,

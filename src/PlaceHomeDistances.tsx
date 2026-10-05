@@ -1,5 +1,6 @@
 import { Compass, Route as RouteIcon } from "lucide-react";
 import { haversine } from "../server/domain.mjs";
+import { placeMatchesHome } from "../server/home-destinations.mjs";
 import { duration, miles } from "./format";
 import { WalkingEstimate } from "./shared";
 import type { HomeJourney, Place } from "./types";
@@ -12,13 +13,16 @@ export default function PlaceHomeDistances({
   place: Place;
   journeys: HomeJourney[];
 }) {
-  if (!journeys.length) return null;
+  const eligibleJourneys = journeys.filter((home) =>
+    placeMatchesHome(place, home),
+  );
+  if (!eligibleJourneys.length) return null;
   return (
     <section
       className="place-home-distances"
       aria-label="Distances and next to visit positions"
     >
-      {journeys.map((home) => {
+      {eligibleJourneys.map((home) => {
         const destination = home.destinations?.find(
           (entry) => entry.placeId === place.id,
         );

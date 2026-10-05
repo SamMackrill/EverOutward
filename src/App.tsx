@@ -43,6 +43,7 @@ import PlaceHomeDistances from "./PlaceHomeDistances";
 import { PhotoCredit, Stars } from "./shared";
 import { date, shortDate } from "./format";
 import { enrichCatalogue } from "./catalogue";
+import { placesForHome } from "../server/home-destinations.mjs";
 import * as api from "./api";
 import {
   haversine,
@@ -339,6 +340,11 @@ export default function App() {
     () => new Set(visits.map((v) => v.placeId)),
     [visits],
   );
+  const activeJourney = homeJourneys.find((h) => h.id === activeHomeId);
+  const homePlaces = useMemo(
+    () => placesForHome(places, home || activeJourney) as Place[],
+    [places, home, activeJourney],
+  );
   const progress = useMemo(() => {
     const result = outward(places, visits, home, routes);
     if (!session.owner) {
@@ -372,22 +378,22 @@ export default function App() {
       : publicRange;
   const placeList = useMemo(
     () =>
-      places.filter((p) =>
+      homePlaces.filter((p) =>
         `${p.name} ${p.region}`
           .toLowerCase()
           .includes(placeQuery.toLowerCase()),
       ),
-    [places, placeQuery],
+    [homePlaces, placeQuery],
   );
   const nearby = useMemo(
     () =>
       home
-        ? [...places]
+        ? [...homePlaces]
             .filter((p) => !visited.has(p.id))
             .sort((a, b) => haversine(home, a) - haversine(home, b))
             .slice(0, 5)
         : [],
-    [places, visited, home],
+    [homePlaces, visited, home],
   );
   const currentVisit = view.startsWith("visit/")
     ? visits.find((v) => v.id === view.slice(6))
@@ -596,8 +602,8 @@ export default function App() {
         }
         nextGate={progress.ranked[0]}
         progress={{
-          visited: visited.size,
-          total: places.length,
+          visited: homePlaces.filter((p) => visited.has(p.id)).length,
+          total: homePlaces.length,
           days: visits.length,
           range: mapRange,
         }}
@@ -629,7 +635,7 @@ export default function App() {
           )}
           <MapPanel
             hidden={view !== "map"}
-            places={places}
+            places={homePlaces}
             visits={visits}
             routes={routes}
             visited={visited}

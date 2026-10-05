@@ -78,6 +78,7 @@ export type Home = {
   archivedAt?: string | null;
 };
 export type HomeJourney = {
+  destinationScope?: "northern-ireland" | "great-britain";
   reviewedRoutes?: Route[];
   destinations?: (QueueEntry & { position: number })[];
   id: string;

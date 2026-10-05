@@ -2,6 +2,8 @@
 
 A local owner workspace and a public National Trust journal. The next five places are ordered by **straight-line distance from the current home**, using the same catalogue coordinates as the discovery circle. Saved driving distances and times are separate travel estimates and never change this order. Each home has its own discovery circle, using shared visit progress: a filled, semi-transparent circle reaches the outermost visited place geographically inside that home's nearest unvisited destination with ordinary access. Reviewed special-open-day places do not bound the circle. Visits farther away do not enlarge that local challenge range. Missing or outdated driving estimates do not hold up the queue or circle. When all ordinary-access places are visited, the circle reaches the farthest visit.
 
+**Ardglass** has a separate Northern Ireland challenge to avoid Irish Sea crossings. Homes whose name includes Ardglass show only catalogue places with the **Northern Ireland** region; all other homes exclude those places. This applies to the map, place lists, next five, discovery circles, distance reviews and route calculations, locally and on the next publish. The shared visit journal remains complete. Existing saved routes are retained, but each home's totals and published distances include only its eligible destinations.
+
 ## Run locally
 
 Use Node.js 24 or newer.
