@@ -70,7 +70,9 @@ function DestinationPhoto({
       ) : (
         <span className="destination-no-photo">
           <Camera size={24} />
-          {place.image ? "Photo could not load · Retry" : "Photo to follow"}
+          {place.image
+            ? "Photo could not load · Retry"
+            : "No destination photo yet"}
         </span>
       )}
       {children}

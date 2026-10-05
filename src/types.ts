@@ -15,6 +15,8 @@ export type Place = {
   imageLicence?: string;
   imageLicenceUrl?: string;
   imageAlt?: string;
+  imageAttribution?: string;
+  imageChanges?: string;
   hours: string;
   entranceVerified: boolean;
 };

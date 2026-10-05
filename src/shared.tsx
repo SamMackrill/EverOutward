@@ -110,6 +110,8 @@ export function PhotoCredit({ place }: { place: Place }) {
       <a href={place.imageLicenceUrl} target="_blank" rel="noreferrer">
         {place.imageLicence}
       </a>
+      {place.imageAttribution && <> · {place.imageAttribution}</>}
+      {place.imageChanges && <> · {place.imageChanges}</>}
     </p>
   ) : null;
 }
