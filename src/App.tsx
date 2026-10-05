@@ -834,10 +834,9 @@ export default function App() {
               owner={session.owner}
               onChange={setAccessDates}
             />
-            <p>
-              {selected.description ||
-                `Explore this National Trust place in ${selected.region}. Check the official visitor information for facilities, access and seasonal arrangements.`}
-            </p>
+            {(selected.description || selected.summary) && (
+              <p>{selected.description || selected.summary}</p>
+            )}
             <div className="info-row">
               <Clock3 size={18} />
               <span>

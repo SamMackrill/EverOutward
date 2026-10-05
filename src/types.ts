@@ -12,6 +12,7 @@ export type Place = {
   lat: number;
   lng: number;
   description: string;
+  summary?: string;
   officialUrl: string;
   image: string;
   imageAuthor?: string;
