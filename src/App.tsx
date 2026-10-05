@@ -212,7 +212,9 @@ export default function App() {
     const visit = next.startsWith("visit/")
       ? visits.find((v) => v.id === next.slice(6))
       : null;
-    return visit?.sharePath || `/#${next}`;
+    return (
+      visit?.sharePath || `${location.pathname === "/" ? "" : "/"}#${next}`
+    );
   };
   const navigate = (next: string) => {
     if (view === "timeline" && next.startsWith("visit/")) {
