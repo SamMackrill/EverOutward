@@ -350,11 +350,15 @@ export default function MapView({
         ?.queue.find((entry) => entry.placeId === p.id);
       const geographicMetres = home
         ? haversine(home, p)
-        : queueEntry?.geographicMetres;
+        : range
+          ? haversine(range.centre, p)
+          : queueEntry?.geographicMetres;
+      const geographicApproximate =
+        !home && !!(range?.approximate || queueEntry?.geographicApproximate);
       const geographic = document.createElement("small");
       geographic.textContent =
         typeof geographicMetres === "number"
-          ? `${!home && queueEntry?.geographicApproximate ? "≈" : ""}${(geographicMetres / 1609.344).toFixed(1)} mi straight line`
+          ? `${geographicApproximate ? "≈" : ""}${(geographicMetres / 1609.344).toFixed(1)} mi straight line`
           : "Straight-line distance unavailable";
       const route = document.createElement("small");
       route.textContent = r
@@ -518,6 +522,7 @@ export default function MapView({
     range?.radius,
     range?.centre.lat,
     range?.centre.lng,
+    range?.approximate,
     theme,
     selectedId,
   ]);

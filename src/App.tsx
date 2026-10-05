@@ -358,7 +358,12 @@ export default function App() {
   const selectedGeographicMetres =
     home && selected
       ? haversine(home, selected)
-      : selectedQueueEntry?.geographicMetres;
+      : selected && publicRange
+        ? haversine(publicRange.centre, selected)
+        : selectedQueueEntry?.geographicMetres;
+  const selectedGeographicApproximate =
+    !home &&
+    !!(publicRange?.approximate || selectedQueueEntry?.geographicApproximate);
   const mapRange: VisitRange | null =
     session.owner && home
       ? {
@@ -842,10 +847,10 @@ export default function App() {
               <div className="info-row">
                 <Compass size={18} />
                 <span>
-                  {selectedQueueEntry?.geographicApproximate ? "≈" : ""}
+                  {selectedGeographicApproximate ? "≈" : ""}
                   {miles(selectedGeographicMetres)} mi straight line from home
                   <small>
-                    {selectedQueueEntry?.geographicApproximate
+                    {selectedGeographicApproximate
                       ? "Approximate public distance; order is saved from the exact home location."
                       : "Straight-line distance determines the next-five order and discovery circle."}
                   </small>

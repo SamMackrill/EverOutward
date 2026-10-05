@@ -2,10 +2,14 @@ import "dotenv/config";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import express from "express";
-import { createStore } from "./store.mjs";
+import { createStore, createPreviewStore } from "./store.mjs";
 import { createApp } from "./app.mjs";
 
-const store = createStore(resolve(".local/everoutward.sqlite"));
+const temporaryPreview = process.env.TEMPORARY_PREVIEW === "1";
+const databasePath = resolve(".local/everoutward.sqlite");
+const store = temporaryPreview
+  ? createPreviewStore(databasePath)
+  : createStore(databasePath);
 const { places } = JSON.parse(readFileSync("public/data/places.json", "utf8"));
 let initialHome = null;
 try {
@@ -17,7 +21,7 @@ const app = createApp({
   places,
   initialHome,
   localOwner: true,
-  temporaryPreview: process.env.TEMPORARY_PREVIEW === "1",
+  temporaryPreview,
 });
 // Checks resume from the saved timestamps; only the local server contacts NT.
 const stopAccessChecks = app.locals.accessMonitor.start();

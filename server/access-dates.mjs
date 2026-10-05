@@ -129,22 +129,20 @@ async function officialPage(url, fetcher) {
   throw new Error("The official page redirected too many times.");
 }
 
-/** Persist successes, failures and unread dates across browser/server restarts. */
-export function createAccessMonitor({
-  store,
+/** Sanitise a captured set of calendar records for API responses and publishing. */
+export function accessEntries(
+  savedEntries,
   places,
-  fetcher = fetch,
-  now = () => new Date(),
-  rules = limitedAccess,
-}) {
-  const watched = Object.entries(rules).filter(([id]) =>
-    places.some((p) => p.id === id),
+  { now = new Date(), rules = limitedAccess } = {},
+) {
+  const today = accessToday(now);
+  const savedById = new Map(
+    savedEntries.map((entry) => [entry.placeId, entry]),
   );
-  let running = null;
-  const entries = () => {
-    const today = accessToday(now());
-    return watched.map(([placeId, rule]) => {
-      const saved = store.get("accessDates", placeId) || {};
+  return Object.entries(rules)
+    .filter(([id]) => places.some((p) => p.id === id))
+    .map(([placeId, rule]) => {
+      const saved = savedById.get(placeId) || {};
       return {
         placeId,
         source: rule.source,
@@ -160,7 +158,22 @@ export function createAccessMonitor({
         error: saved.error || null,
       };
     });
-  };
+}
+
+/** Persist successes, failures and unread dates across browser/server restarts. */
+export function createAccessMonitor({
+  store,
+  places,
+  fetcher = fetch,
+  now = () => new Date(),
+  rules = limitedAccess,
+}) {
+  const watched = Object.entries(rules).filter(([id]) =>
+    places.some((p) => p.id === id),
+  );
+  let running = null;
+  const entries = () =>
+    accessEntries(store.list("accessDates"), places, { now: now(), rules });
   const check = (force = false) => {
     if (running) return running;
     running = (async () => {

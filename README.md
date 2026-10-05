@@ -15,7 +15,7 @@ Open **http://127.0.0.1:5173**. The local server opens with full owner access au
 
 For a production build served locally, run `npm run build` and `npm start`, then open http://127.0.0.1:3001. Use an HTTP URL in T3's browser preview, rather than its HTML-file preview.
 
-Temporary previews show a persistent **Temporary preview · Publishing disabled** notice. Both Publish buttons are disabled, with an explanation in Workspace; use the usual journal workspace for permanent changes. Preview servers must pass `temporaryPreview: true` to `createApp`, or set `TEMPORARY_PREVIEW=1` when using `server/index.mjs`. An in-memory journal without a custom publisher is recognised automatically. Preview mode also blocks manual and automatic uploads on the server and hides copied publishing jobs. Ordinary saved journals keep publishing enabled. For an actual publish failure, Workspace shows the full error below the Publish button; hovering over **Publish failed · Retry** also shows the reason.
+Temporary previews show a persistent **Temporary preview · Publishing disabled** notice. Both Publish buttons are disabled, with an explanation in Workspace; use the usual journal workspace for permanent changes. With `TEMPORARY_PREVIEW=1`, `server/index.mjs` reads the saved journal into a separate in-memory store without editing the original; preview edits disappear when that server restarts. Custom preview servers must similarly use `createPreviewStore` or another isolated store and pass `temporaryPreview: true` to `createApp`. An in-memory journal without a custom publisher is recognised automatically. Preview mode also blocks manual and automatic uploads on the server and hides copied publishing jobs. Ordinary saved journals keep publishing enabled. For an actual publish failure, Workspace shows the full error below the Publish button; hovering over **Publish failed · Retry** also shows the reason.
 
 ## Use the journal
 
@@ -26,7 +26,7 @@ Temporary previews show a persistent **Temporary preview · Publishing disabled*
 - Guest comments require a name and text, appear immediately, and belong either to the visit or an individual photo. Remove public comments from that visit in the local owner workspace.
 - Light, Dark and System themes persist in the browser. The original kissing-gate artwork and its favicon, Apple, app and maskable exports are in `public/icons`.
 
-## The next five by driving distance
+## The next five by straight-line distance
 
 ### Home locations and trip origins
 
