@@ -1,6 +1,6 @@
 /** Ardglass is a separate challenge because mainland trips cross the Irish Sea. */
 export function homeDestinationScope(home) {
-  return /\bardglass\b/i.test(home?.label || "")
+  return /ardglass/i.test(home?.label || "")
     ? "northern-ireland"
     : "great-britain";
 }

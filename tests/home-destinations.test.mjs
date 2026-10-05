@@ -49,10 +49,9 @@ test("Ardglass gets the 29 NI catalogue sites and every other home excludes them
     assert.ok(gb.every((place) => place.region !== "Northern Ireland"));
   }
   assert.equal(placesForHome(catalogue, null).length, catalogue.length);
-  assert.deepEqual(
-    placesForHome(places, { label: " ARDGLASS " }),
-    places.slice(0, 2),
-  );
+  for (const label of [" ARDGLASS ", "Ardglass_Annex", "ArdglassHouse"]) {
+    assert.deepEqual(placesForHome(places, { label }), places.slice(0, 2));
+  }
 });
 
 test("private and public home lists, reviewed routes and circles stay on their side of the sea", () => {
