@@ -279,6 +279,7 @@ export function createApp({
     const home = currentHome(store);
     const homes = liveHomes(store);
     const allHomes = store.list("homes");
+    const publication = store.get("settings", "lastPublication");
     const routes = store.list("routes");
     const shared = publicJournal(
       places,
@@ -301,6 +302,14 @@ export function createApp({
       placeOverrides: publicPlaceOverrides(store.list("placeCorrections")),
       visits: visits.map((visit) => ({
         ...visit,
+        shareUrl:
+          visit.published &&
+          publication?.visits?.[visit.id] &&
+          publication.siteUrl &&
+          publication.sharePaths?.[visit.id]
+            ? new URL(publication.sharePaths[visit.id], publication.siteUrl)
+                .href
+            : undefined,
         startingHomeLabel: publicVisit(visit, allHomes).startingHomeLabel,
         publicationStatus: visitPublicationStatus(
           visit,

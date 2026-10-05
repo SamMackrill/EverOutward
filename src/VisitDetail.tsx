@@ -72,13 +72,20 @@ export default function VisitDetail({
   const origin = visit.startingHomeLabel || visit.startingHomeSnapshot?.label;
   /** Opens the share sheet, or copies the visit link where sharing isn't available. */
   const share = async () => {
-    const title = document.title;
+    const title = `${place.name} · Ever Outward`;
+    const url = owner
+      ? visit.shareUrl
+      : new URL(visit.sharePath || `/#visit/${visit.id}`, location.origin).href;
+    if (!url) {
+      setShared("Publish this visit to share");
+      return;
+    }
     try {
       if (navigator.share) {
-        await navigator.share({ title, url: location.href });
+        await navigator.share({ title, url });
         return;
       }
-      await navigator.clipboard.writeText(location.href);
+      await navigator.clipboard.writeText(url);
       setShared("Link copied");
     } catch (e) {
       if ((e as Error).name !== "AbortError") setShared("Copy failed");

@@ -10,6 +10,7 @@ import { cloudRequest, siteState } from "../server/herenow.mjs";
 import { createStore } from "../server/store.mjs";
 import { migrateHomes, publicJournal } from "../server/homes.mjs";
 import { sortVisits } from "../server/domain.mjs";
+import { visitSharePaths, writeVisitPages } from "../server/visit-sharing.mjs";
 import {
   applyPlaceCorrections,
   publicPlaceOverrides,
@@ -56,6 +57,15 @@ export async function publishWebsite(progress = () => {}) {
     snapshot.activeHomeId,
   );
   const visits = journal.visits;
+  const sharePaths = visitSharePaths(
+    visits,
+    correctedPlaces,
+    db.get("settings", "lastPublication")?.sharePaths,
+  );
+  journal.visits = visits.map((visit) => ({
+    ...visit,
+    sharePath: sharePaths[visit.id],
+  }));
   journal.placeOverrides = publicPlaceOverrides(snapshot.placeCorrections);
   db.close();
   await writeFile(
@@ -108,13 +118,34 @@ export async function publishWebsite(progress = () => {}) {
       2,
     ),
   );
-  await writeFile(
-    "dist/index.html",
-    withSiteUrl(
-      await readFile("dist/index.html", "utf8"),
-      (await siteState()).siteUrl,
-    ),
+  const existing = await siteState();
+  const template = await readFile("dist/index.html", "utf8");
+  const placeDetails = JSON.parse(
+    await readFile("scripts/place-details.json", "utf8"),
   );
+  const assets = await readdir("dist/assets");
+  const previewPlaces = correctedPlaces.map((place) => {
+    const image = placeDetails[place.id]?.image || place.image;
+    const stem = image?.match(/^\/photos\/(.+)\.jpg$/)?.[1];
+    const bundled =
+      stem &&
+      assets.find(
+        (name) => name.startsWith(stem + "-") && name.endsWith(".jpg"),
+      );
+    return { ...place, image: bundled ? `/assets/${bundled}` : image };
+  });
+  async function preparePages(siteUrl) {
+    await writeFile("dist/index.html", withSiteUrl(template, siteUrl));
+    await writeVisitPages({
+      root: resolve("dist"),
+      template,
+      visits,
+      places: previewPlaces,
+      paths: sharePaths,
+      siteUrl,
+    });
+  }
+  await preparePages(existing.siteUrl);
   const root = resolve("dist");
   const paths = [];
   async function walk(dir) {
@@ -139,18 +170,19 @@ export async function publishWebsite(progress = () => {}) {
     ".webmanifest": "application/manifest+json",
     ".woff2": "font/woff2",
   };
-  const files = await Promise.all(
-    paths.map(async (full) => {
-      const data = await readFile(full);
-      return {
-        path: relative(root, full).replaceAll("\\", "/"),
-        size: data.length,
-        contentType: types[extname(full)] || "application/octet-stream",
-        hash: createHash("sha256").update(data).digest("hex"),
-      };
-    }),
-  );
-  const existing = await siteState();
+  const describeFiles = () =>
+    Promise.all(
+      paths.map(async (full) => {
+        const data = await readFile(full);
+        return {
+          path: relative(root, full).replaceAll("\\", "/"),
+          size: data.length,
+          contentType: types[extname(full)] || "application/octet-stream",
+          hash: createHash("sha256").update(data).digest("hex"),
+        };
+      }),
+    );
+  let files = await describeFiles();
   progress(`Preparing ${visits.length} selected visits for upload…`);
   if (existing.slug) {
     const live = await cloudRequest(`/api/v1/publish/${existing.slug}`);
@@ -162,19 +194,21 @@ export async function publishWebsite(progress = () => {}) {
         "The live site changed since the last publish. Review the live version before overwriting it.",
       );
   }
-  const response = await cloudRequest(
+  const publishBody = () =>
+    JSON.stringify({
+      files,
+      ttlSeconds: null,
+      spaMode: true,
+      displayName: "Ever Outward: The Next Gate",
+      displayDescription:
+        "Our National Trust visits, photographs and memories. Shared discoveries from every home. One next gate.",
+      ...(existing.versionId ? { baseVersionId: existing.versionId } : {}),
+    });
+  let response = await cloudRequest(
     existing.slug ? `/api/v1/publish/${existing.slug}` : "/api/v1/publish",
     {
       method: existing.slug ? "PUT" : "POST",
-      body: JSON.stringify({
-        files,
-        ttlSeconds: null,
-        spaMode: true,
-        displayName: "Ever Outward: The Next Gate",
-        displayDescription:
-          "Our National Trust visits, photographs and memories. Shared discoveries from every home. One next gate.",
-        ...(existing.versionId ? { baseVersionId: existing.versionId } : {}),
-      }),
+      body: publishBody(),
     },
   );
   // Persist the new project binding before uploads so a retry updates this site.
@@ -192,6 +226,29 @@ export async function publishWebsite(progress = () => {}) {
       2,
     ),
   );
+  // A brand-new site gets its address at allocation. Restage the final bytes so
+  // its very first release already has absolute preview URLs and matching hashes.
+  if (!existing.siteUrl) {
+    await preparePages(response.siteUrl);
+    files = await describeFiles();
+    response = await cloudRequest(`/api/v1/publish/${response.slug}`, {
+      method: "PUT",
+      body: publishBody(),
+    });
+    await writeFile(
+      ".herenow/state.json",
+      JSON.stringify(
+        {
+          ...existing,
+          slug: response.slug,
+          siteUrl: response.siteUrl,
+          pendingVersionId: response.upload.versionId,
+        },
+        null,
+        2,
+      ),
+    );
+  }
   for (let offset = 0; offset < response.upload.uploads.length; offset += 5) {
     progress(
       `Uploading website files (${offset} of ${response.upload.uploads.length})…`,
@@ -250,6 +307,8 @@ export async function publishWebsite(progress = () => {}) {
   const localStore = createStore(resolve(".local/everoutward.sqlite"));
   try {
     localStore.put("settings", "lastPublication", {
+      siteUrl: state.siteUrl,
+      sharePaths,
       versionId: state.versionId,
       publishedAt: state.publishedAt,
       visits: Object.fromEntries(

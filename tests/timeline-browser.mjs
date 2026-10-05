@@ -83,6 +83,11 @@ app.use(express.static(resolve("dist")));
 const server = app.listen(0, "127.0.0.1");
 await new Promise((r) => server.once("listening", r));
 const origin = `http://127.0.0.1:${server.address().port}`;
+store.put("settings", "lastPublication", {
+  siteUrl: "https://journal.example/",
+  visits: { third: "published" },
+  sharePaths: { third: "/visits/ramsey-abbey-gatehouse-2026-03-15.html" },
+});
 process.env.APP_ORIGIN = origin;
 const browser = await chromium.launch();
 const context = await browser.newContext({
@@ -236,7 +241,7 @@ try {
   await page.getByRole("button", { name: "Link copied" }).waitFor();
   assert.equal(
     await page.evaluate(() => navigator.clipboard.readText()),
-    `${origin}/#visit/third`,
+    "https://journal.example/visits/ramsey-abbey-gatehouse-2026-03-15.html",
   );
 
   // Modifier clicks are left to the browser (new tab), not in-app navigation.

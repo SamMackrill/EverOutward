@@ -1,14 +1,34 @@
-import { createContext, useContext, type AnchorHTMLAttributes } from "react";
+import {
+  createContext,
+  useContext,
+  type AnchorHTMLAttributes,
+  type ReactNode,
+} from "react";
 
 const NavigateContext = createContext<(to: string) => void>((to) => {
   location.hash = to;
 });
-export const NavigationProvider = NavigateContext.Provider;
+const HrefContext = createContext<(to: string) => string>((to) => `#${to}`);
+export function NavigationProvider({
+  value,
+  href,
+  children,
+}: {
+  value: (to: string) => void;
+  href: (to: string) => string;
+  children: ReactNode;
+}) {
+  return (
+    <NavigateContext.Provider value={value}>
+      <HrefContext.Provider value={href}>{children}</HrefContext.Provider>
+    </NavigateContext.Provider>
+  );
+}
 /** Returns the app's in-place navigation function. */
 export const useNavigate = () => useContext(NavigateContext);
 
 /**
- * A real link to a hash route: it can be opened in a new tab, copied or
+ * A real link to an app route: it can be opened in a new tab, copied or
  * shared, while a plain click still navigates in place.
  */
 export default function Link({
@@ -17,10 +37,11 @@ export default function Link({
   ...props
 }: { to: string } & AnchorHTMLAttributes<HTMLAnchorElement>) {
   const navigate = useNavigate();
+  const href = useContext(HrefContext);
   return (
     <a
       {...props}
-      href={`#${to}`}
+      href={href(to)}
       onClick={(e) => {
         onClick?.(e);
         if (
