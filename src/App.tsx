@@ -296,6 +296,8 @@ export default function App() {
         : [
             ...new globalThis.Map(
               [
+                ...(homeJourneys.find((h) => h.id === activeHomeId)
+                  ?.destinations || []),
                 ...publicQueue,
                 ...(homeJourneys.find((h) => h.id === activeHomeId)
                   ?.reviewedRoutes || []),
