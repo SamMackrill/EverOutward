@@ -103,13 +103,9 @@ export function homeJourneys(
             confirmed: journey.rangeComplete,
             approximate: false,
           };
-      return {
-        id: home.id,
-        label: home.label,
-        colour: home.colour,
-        range,
-        queue: journey.ranked.map(
-          ({
+      const destinations = journey.allRanked.map(
+        (
+          {
             id,
             metres,
             seconds,
@@ -117,25 +113,34 @@ export function homeJourneys(
             walkingSeconds,
             walkingNote,
             geographicMetres,
-          }) => ({
-            placeId: id,
-            // The public order is the owner's saved order. Display approximate
-            // geographic distances from the rounded public centre, never exact
-            // radii that could reveal a private home's precise coordinates.
-            geographicMetres: approximate
-              ? haversine(
-                  range.centre,
-                  places.find((p) => p.id === id),
-                )
-              : geographicMetres,
-            geographicApproximate: approximate,
-            metres,
-            seconds,
-            walkingMetres,
-            walkingSeconds,
-            walkingNote,
-          }),
-        ),
+          },
+          index,
+        ) => ({
+          placeId: id,
+          position: index + 1,
+          // Keep the exact challenge order, but publish distances only from
+          // the rounded centre so private home coordinates stay private.
+          geographicMetres: approximate
+            ? haversine(
+                range.centre,
+                places.find((p) => p.id === id),
+              )
+            : geographicMetres,
+          geographicApproximate: approximate,
+          metres,
+          seconds,
+          walkingMetres,
+          walkingSeconds,
+          walkingNote,
+        }),
+      );
+      return {
+        id: home.id,
+        label: home.label,
+        colour: home.colour,
+        range,
+        destinations,
+        queue: destinations.slice(0, 5).map(({ position, ...entry }) => entry),
         complete: journey.complete,
         pendingCount: journey.blockingPendingCount,
         reviewedRoutes: saved

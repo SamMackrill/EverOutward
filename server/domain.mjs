@@ -65,6 +65,7 @@ export function outward(places, visits, home, routes = []) {
   );
   return {
     ranked: ranked.slice(0, 5),
+    allRanked: ranked,
     pendingCount: pending.length,
     blockingPendingCount,
     complete,

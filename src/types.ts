@@ -79,6 +79,7 @@ export type Home = {
 };
 export type HomeJourney = {
   reviewedRoutes?: Route[];
+  destinations?: (QueueEntry & { position: number })[];
   id: string;
   label: string;
   colour: string;
