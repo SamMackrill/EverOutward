@@ -136,7 +136,8 @@ test("review resolves one home, corrects entrances for every home, retains unrel
     409,
   );
   let published = publicJournal(places, [], [a, b], store.list("routes"), a.id);
-  assert(!published.queue.some((r) => r.placeId === "0"));
+  assert.equal(published.queue[0].placeId, "0");
+  assert.equal(published.queue[0].metres, 90000);
   assert.equal(
     published.homes[0].reviewedRoutes.find((r) => r.placeId === "0").metres,
     90000,
@@ -144,6 +145,11 @@ test("review resolves one home, corrects entrances for every home, retains unrel
   assert(!JSON.stringify(published).includes("Private evidence"));
   await correct(a, "0", { action: "flag", reason: "Wrong car park" });
   assert.equal(row(a, "0").status, "needs-review");
+  assert.equal(
+    publicJournal(places, [], [a, b], store.list("routes"), a.id).queue[0]
+      .metres,
+    undefined,
+  );
   assert(
     !publicJournal(places, [], [a, b], store.list("routes"), a.id).homes[0]
       .reviewedRoutes.length,
@@ -200,13 +206,14 @@ test("review resolves one home, corrects entrances for every home, retains unrel
   });
   assert.notEqual(journalSnapshot(store).fingerprint, before);
   assert.equal(row(a, "0").status, "needs-review");
-  assert(
-    !outward(
+  assert.equal(
+    outward(
       applyPlaceCorrections(places, store.list("placeCorrections")),
       [],
       a,
       store.list("routes"),
-    ).ranked.some((r) => r.placeId === "0"),
+    ).ranked.find((r) => r.placeId === "0").metres,
+    undefined,
   );
   assert.equal(queued, 3);
 });

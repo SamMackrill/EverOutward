@@ -10,6 +10,7 @@ import { cloudRequest, siteState } from "../server/herenow.mjs";
 import { createStore } from "../server/store.mjs";
 import { migrateHomes, publicJournal } from "../server/homes.mjs";
 import { sortVisits } from "../server/domain.mjs";
+import { accessEntries } from "../server/access-dates.mjs";
 import {
   applyPlaceCorrections,
   publicPlaceOverrides,
@@ -57,6 +58,7 @@ export async function publishWebsite(progress = () => {}) {
   );
   const visits = journal.visits;
   journal.placeOverrides = publicPlaceOverrides(snapshot.placeCorrections);
+  journal.accessDates = accessEntries(snapshot.accessDates, correctedPlaces);
   db.close();
   await writeFile(
     "dist/data/places.json",

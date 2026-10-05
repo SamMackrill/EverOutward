@@ -4,6 +4,7 @@ import {
   Download,
   Globe,
   LoaderCircle,
+  LockKeyhole,
   Settings,
 } from "lucide-react";
 import HomeLocations from "./HomeLocations";
@@ -146,22 +147,47 @@ export default function Workspace({
         </div>
         <div className="form-stack">
           <p className="publish-changes">
-            {changes
-              ? `${changes} ${changes === 1 ? "change" : "changes"} not yet published`
-              : "The public journal is up to date"}
+            {!publisher.available
+              ? "Temporary preview · Changes stay in this preview"
+              : changes
+                ? `${changes} ${changes === 1 ? "change" : "changes"} not yet published`
+                : "The public journal is up to date"}
           </p>
           <button
-            className="button primary"
             onClick={publish}
-            disabled={busy || calculating || saving.size > 0}
+            disabled={
+              !publisher.available || busy || calculating || saving.size > 0
+            }
+            aria-describedby={
+              !publisher.available ? "publishing-disabled-reason" : undefined
+            }
+            className={
+              publisher.available
+                ? "button primary"
+                : "button primary publishing-unavailable"
+            }
           >
-            {busy ? (
+            {!publisher.available ? (
+              <LockKeyhole size={18} />
+            ) : busy ? (
               <LoaderCircle className="spin" size={18} />
             ) : (
               <Globe size={18} />
             )}{" "}
-            {busy ? "Publishing…" : "Publish journal to here.now"}
+            {!publisher.available
+              ? "Publishing disabled in preview"
+              : busy
+                ? "Publishing…"
+                : "Publish journal to here.now"}
           </button>
+          {!publisher.available && (
+            <p
+              id="publishing-disabled-reason"
+              className="publishing-disabled-reason"
+            >
+              {publisher.disabledReason}
+            </p>
+          )}
           <div className="publish-status" role="status" aria-live="polite">
             {busy && (
               <p>

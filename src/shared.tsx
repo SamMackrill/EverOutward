@@ -13,7 +13,7 @@ export function WalkingEstimate({
   route,
   detail = false,
 }: {
-  route?: Route;
+  route?: Partial<Route>;
   detail?: boolean;
 }) {
   if (!route?.walkingMetres || !route.walkingSeconds) return null;
@@ -21,15 +21,18 @@ export function WalkingEstimate({
     <p className="small walking-estimate">
       + approx. {miles(route.walkingMetres)} mi walk ·{" "}
       {duration(route.walkingSeconds)} one way
-      {detail && (
-        <>
-          <br />
-          Approx. {miles(route.metres + route.walkingMetres)} mi and{" "}
-          {duration(route.seconds + route.walkingSeconds)} including the drive.
-          <br />
-          <span className="muted">{route.walkingNote}</span>
-        </>
-      )}
+      {detail &&
+        typeof route.metres === "number" &&
+        typeof route.seconds === "number" && (
+          <>
+            <br />
+            Approx. {miles(route.metres + route.walkingMetres)} mi and{" "}
+            {duration(route.seconds + route.walkingSeconds)} including the
+            drive.
+            <br />
+            <span className="muted">{route.walkingNote}</span>
+          </>
+        )}
     </p>
   );
 }

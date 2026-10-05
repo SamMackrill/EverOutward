@@ -314,7 +314,15 @@ test("each public home has its own rounded circle; private snapshots and drafts 
     assert.equal(h.range.approximate, true);
     assert.deepEqual(h.range.centre, { lat: 52, lng: 0 });
     assert.equal(h.range.radius, haversine(h.range.centre, places[0]));
+    const privateHome = homes.find((home) => home.id === h.id);
+    for (const entry of h.queue) {
+      const place = places.find((p) => p.id === entry.placeId);
+      assert.equal(entry.geographicApproximate, true);
+      assert.equal(entry.geographicMetres, haversine(h.range.centre, place));
+      assert.notEqual(entry.geographicMetres, haversine(privateHome, place));
+    }
   }
+  assert.equal(result.ordering, "straight-line");
 });
 
 test("a route job stays attached to its chosen home when the current home switches", async () => {

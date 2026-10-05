@@ -1,6 +1,31 @@
 import { DatabaseSync } from "node:sqlite";
-import { mkdirSync } from "node:fs";
+import { existsSync, mkdirSync } from "node:fs";
 import { dirname } from "node:path";
+
+/** Copy the saved journal into memory without opening the original for writes. */
+export function createPreviewStore(filename) {
+  const preview = createStore(":memory:");
+  try {
+    if (existsSync(filename)) {
+      const original = new DatabaseSync(filename, { readOnly: true });
+      try {
+        const rows = original
+          .prepare("SELECT kind,id,payload FROM records ORDER BY kind,id")
+          .all();
+        preview.transaction(() => {
+          for (const row of rows)
+            preview.put(row.kind, row.id, JSON.parse(row.payload));
+        });
+      } finally {
+        original.close();
+      }
+    }
+    return preview;
+  } catch (error) {
+    preview.close();
+    throw error;
+  }
+}
 
 export function createStore(filename) {
   if (filename !== ":memory:")

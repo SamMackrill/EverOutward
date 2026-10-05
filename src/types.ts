@@ -1,4 +1,8 @@
 export type Place = {
+  limitedAccess?: boolean;
+  limitedAccessNote?: string;
+  accessSource?: string;
+  accessDates?: AccessDates;
   boatRequired?: boolean;
   entrance?: { lat: number; lng: number; version: string };
   accessNote?: string;
@@ -17,6 +21,16 @@ export type Place = {
   imageAlt?: string;
   hours: string;
   entranceVerified: boolean;
+};
+export type AccessDates = {
+  placeId: string;
+  source: string;
+  dates: { date: string; hours: string }[];
+  newDates: string[];
+  checkedAt: string | null;
+  attemptedAt: string | null;
+  nextCheckAt: string | null;
+  error: string | null;
 };
 export type Photo = {
   id: string;
@@ -65,7 +79,7 @@ export type HomeJourney = {
   label: string;
   colour: string;
   range: VisitRange;
-  queue: Route[];
+  queue: QueueEntry[];
   complete: boolean;
   pendingCount: number;
   saved?: number;
@@ -90,6 +104,11 @@ export type Route = {
   checkedAt?: string;
   source?: string;
 };
+export type QueueEntry = Partial<Route> & {
+  placeId: string;
+  geographicMetres?: number;
+  geographicApproximate?: boolean;
+};
 export type Comment = {
   id: string;
   visitId: string;
@@ -99,6 +118,8 @@ export type Comment = {
   createdAt: string;
 };
 export type Session = {
+  temporaryPreview?: boolean;
+  publishing?: { enabled: boolean; disabledReason: string | null };
   localOwner?: boolean;
   local: boolean;
   owner: boolean;

@@ -1,5 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { createApp } from "../server/app.mjs";
 import { createStore } from "../server/store.mjs";
 import { currentHome } from "../server/homes.mjs";
@@ -16,10 +17,43 @@ const routes = [
   { placeId: "b", metres: 5000, seconds: 400, homeVersion: "v1" },
   { placeId: "c", metres: 12000, seconds: 1000, homeVersion: "v1" },
 ];
-test("road ordering, repeat visits, deletion, incomplete routes and home changes", () => {
+test("Ickworth precedes Hatfield Forest geographically even when its road route is longer", () => {
+  const catalogue = JSON.parse(
+    readFileSync(
+      new URL("../public/data/places.json", import.meta.url),
+      "utf8",
+    ),
+  ).places;
+  const pair = ["Ickworth", "Hatfield Forest"].map((name) =>
+    catalogue.find((p) => p.name.includes(name)),
+  );
+  assert(pair.every(Boolean));
+  const base = { lat: 52.23, lng: 0.08, version: "test-home" };
+  const routes = pair.map((p, i) => ({
+    placeId: p.id,
+    metres: i ? 49740 : 52133,
+    seconds: 3000,
+    homeVersion: base.version,
+  }));
+  const expected = pair.map((p) => p.id);
+  for (const saved of [routes, routes.slice(1), []]) {
+    const result = outward(pair, [], base, saved);
+    assert.deepEqual(
+      result.ranked.map((p) => p.id),
+      expected,
+    );
+    assert(
+      result.ranked[0].geographicMetres < result.ranked[1].geographicMetres,
+    );
+  }
+  const afterVisit = outward(pair, [{ placeId: pair[1].id }], base, routes);
+  assert.equal(afterVisit.ranked[0].id, pair[0].id);
+  assert.equal(afterVisit.visitedCount, 1);
+});
+test("straight-line ordering, repeat visits, deletion, incomplete routes and home changes", () => {
   assert.deepEqual(
     outward(places, [], home, routes).ranked.map((p) => p.id),
-    ["b", "a", "c"],
+    ["a", "b", "c"],
   );
   const visits = [{ placeId: "b" }, { placeId: "b" }, { placeId: "c" }];
   const p = outward(places, visits, home, routes);
@@ -30,11 +64,16 @@ test("road ordering, repeat visits, deletion, incomplete routes and home changes
   assert.equal(after.radius, 0);
   assert.equal(p.radius, 0);
   assert.equal(after.visitedCount, 1);
-  assert.equal(outward(places, [], home, routes.slice(0, 1)).complete, false);
+  assert.equal(outward(places, [], home, routes.slice(0, 1)).complete, true);
   assert.equal(
     outward(places, [], { ...home, version: "v2" }, routes).ranked.length,
-    0,
+    3,
   );
+  assert.equal(
+    outward(places, [], { ...home, version: "v2" }, routes).ranked[0].metres,
+    undefined,
+  );
+  assert.equal(outward(places, [], null, routes).ranked.length, 0);
   assert.equal(outward(places, [], home, routes).radius, 0);
   assert.equal(
     outward(
@@ -81,12 +120,15 @@ for (const passwordConfigured of [false, true]) {
     });
     const base = `http://127.0.0.1:${server.address().port}`;
     const session = await fetch(base + "/api/session");
-    assert.deepEqual(await session.json(), {
+    const { temporaryPreview, publishing, ...auth } = await session.json();
+    assert.deepEqual(auth, {
       local: true,
       localOwner: true,
       owner: true,
       passwordConfigured,
     });
+    assert.equal(temporaryPreview, true);
+    assert.equal(publishing.enabled, false);
     assert.equal(session.headers.get("set-cookie"), null);
     const headers = {
       "Content-Type": "application/json",
