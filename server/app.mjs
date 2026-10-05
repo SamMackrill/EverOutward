@@ -1,4 +1,5 @@
 import express from "express";
+import { placeMatchesHome } from "./home-destinations.mjs";
 import { createAccessMonitor } from "./access-dates.mjs";
 import { z } from "zod";
 import {
@@ -357,10 +358,18 @@ export function createApp({
       home,
       homes,
       activeHomeId: home?.id || null,
-      routes: routes.filter(
-        (r) =>
-          homes.some((h) => h.id === r.homeId && h.version === r.homeVersion) &&
-          places.some((p) => p.id === r.placeId && routeMatchesPlace(r, p)),
+      routes: routes.filter((r) =>
+        homes.some(
+          (h) =>
+            h.id === r.homeId &&
+            h.version === r.homeVersion &&
+            places.some(
+              (p) =>
+                p.id === r.placeId &&
+                placeMatchesHome(p, h) &&
+                routeMatchesPlace(r, p),
+            ),
+        ),
       ),
       homeJourneys: homeJourneys(
         places,
@@ -881,7 +890,9 @@ export function createApp({
             reviewNote: data.note,
             reviewedAt: new Date().toISOString(),
           });
-          for (const h of liveHomes(store))
+          for (const h of liveHomes(store).filter((h) =>
+            placeMatchesHome(place, h),
+          ))
             store.put("routeReviews", routeKey(h, place.id), {
               homeId: h.id,
               homeVersion: h.version,
@@ -911,7 +922,7 @@ export function createApp({
       routing = true;
       try {
         for (const h of data.action === "entrance"
-          ? liveHomes(store)
+          ? liveHomes(store).filter((h) => placeMatchesHome(place, h))
           : [home]) {
           try {
             const result = await refreshDrivingRoutes({

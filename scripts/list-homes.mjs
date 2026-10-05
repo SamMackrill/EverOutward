@@ -1,6 +1,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import { applyPlaceCorrections } from "../server/distance-review.mjs";
 import { routeMatchesPlace } from "../server/domain.mjs";
+import { placesForHome } from "../server/home-destinations.mjs";
 import { createStore } from "../server/store.mjs";
 import {
   currentHome,
@@ -25,7 +26,9 @@ try {
         current: currentHome(store)?.id === h.id,
         version: h.version,
         savedDistances: homeRoutes(store, h).filter((r) =>
-          places.some((p) => p.id === r.placeId && routeMatchesPlace(r, p)),
+          placesForHome(places, h).some(
+            (p) => p.id === r.placeId && routeMatchesPlace(r, p),
+          ),
         ).length,
       })),
       null,

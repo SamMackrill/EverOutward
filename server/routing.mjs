@@ -2,6 +2,7 @@ import { setTimeout as delay } from "node:timers/promises";
 import { haversine, outward, routeMatchesPlace } from "./domain.mjs";
 import { currentHome, homeRoutes, migrateHomes, routeKey } from "./homes.mjs";
 import { boatAccess } from "./access-rules.mjs";
+import { placesForHome } from "./home-destinations.mjs";
 
 const endpoint =
   "https://routing.openstreetmap.de/routed-car/table/v1/driving/";
@@ -21,6 +22,7 @@ export async function refreshDrivingRoutes({
   const home = homeId ? store.get("homes", homeId) : currentHome(store);
   if (!home || home.archivedAt)
     throw new Error("Set your home before calculating driving distances.");
+  places = placesForHome(places, home);
   const candidates = [...places].sort(
     (a, b) =>
       haversine(home, a.entrance || a) - haversine(home, b.entrance || b),
@@ -40,7 +42,9 @@ export async function refreshDrivingRoutes({
       store.get("routeReports", JSON.stringify([home.id, home.version]))
         ?.unavailablePlaces || []
     )
-      .filter((p) => !known.has(p.placeId))
+      .filter(
+        (p) => places.some((d) => d.id === p.placeId) && !known.has(p.placeId),
+      )
       .map((p) => [p.placeId, p]),
   );
   let calculated = 0;

@@ -2,6 +2,7 @@ import { createHash, randomUUID } from "node:crypto";
 import { routeKey } from "./homes.mjs";
 import { routeMatchesPlace, isReviewedRoute } from "./domain.mjs";
 import { boatAccess, applyAccessRules } from "./access-rules.mjs";
+import { placesForHome } from "./home-destinations.mjs";
 
 export function applyPlaceCorrections(places, corrections = []) {
   const byId = new Map(corrections.map((c) => [c.placeId, c]));
@@ -58,7 +59,7 @@ export function distanceReviewRows(store, home, places) {
         ?.unavailablePlaces || []
     ).map((r) => [r.placeId, r]),
   );
-  return places.map((place) => {
+  return placesForHome(places, home).map((place) => {
     const route = routes.get(place.id),
       review = reviews.get(place.id),
       failure = failures.get(place.id);

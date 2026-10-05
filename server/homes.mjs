@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { dirname, join } from "node:path";
+import { homeDestinationScope, placesForHome } from "./home-destinations.mjs";
 import {
   outward,
   haversine,
@@ -88,11 +89,14 @@ export function homeJourneys(
   return homes
     .filter((h) => !h.archivedAt)
     .map((home) => {
+      const destinationsForHome = placesForHome(places, home);
       const saved = routes.filter(
         (r) =>
           r.homeId === home.id &&
           r.homeVersion === home.version &&
-          places.some((p) => p.id === r.placeId && routeMatchesPlace(r, p)),
+          destinationsForHome.some(
+            (p) => p.id === r.placeId && routeMatchesPlace(r, p),
+          ),
       );
       const journey = outward(places, visits, home, saved);
       const range = approximate
@@ -138,6 +142,7 @@ export function homeJourneys(
         id: home.id,
         label: home.label,
         colour: home.colour,
+        destinationScope: homeDestinationScope(home),
         range,
         destinations,
         queue: destinations.slice(0, 5).map(({ position, ...entry }) => entry),
@@ -170,12 +175,16 @@ export function homeJourneys(
           ? {}
           : {
               saved: saved.length,
-              total: places.length,
+              total: destinationsForHome.length,
               unavailablePlaces: (
                 reports.find(
                   (r) => r.homeId === home.id && r.homeVersion === home.version,
                 )?.unavailablePlaces || []
-              ).filter((p) => !saved.some((r) => r.placeId === p.placeId)),
+              ).filter(
+                (p) =>
+                  destinationsForHome.some((d) => d.id === p.placeId) &&
+                  !saved.some((r) => r.placeId === p.placeId),
+              ),
             }),
       };
     });
