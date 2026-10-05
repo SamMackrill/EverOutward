@@ -1,0 +1,56 @@
+{
+  "checkedAt": "2026-10-05T19:01:41.348Z",
+  "summary": {
+    "total": 643,
+    "withPhoto": 640,
+    "missing": 3,
+    "searched": 623,
+    "needsReview": 3,
+    "unavailable": 0,
+    "errors": 0
+  },
+  "missing": [
+    {
+      "id": "398d525c-1506-42d0-a4e3-831a5d12c118",
+      "name": "Lawrence House",
+      "status": "needs-review",
+      "reviewNote": "Reviewed Commons search, nearby images and the museum category. The category contains three collection paintings, not photographs of Lawrence House. Nearby castle and church images depict other attractions. The project owner accepted the museum garden page's garden-urn photograph as a suitable destination image on 2026-10-05. Its reuse permission and photographer credit remain unverified; the subject is approved and a house exterior photograph is not required.",
+      "evidence": [
+        "https://commons.wikimedia.org/wiki/Category:Lawrence_House_Museum",
+        "https://lawrencehousemuseum.org.uk/discover/lawrence-house-gardens/"
+      ],
+      "reasons": [
+        "Needs subject/location review",
+        "Photograph is more than 5 km from the catalogue destination",
+        "Missing compatible licence, author or trusted source URL",
+        "Not a suitable JPEG photograph"
+      ]
+    },
+    {
+      "id": "58f6bee7-0aaf-4c11-bf7e-1013d5250091",
+      "name": "The Royal Oak Foundation Conservation Studio",
+      "status": "needs-review",
+      "reviewNote": "The official page identifies the studio in a medieval barn accessed via the Brewhouse courtyard. Reviewed Commons studio/barn searches and nearby Knole photographs; those show the main house, park or courtyards without identifying the studio. Official photographs have National Trust credits, with no reusable licence verified. No verified reusable studio photograph found.",
+      "evidence": [
+        "https://www.nationaltrust.org.uk/visit/kent/the-royal-oak-foundation-conservation-studio/what-to-see-at-royal-oak-foundation-conservation-studio"
+      ],
+      "reasons": [
+        "Needs subject/location review",
+        "Historical photograph needs review"
+      ]
+    },
+    {
+      "id": "fb14e848-f903-4a7a-94b4-9dd9fefde5c6",
+      "name": "The Textile Conservation Studio",
+      "status": "needs-review",
+      "reviewNote": "The official page locates the studio off New Road in Oulton Street, Norfolk. Reviewed studio-specific and nearby searches; results depict unrelated RAF buildings, village houses or conservation work elsewhere. Photos exist on the official site and a visitor blog, but no reusable licence for those photos was verified. No verified reusable studio photograph found.",
+      "evidence": [
+        "https://www.nationaltrust.org.uk/visit/norfolk/the-textile-conservation-studio",
+        "https://www.graceleesmaffei.org/home/2020/1/28/behind-the-scenes-at-the-textile-conservation-studio"
+      ],
+      "reasons": [
+        "Needs subject/location review"
+      ]
+    }
+  ]
+}

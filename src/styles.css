@@ -2564,6 +2564,7 @@ select {
 }
 .photo-credit {
   font-size: 11px !important;
+  overflow-wrap: anywhere;
   color: var(--muted);
   grid-column: 1/-1;
   line-height: 1.4;

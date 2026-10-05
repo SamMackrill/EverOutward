@@ -1,0 +1,540 @@
+{
+  "5c400bc3-0280-438c-b6ba-4804189f5979": {
+    "name": "St Ives to Pendeen",
+    "fileTitle": "File:Looking towards Bosigran headland - geograph.org.uk - 7997576.jpg",
+    "alt": "Bosigran headland on the St Ives to Pendeen coast",
+    "aliases": ["Bosigran"],
+    "reviewedOn": "2026-10-05",
+    "evidence": [
+      "https://commons.wikimedia.org/wiki/File:Looking_towards_Bosigran_headland_-_geograph.org.uk_-_7997576.jpg",
+      "https://www.nationaltrust.org.uk/visit/cornwall/cape-cornwall/bosigran-circular-walk"
+    ],
+    "note": "Subject verified visually and against source description; photo coordinates are 561 metres from the catalogue point. For grouped estates this photograph shows the named component in the alt text."
+  },
+  "cd076b79-3e82-468d-8074-8b163af6e2b9": {
+    "name": "Solva Coast",
+    "fileTitle": "File:Solva harbour from Gribin - geograph.org.uk - 2396474.jpg",
+    "alt": "Solva harbour viewed from the Gribin",
+    "aliases": ["Solva", "Gribin"],
+    "reviewedOn": "2026-10-05",
+    "evidence": [
+      "https://commons.wikimedia.org/wiki/File:Solva_harbour_from_Gribin_-_geograph.org.uk_-_2396474.jpg",
+      "https://www.nationaltrust.org.uk/visit/wales/solva-coast/history-of-the-solva-coast"
+    ],
+    "note": "Subject verified visually and against source description; photo coordinates are 337 metres from the catalogue point. For grouped estates this photograph shows the named component in the alt text."
+  },
+  "12a1f89f-e0f8-405f-858c-c61a93974fad": {
+    "name": "Carnewas at Bedruthan",
+    "fileTitle": "File:Bedruthan Steps - geograph.org.uk - 3390699.jpg",
+    "alt": "Bedruthan Steps viewed from Carnewas",
+    "aliases": ["Bedruthan Steps", "Carnewas"],
+    "reviewedOn": "2026-10-05",
+    "evidence": [
+      "https://commons.wikimedia.org/wiki/File:Bedruthan_Steps_-_geograph.org.uk_-_3390699.jpg"
+    ],
+    "note": "Subject verified visually and against source description; photo coordinates are 207 metres from the catalogue point. For grouped estates this photograph shows the named component in the alt text."
+  },
+  "6948d3a5-5d13-4023-8907-584b01aa4231": {
+    "name": "Cleddau Woodlands",
+    "fileTitle": "File:The Landsker Borderlands Trail near Lawrenny Quay - geograph.org.uk - 3621940.jpg",
+    "alt": "Woodland trail near Lawrenny Quay in the Cleddau Woodlands",
+    "aliases": ["Lawrenny Wood"],
+    "reviewedOn": "2026-10-05",
+    "evidence": [
+      "https://commons.wikimedia.org/wiki/File:The_Landsker_Borderlands_Trail_near_Lawrenny_Quay_-_geograph.org.uk_-_3621940.jpg",
+      "https://www.nationaltrust.org.uk/visit/wales/cleddau-woodlands/lawrenny-walk"
+    ],
+    "note": "Subject verified visually and against source description; photo coordinates are 218 metres from the catalogue point. For grouped estates this photograph shows the named component in the alt text."
+  },
+  "6ecc194d-3825-43b2-a0f8-7da670fbc975": {
+    "name": "Polperro, Looe and Whitsand Bay",
+    "fileTitle": "File:Coast path on Bodigga Cliff - geograph.org.uk - 2642167.jpg",
+    "alt": "Coast path on Bodigga Cliff near Looe",
+    "aliases": ["Bodigga Cliff"],
+    "reviewedOn": "2026-10-05",
+    "evidence": [
+      "https://commons.wikimedia.org/wiki/File:Coast_path_on_Bodigga_Cliff_-_geograph.org.uk_-_2642167.jpg",
+      "https://www.nationaltrust.org.uk/visit/cornwall/coast-beaches/things-to-see-and-do-around-polperro-looe-and-whitsand-bay"
+    ],
+    "note": "Subject verified visually and against source description; photo coordinates are 453 metres from the catalogue point. For grouped estates this photograph shows the named component in the alt text."
+  },
+  "ba5a9a74-ee3a-4e5f-b0c7-fdeb063c11c9": {
+    "name": "Rhosili and South Gower Coast",
+    "fileTitle": "File:Rhossili Bay from Rhossili - geograph.org.uk - 4904492.jpg",
+    "alt": "Rhossili Bay viewed from the South Gower Coast",
+    "aliases": ["Rhossili"],
+    "reviewedOn": "2026-10-05",
+    "evidence": [
+      "https://commons.wikimedia.org/wiki/File:Rhossili_Bay_from_Rhossili_-_geograph.org.uk_-_4904492.jpg"
+    ],
+    "note": "Subject verified visually and against source description; photo coordinates are 30 metres from the catalogue point. For grouped estates this photograph shows the named component in the alt text."
+  },
+  "2fb1a6e5-ac9e-40fe-b5df-a7a09ba00141": {
+    "name": "Eifionydd",
+    "fileTitle": "File:Site of Dinas Dinlle hill fort - geograph.org.uk - 7728366.jpg",
+    "alt": "Grassy earthworks of Dinas Dinlle hillfort",
+    "aliases": ["Dinas Dinlle"],
+    "reviewedOn": "2026-10-05",
+    "evidence": [
+      "https://commons.wikimedia.org/wiki/File:Site_of_Dinas_Dinlle_hill_fort_-_geograph.org.uk_-_7728366.jpg",
+      "https://www.bbc.co.uk/blogs/wales/entries/db5c0eee-e6dd-3e2e-be7e-ffa9bc36194c"
+    ],
+    "note": "Subject verified visually and against source description; photo coordinates are 54 metres from the catalogue point. For grouped estates this photograph shows the named component in the alt text. The catalogue Eifionydd point coincides with its separate Dinas Dinlle record; the BBC source names its National Trust Eifionydd warden. This is a photograph of that actual catalogue location."
+  },
+  "e23f39f7-35bf-4105-973e-b4802a684d72": {
+    "name": "Plas Newydd House and Garden",
+    "fileTitle": "File:Plas Newydd and Strait.jpg",
+    "alt": "Plas Newydd house beside the Menai Strait on Anglesey",
+    "aliases": ["Plas Newydd"],
+    "reviewedOn": "2026-10-05",
+    "evidence": [
+      "https://commons.wikimedia.org/wiki/File:Plas_Newydd_and_Strait.jpg"
+    ],
+    "note": "Subject verified visually and against source description; photo coordinates are 40 metres from the catalogue point. For grouped estates this photograph shows the named component in the alt text."
+  },
+  "6c660726-5f74-46c0-b0d1-26774e4fdd83": {
+    "name": "South Snowdonia",
+    "fileTitle": "File:Dolmelynllyn ornamental lake - geograph.org.uk - 7955117.jpg",
+    "alt": "Ornamental lake on the Dolmelynllyn Estate in South Snowdonia",
+    "aliases": ["Dolmelynllyn"],
+    "reviewedOn": "2026-10-05",
+    "evidence": [
+      "https://commons.wikimedia.org/wiki/File:Dolmelynllyn_ornamental_lake_-_geograph.org.uk_-_7955117.jpg",
+      "https://www.nationaltrust.org.uk/visit/wales/south-snowdonia/exploring-south-snowdonia"
+    ],
+    "note": "Subject verified visually and against source description; photo coordinates are 133 metres from the catalogue point. For grouped estates this photograph shows the named component in the alt text."
+  },
+  "4cb1ea78-89df-4727-94cc-a73ac27f851f": {
+    "name": "Lorna Doone Valley",
+    "fileTitle": "File:Malmsmead Bridge over Badgworthy Water (geograph 3002984).jpg",
+    "alt": "Malmsmead Bridge over Badgworthy Water in the Lorna Doone Valley",
+    "aliases": ["Malmsmead"],
+    "reviewedOn": "2026-10-05",
+    "evidence": [
+      "https://commons.wikimedia.org/wiki/File:Malmsmead_Bridge_over_Badgworthy_Water_(geograph_3002984).jpg",
+      "https://www.nationaltrust.org.uk/visit/devon/lorna-doone-valley"
+    ],
+    "note": "Subject verified visually and against source description; photo coordinates are 74 metres from the catalogue point. For grouped estates this photograph shows the named component in the alt text."
+  },
+  "df04d29e-f4b4-472a-b4f1-df2c3ca935b0": {
+    "name": "Crownley Woods",
+    "fileTitle": "File:Bow Creek - geograph.org.uk - 5223250.jpg",
+    "alt": "Wooded banks of Bow Creek at Crownley Woods, Tuckenhay",
+    "aliases": ["Crownley Wood"],
+    "reviewedOn": "2026-10-05",
+    "evidence": [
+      "https://commons.wikimedia.org/wiki/File:Bow_Creek_-_geograph.org.uk_-_5223250.jpg",
+      "https://www.the-independent.com/travel/uk/tales-from-the-trees-crownley-wood-devon-trees-move-with-the-tide-in-this-creekside-woodland-8919081.html"
+    ],
+    "note": "Subject verified visually and against source description; photo coordinates are 144 metres from the catalogue point. For grouped estates this photograph shows the named component in the alt text."
+  },
+  "5d828304-492a-4db1-9579-2635259b2756": {
+    "name": "Abergwesyn Common",
+    "fileTitle": "File:Peat bog west-south-west of Gorllwyn - geograph.org.uk - 2111130.jpg",
+    "alt": "Peat bog south-west of Gorllwyn on Abergwesyn Common",
+    "aliases": ["Gorllwyn"],
+    "reviewedOn": "2026-10-05",
+    "evidence": [
+      "https://commons.wikimedia.org/wiki/File:Peat_bog_west-south-west_of_Gorllwyn_-_geograph.org.uk_-_2111130.jpg",
+      "https://heritagerecords.nationaltrust.org.uk/HBSMR/MonRecord.aspx?uid=MNA187624"
+    ],
+    "note": "Subject verified visually and against source description; photo coordinates are 1311 metres from the catalogue point. For grouped estates this photograph shows the named component in the alt text."
+  },
+  "ab063811-c6ac-4c87-803d-e92f0dc62ebc": {
+    "name": "Whitehaven Coast",
+    "fileTitle": "File:Looking south along the England Coast Path - geograph.org.uk - 5802199.jpg",
+    "alt": "Coastal path south of Whitehaven overlooking the sea",
+    "aliases": ["Whitehaven"],
+    "reviewedOn": "2026-10-05",
+    "evidence": [
+      "https://commons.wikimedia.org/wiki/File:Looking_south_along_the_England_Coast_Path_-_geograph.org.uk_-_5802199.jpg",
+      "https://www.nationaltrust.org.uk/visit/lake-district/whitehaven-coast"
+    ],
+    "note": "Subject verified visually and against source description; photo coordinates are 192 metres from the catalogue point. For grouped estates this photograph shows the named component in the alt text."
+  },
+  "9f27ff42-bdfa-463a-bbb5-5cf3d8daa3b9": {
+    "name": "Sandscale Haws National Nature Reserve",
+    "fileTitle": "File:Roanhead Beach - geograph.org.uk - 7889177.jpg",
+    "alt": "Roanhead beach beside Sandscale Haws",
+    "aliases": ["Roanhead"],
+    "reviewedOn": "2026-10-05",
+    "evidence": [
+      "https://commons.wikimedia.org/wiki/File:Roanhead_Beach_-_geograph.org.uk_-_7889177.jpg",
+      "https://www.nationaltrust.org.uk/visit/lake-district/sandscale-haws-national-nature-reserve"
+    ],
+    "note": "Subject verified visually and against source description; photo coordinates are 216 metres from the catalogue point. For grouped estates this photograph shows the named component in the alt text."
+  },
+  "c0c28f77-695c-44de-8055-ce20d640e94d": {
+    "name": "Musbury Hill Fort",
+    "fileTitle": "File:Musbury Castle - geograph.org.uk - 3149521.jpg",
+    "alt": "Earthworks and grassy slopes of Musbury Castle hillfort",
+    "aliases": ["Musbury Castle"],
+    "reviewedOn": "2026-10-05",
+    "evidence": [
+      "https://commons.wikimedia.org/wiki/File:Musbury_Castle_-_geograph.org.uk_-_3149521.jpg"
+    ],
+    "note": "Subject verified visually and against source description; photo coordinates are 144 metres from the catalogue point. For grouped estates this photograph shows the named component in the alt text."
+  },
+  "16493d07-7826-406b-a1cb-1a6ff2b123b0": {
+    "name": "The Hardmans' House",
+    "fileTitle": "File:HardmanRodneyStreetOM.jpg",
+    "alt": "Entrance to E. Chambre Hardman's house at 59 Rodney Street, Liverpool",
+    "aliases": ["Hardman Rodney Street"],
+    "reviewedOn": "2026-10-05",
+    "evidence": [
+      "https://commons.wikimedia.org/wiki/File:HardmanRodneyStreetOM.jpg"
+    ],
+    "note": "Subject verified visually and against the source description; photo has no embedded location."
+  },
+  "387c91ec-46bf-4aa1-813a-a32a6d26404b": {
+    "name": "The Beatles' Childhood Homes",
+    "fileTitle": "File:Mendips 251 Menlove Avenue - geograph.org.uk - 4596182.jpg",
+    "alt": "Mendips, John Lennon's childhood home at 251 Menlove Avenue",
+    "aliases": ["Mendips"],
+    "reviewedOn": "2026-10-05",
+    "evidence": [
+      "https://commons.wikimedia.org/wiki/File:Mendips_251_Menlove_Avenue_-_geograph.org.uk_-_4596182.jpg"
+    ],
+    "note": "Subject verified visually and against source description; photo coordinates are 41 metres from the catalogue point. For grouped estates this photograph shows the named component in the alt text."
+  },
+  "1d5e7c31-1fef-48f1-9ad4-017a73fff8d5": {
+    "name": "Mendip Hills",
+    "fileTitle": "File:West Mendip Way to Wavering Down.jpg",
+    "alt": "West Mendip Way looking towards Wavering Down",
+    "aliases": ["Wavering Down"],
+    "reviewedOn": "2026-10-05",
+    "evidence": [
+      "https://commons.wikimedia.org/wiki/File:West_Mendip_Way_to_Wavering_Down.jpg",
+      "https://www.nationaltrust.org.uk/visit/somerset/mendip-hills"
+    ],
+    "note": "Subject verified visually and against source description; photo coordinates are 2455 metres from the catalogue point. For grouped estates this photograph shows the named component in the alt text."
+  },
+  "f9501822-2b2a-45d5-b0cc-4fb5aced99ac": {
+    "name": "Yorkshire Dales",
+    "fileTitle": "File:Tarn Moss to Malham Tarn - geograph.org.uk - 5472692.jpg",
+    "alt": "Tarn Moss and the boardwalk near Malham Tarn in the Yorkshire Dales",
+    "aliases": ["Malham Tarn"],
+    "reviewedOn": "2026-10-05",
+    "evidence": [
+      "https://commons.wikimedia.org/wiki/File:Tarn_Moss_to_Malham_Tarn_-_geograph.org.uk_-_5472692.jpg",
+      "https://www.nationaltrust.org.uk/visit/yorkshire/yorkshire-dales/malham-tarn-upland-farm-circular-walk"
+    ],
+    "note": "Subject verified visually and against source description; photo coordinates are 515 metres from the catalogue point. For grouped estates this photograph shows the named component in the alt text."
+  },
+  "854ec2c8-1c12-47eb-8bb2-e104593b9a03": {
+    "name": "Letocetum Roman Baths and Museum",
+    "fileTitle": "File:Letocetum - Wall Roman Site (31340852044).jpg",
+    "alt": "Roman bath house remains at Letocetum, Wall",
+    "aliases": ["Letocetum"],
+    "reviewedOn": "2026-10-05",
+    "evidence": [
+      "https://commons.wikimedia.org/wiki/File:Letocetum_-_Wall_Roman_Site_(31340852044).jpg"
+    ],
+    "note": "Subject verified visually and against source description; photo coordinates are 44 metres from the catalogue point. For grouped estates this photograph shows the named component in the alt text."
+  },
+  "8103396d-6a4a-4e84-87ac-cd3a6d41edf6": {
+    "name": "Kinder, Edale and the High Peak",
+    "fileTitle": "File:Mam Tor from Rushup Edge - geograph.org.uk - 1036721.jpg",
+    "alt": "Mam Tor viewed from Rushup Edge in the High Peak",
+    "aliases": ["Mam Tor"],
+    "reviewedOn": "2026-10-05",
+    "evidence": [
+      "https://commons.wikimedia.org/wiki/File:Mam_Tor_from_Rushup_Edge_-_geograph.org.uk_-_1036721.jpg"
+    ],
+    "note": "Subject verified visually and against source description; photo coordinates are 286 metres from the catalogue point. For grouped estates this photograph shows the named component in the alt text."
+  },
+  "91f07028-5512-466e-b057-f93046d7714e": {
+    "name": "The Old Manor",
+    "fileTitle": "File:Norbury church and hall 046773 50c8b955.jpg",
+    "alt": "The medieval Old Manor hall beside Norbury parish church",
+    "aliases": ["Norbury Old Manor"],
+    "reviewedOn": "2026-10-05",
+    "evidence": [
+      "https://commons.wikimedia.org/wiki/File:Norbury_church_and_hall_046773_50c8b955.jpg",
+      "https://www.nationaltrust.org.uk/visit/peak-district-derbyshire/the-old-manor"
+    ],
+    "note": "The source description identifies the medieval Old Manor hall on the left, beside Norbury church. Visually verified; photo coordinates are 63 metres from the catalogue point. The newer red-brick Norbury Manor house is a separate building and was excluded from this selection."
+  },
+  "eeb80c09-4376-48e6-9b7d-e4b547eacc48": {
+    "name": "Brancaster Estate",
+    "fileTitle": "File:Fishing boats at low tide, Brancaster Staithe - geograph.org.uk - 2651064.jpg",
+    "alt": "Fishing boats at low tide in Brancaster Staithe harbour",
+    "aliases": ["Brancaster Staithe"],
+    "reviewedOn": "2026-10-05",
+    "evidence": [
+      "https://commons.wikimedia.org/wiki/File:Fishing_boats_at_low_tide,_Brancaster_Staithe_-_geograph.org.uk_-_2651064.jpg"
+    ],
+    "note": "Subject verified visually and against source description; photo coordinates are 11 metres from the catalogue point. For grouped estates this photograph shows the named component in the alt text."
+  },
+  "917ea7c0-b9a7-4ac3-ab6b-839388115a5d": {
+    "name": "Marker's",
+    "fileTitle": "File:Marker's Cottage Broadclyst - geograph.org.uk - 4040065.jpg",
+    "alt": "Historic painted wall inside Marker's Cottage, Broadclyst",
+    "aliases": ["Marker's Cottage"],
+    "reviewedOn": "2026-10-05",
+    "evidence": [
+      "https://commons.wikimedia.org/wiki/File:Marker%27s_Cottage_Broadclyst_-_geograph.org.uk_-_4040065.jpg"
+    ],
+    "note": "Subject verified visually and against source description; photo coordinates are 10 metres from the catalogue point. For grouped estates this photograph shows the named component in the alt text."
+  },
+  "22bd2779-4059-4270-81c0-0587d070a7b7": {
+    "name": "Ynys Môn Coast and Countryside",
+    "fileTitle": "File:View towards Cemlyn Bay from the Anglesey Coastal Path - geograph.org.uk - 6214825.jpg",
+    "alt": "Cemlyn Bay viewed from the Anglesey Coastal Path",
+    "aliases": ["Cemlyn"],
+    "reviewedOn": "2026-10-05",
+    "evidence": [
+      "https://commons.wikimedia.org/wiki/File:View_towards_Cemlyn_Bay_from_the_Anglesey_Coastal_Path_-_geograph.org.uk_-_6214825.jpg",
+      "https://www.nationaltrust.org.uk/visit/wales/cemlyn"
+    ],
+    "note": "Subject verified visually and against source description; photo coordinates are 129 metres from the catalogue point. For grouped estates this photograph shows the named component in the alt text."
+  },
+  "b62c81bc-4a23-4ea9-a114-afced34b4e64": {
+    "name": "The Children's Country House at Sudbury",
+    "fileTitle": "File:Sudbury Hall from rear gardens - geograph.org.uk - 7655285.jpg",
+    "alt": "Sudbury Hall viewed from the rear gardens",
+    "aliases": ["Sudbury Hall"],
+    "reviewedOn": "2026-10-05",
+    "evidence": [
+      "https://commons.wikimedia.org/wiki/File:Sudbury_Hall_from_rear_gardens_-_geograph.org.uk_-_7655285.jpg"
+    ],
+    "note": "Subject verified visually and against source description; photo coordinates are 28 metres from the catalogue point. For grouped estates this photograph shows the named component in the alt text."
+  },
+  "bb22fc55-8a9c-4803-b737-5ec0a681466b": {
+    "name": "New Forest Northern Commons",
+    "fileTitle": "File:Ponies grazing Rockford Common, New Forest - geograph.org.uk - 313001.jpg",
+    "alt": "Ponies grazing heathland on Rockford Common in the New Forest",
+    "aliases": ["Rockford Common"],
+    "reviewedOn": "2026-10-05",
+    "evidence": [
+      "https://commons.wikimedia.org/wiki/File:Ponies_grazing_Rockford_Common,_New_Forest_-_geograph.org.uk_-_313001.jpg",
+      "https://www.nationaltrust.org.uk/visit/hampshire/new-forest-northern-commons/exploring-the-new-forest-northern-commons"
+    ],
+    "note": "Subject verified visually and against source description; photo coordinates are 681 metres from the catalogue point. For grouped estates this photograph shows the named component in the alt text."
+  },
+  "706e912e-025f-4fa7-a591-a2f8c2ca8f3b": {
+    "name": "Northumberland Coast",
+    "fileTitle": "File:Beach, Seahouses - geograph.org.uk - 6575864.jpg",
+    "alt": "Beach at Seahouses on the Northumberland Coast",
+    "aliases": ["Seahouses"],
+    "reviewedOn": "2026-10-05",
+    "evidence": [
+      "https://commons.wikimedia.org/wiki/File:Beach,_Seahouses_-_geograph.org.uk_-_6575864.jpg",
+      "https://heritagerecords.nationaltrust.org.uk/HBSMR/MonRecord.aspx?uid=MNA179149"
+    ],
+    "note": "Subject verified visually and against source description; photo coordinates are 96 metres from the catalogue point. For grouped estates this photograph shows the named component in the alt text."
+  },
+  "08771ce4-94c2-4a12-8f60-a404f47fe58f": {
+    "name": "Buscot Old Parsonage",
+    "fileTitle": "File:The Old Parsonage (2) - geograph.org.uk - 6121529.jpg",
+    "alt": "The Old Parsonage beside the church at Buscot",
+    "aliases": ["The Old Parsonage"],
+    "reviewedOn": "2026-10-05",
+    "evidence": [
+      "https://commons.wikimedia.org/wiki/File:The_Old_Parsonage_(2)_-_geograph.org.uk_-_6121529.jpg"
+    ],
+    "note": "Subject verified visually and against source description; photo coordinates are 25 metres from the catalogue point. For grouped estates this photograph shows the named component in the alt text."
+  },
+  "c58bf368-60fb-40c4-a72f-aa305e517d77": {
+    "name": "Mottistone Gardens and Estate",
+    "fileTitle": "File:The Shack, Mottistone Manor Gardens - geograph.org.uk - 3649547.jpg",
+    "alt": "The Shack in Mottistone Manor Gardens",
+    "aliases": ["Mottistone Manor Gardens"],
+    "reviewedOn": "2026-10-05",
+    "evidence": [
+      "https://commons.wikimedia.org/wiki/File:The_Shack,_Mottistone_Manor_Gardens_-_geograph.org.uk_-_3649547.jpg"
+    ],
+    "note": "Subject verified visually and against source description; photo coordinates are 74 metres from the catalogue point. For grouped estates this photograph shows the named component in the alt text."
+  },
+  "462da5aa-9d20-479c-a92a-f844ff84f445": {
+    "name": "Priory Cottage",
+    "fileTitle": "File:Priory Cottages, Steventon, Berkshire - geograph-3725708.jpg",
+    "alt": "Priory Cottages on the Causeway in Steventon",
+    "aliases": ["Priory Cottages"],
+    "reviewedOn": "2026-10-05",
+    "evidence": [
+      "https://commons.wikimedia.org/wiki/File:Priory_Cottages,_Steventon,_Berkshire_-_geograph-3725708.jpg"
+    ],
+    "note": "Subject verified visually and against source description; photo coordinates are 53 metres from the catalogue point. For grouped estates this photograph shows the named component in the alt text."
+  },
+  "366ee6b4-b7ac-4f8d-a61f-0aadc581b094": {
+    "name": "Curbridge Nature Reserve",
+    "fileTitle": "File:River Hamble, looking upstream near Curbridge - geograph.org.uk - 220128.jpg",
+    "alt": "River Hamble and wooded banks near Curbridge Nature Reserve",
+    "aliases": ["Curbridge"],
+    "reviewedOn": "2026-10-05",
+    "evidence": [
+      "https://commons.wikimedia.org/wiki/File:River_Hamble,_looking_upstream_near_Curbridge_-_geograph.org.uk_-_220128.jpg"
+    ],
+    "note": "Subject verified visually and against source description; photo coordinates are 200 metres from the catalogue point. For grouped estates this photograph shows the named component in the alt text."
+  },
+  "e6991207-328c-449c-ad2c-56e45f41ad50": {
+    "name": "Ventnor Downs",
+    "fileTitle": "File:Ventnor , Wroxall Down - geograph.org.uk - 6732456.jpg",
+    "alt": "View from Wroxall Down in the Ventnor Downs",
+    "aliases": ["Wroxall Down"],
+    "reviewedOn": "2026-10-05",
+    "evidence": [
+      "https://commons.wikimedia.org/wiki/File:Ventnor_,_Wroxall_Down_-_geograph.org.uk_-_6732456.jpg",
+      "https://www.nationaltrust.org.uk/visit/isle-of-wight/ventnor-downs"
+    ],
+    "note": "Subject verified visually and against source description; photo coordinates are 30 metres from the catalogue point. For grouped estates this photograph shows the named component in the alt text."
+  },
+  "658fc379-17be-4bfe-90a4-569cfe769e26": {
+    "name": "Chilterns Countryside",
+    "fileTitle": "File:Coombe Hill, trees and monument - geograph.org.uk - 5684464.jpg",
+    "alt": "Coombe Hill monument and surrounding trees in the Chilterns",
+    "aliases": ["Coombe Hill"],
+    "reviewedOn": "2026-10-05",
+    "evidence": [
+      "https://commons.wikimedia.org/wiki/File:Coombe_Hill,_trees_and_monument_-_geograph.org.uk_-_5684464.jpg",
+      "https://www.nationaltrust.org.uk/visit/oxfordshire-buckinghamshire-berkshire/chilterns-countryside/visiting-coombe-hill-in-the-chilterns-countryside"
+    ],
+    "note": "Subject verified visually and against source description; photo coordinates are 58 metres from the catalogue point. For grouped estates this photograph shows the named component in the alt text."
+  },
+  "d69bdb31-d640-43fd-bb1e-1b9479eb94d0": {
+    "name": "Ludshott Commons",
+    "fileTitle": "File:Ludshott Common - geograph.org.uk - 7812392.jpg",
+    "alt": "Heathland and trees on Ludshott Common",
+    "aliases": ["Ludshott Common"],
+    "reviewedOn": "2026-10-05",
+    "evidence": [
+      "https://commons.wikimedia.org/wiki/File:Ludshott_Common_-_geograph.org.uk_-_7812392.jpg"
+    ],
+    "note": "Subject verified visually and against source description; photo coordinates are 943 metres from the catalogue point. For grouped estates this photograph shows the named component in the alt text."
+  },
+  "f7d0d958-e989-42fa-9b92-b784b5c91290": {
+    "name": "Woolbeding Countryside",
+    "fileTitle": "File:View from Woolbeding Common - geograph.org.uk - 2001744.jpg",
+    "alt": "View across the countryside from Woolbeding Common",
+    "aliases": ["Woolbeding Common"],
+    "reviewedOn": "2026-10-05",
+    "evidence": [
+      "https://commons.wikimedia.org/wiki/File:View_from_Woolbeding_Common_-_geograph.org.uk_-_2001744.jpg",
+      "https://www.nationaltrust.org.uk/visit/sussex/woolbeding-countryside"
+    ],
+    "note": "Subject verified visually and against source description; photo coordinates are 338 metres from the catalogue point. For grouped estates this photograph shows the named component in the alt text."
+  },
+  "9d2d83e6-1649-4e7a-946b-ccaeef8c651c": {
+    "name": "Dorneywood Garden",
+    "fileTitle": "File:Dorneywood grounds.jpg",
+    "alt": "Garden and grounds at Dorneywood",
+    "aliases": ["Dorneywood"],
+    "reviewedOn": "2026-10-05",
+    "evidence": [
+      "https://commons.wikimedia.org/wiki/File:Dorneywood_grounds.jpg"
+    ],
+    "note": "Subject verified visually and against the source description; photo has no embedded location. Commons omits its Artist field; file history and self-published licence identify uploader/copyright holder Andrew Davidson.",
+    "author": "Andrew Davidson"
+  },
+  "0e3a4f5d-5e03-425c-abcf-fd6a6d671834": {
+    "name": "Yorkshire Coast",
+    "fileTitle": "File:The coast at Ravenscar - geograph.org.uk - 587742.jpg",
+    "alt": "The Yorkshire coastline viewed from Ravenscar",
+    "aliases": ["Ravenscar"],
+    "reviewedOn": "2026-10-05",
+    "evidence": [
+      "https://commons.wikimedia.org/wiki/File:The_coast_at_Ravenscar_-_geograph.org.uk_-_587742.jpg"
+    ],
+    "note": "Subject verified visually and against source description; photo coordinates are 256 metres from the catalogue point. For grouped estates this photograph shows the named component in the alt text."
+  },
+  "f8d13899-ab13-40e8-a2c7-42c80aeef189": {
+    "name": "The Homewood",
+    "fileTitle": "File:The Homewood and garden.jpg",
+    "alt": "The Homewood house and garden in Esher",
+    "aliases": ["The Homewood, Esher"],
+    "reviewedOn": "2026-10-05",
+    "evidence": [
+      "https://commons.wikimedia.org/wiki/File:The_Homewood_and_garden.jpg"
+    ],
+    "note": "Subject verified visually and against the source description; photo has no embedded location."
+  },
+  "2551fb36-996a-41ae-b588-7d9409e9a9f3": {
+    "name": "Gunby Hall Estate: Monksthorpe Chapel",
+    "fileTitle": "File:Monksthorpe Baptist chapel and baptistry - geograph.org.uk - 3071005.jpg",
+    "alt": "Monksthorpe Baptist chapel and its outdoor baptistry",
+    "aliases": ["Monksthorpe Baptist Chapel"],
+    "reviewedOn": "2026-10-05",
+    "evidence": [
+      "https://commons.wikimedia.org/wiki/File:Monksthorpe_Baptist_chapel_and_baptistry_-_geograph.org.uk_-_3071005.jpg"
+    ],
+    "note": "Subject verified visually and against source description; photo coordinates are 25 metres from the catalogue point. For grouped estates this photograph shows the named component in the alt text."
+  },
+  "ab64fba8-5da5-46c2-b3e5-4ce003c5f010": {
+    "name": "Oxburgh Estate",
+    "fileTitle": "File:Oxburgh Hall and Gardens, Norfolk NT (32781697637).jpg",
+    "alt": "Oxburgh Hall and moat in Norfolk",
+    "aliases": ["Oxburgh Hall"],
+    "reviewedOn": "2026-10-05",
+    "evidence": [
+      "https://commons.wikimedia.org/wiki/File:Oxburgh_Hall_and_Gardens,_Norfolk_NT_(32781697637).jpg"
+    ],
+    "note": "Subject verified visually and against source description; photo coordinates are 7 metres from the catalogue point. For grouped estates this photograph shows the named component in the alt text."
+  },
+  "5987c9f5-bdfb-47bd-bdc4-80431d48e003": {
+    "name": "Orford Ness National Nature Reserve",
+    "fileTitle": "File:Orford Ness - Marshes View (14328141700).jpg",
+    "alt": "Marshes and former research buildings at Orford Ness",
+    "aliases": ["Orford Ness"],
+    "reviewedOn": "2026-10-05",
+    "evidence": [
+      "https://commons.wikimedia.org/wiki/File:Orford_Ness_-_Marshes_View_(14328141700).jpg"
+    ],
+    "note": "Subject verified visually and against source description; photo coordinates are 162 metres from the catalogue point. For grouped estates this photograph shows the named component in the alt text."
+  },
+  "7f9c9105-8d70-4696-938a-fcd72d987a7f": {
+    "name": "Gray's Printing Press",
+    "fileTitle": "File:Gray, Printer, Main Street, Strabane - geograph.org.uk - 8350268.jpg",
+    "alt": "Gray's printing museum on Main Street in Strabane",
+    "aliases": ["Gray, Printer"],
+    "reviewedOn": "2026-10-05",
+    "evidence": [
+      "https://commons.wikimedia.org/wiki/File:Gray,_Printer,_Main_Street,_Strabane_-_geograph.org.uk_-_8350268.jpg"
+    ],
+    "note": "Subject verified visually and against source description; photo coordinates are 28 metres from the catalogue point. For grouped estates this photograph shows the named component in the alt text."
+  },
+  "490e78f6-0089-4a9d-88cb-3115474b3a1b": {
+    "name": "Heritage and Rural Skills Centre",
+    "fileTitle": "File:The granary at Coleshill Model Farm - geograph.org.uk - 7878869.jpg",
+    "alt": "The granary at Coleshill Model Farm, home to the Heritage and Rural Skills Centre",
+    "aliases": ["Coleshill Model Farm"],
+    "reviewedOn": "2026-10-05",
+    "evidence": [
+      "https://commons.wikimedia.org/wiki/File:The_granary_at_Coleshill_Model_Farm_-_geograph.org.uk_-_7878869.jpg",
+      "https://www.nationaltrust.org.uk/visit/oxfordshire-buckinghamshire-berkshire/heritage-and-rural-skills-centre"
+    ],
+    "note": "Subject verified visually and against source description; photo coordinates are 19 metres from the catalogue point. For grouped estates this photograph shows the named component in the alt text."
+  },
+  "398d525c-1506-42d0-a4e3-831a5d12c118": {
+    "name": "Lawrence House",
+    "reviewedOn": "2026-10-05",
+    "aliases": ["Lawrence House Museum, Launceston"],
+    "evidence": [
+      "https://commons.wikimedia.org/wiki/Category:Lawrence_House_Museum",
+      "https://lawrencehousemuseum.org.uk/discover/lawrence-house-gardens/"
+    ],
+    "note": "Reviewed Commons search, nearby images and the museum category. The category contains three collection paintings, not photographs of Lawrence House. Nearby castle and church images depict other attractions. The project owner accepted the museum garden page's garden-urn photograph as a suitable destination image on 2026-10-05. Its reuse permission and photographer credit remain unverified; the subject is approved and a house exterior photograph is not required."
+  },
+  "58f6bee7-0aaf-4c11-bf7e-1013d5250091": {
+    "name": "The Royal Oak Foundation Conservation Studio",
+    "reviewedOn": "2026-10-05",
+    "aliases": [
+      "Royal Oak Foundation Conservation Studio",
+      "Knole conservation studio"
+    ],
+    "evidence": [
+      "https://www.nationaltrust.org.uk/visit/kent/the-royal-oak-foundation-conservation-studio/what-to-see-at-royal-oak-foundation-conservation-studio"
+    ],
+    "note": "The official page identifies the studio in a medieval barn accessed via the Brewhouse courtyard. Reviewed Commons studio/barn searches and nearby Knole photographs; those show the main house, park or courtyards without identifying the studio. Official photographs have National Trust credits, with no reusable licence verified. No verified reusable studio photograph found."
+  },
+  "fb14e848-f903-4a7a-94b4-9dd9fefde5c6": {
+    "name": "The Textile Conservation Studio",
+    "reviewedOn": "2026-10-05",
+    "aliases": ["Textile Conservation Studio, Oulton"],
+    "evidence": [
+      "https://www.nationaltrust.org.uk/visit/norfolk/the-textile-conservation-studio",
+      "https://www.graceleesmaffei.org/home/2020/1/28/behind-the-scenes-at-the-textile-conservation-studio"
+    ],
+    "note": "The official page locates the studio off New Road in Oulton Street, Norfolk. Reviewed studio-specific and nearby searches; results depict unrelated RAF buildings, village houses or conservation work elsewhere. Photos exist on the official site and a visitor blog, but no reusable licence for those photos was verified. No verified reusable studio photograph found."
+  }
+}
