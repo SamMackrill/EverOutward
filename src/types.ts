@@ -40,6 +40,8 @@ export type Photo = {
   previewUrl?: string;
 };
 export type Visit = {
+  sharePath?: string;
+  shareUrl?: string;
   publicationStatus?: string;
   startingHomeId?: string;
   startingHomeVersion?: string;

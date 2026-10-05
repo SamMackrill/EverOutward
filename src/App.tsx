@@ -34,6 +34,7 @@ import Workspace from "./Workspace";
 import { usePublish } from "./usePublish";
 import Timeline from "./Timeline";
 import Link, { NavigationProvider } from "./navigation";
+import { currentView } from "./visitRoute";
 import BoatNotice from "./BoatNotice";
 import AccessNotice, { AccessAlerts, AccessDetail } from "./AccessNotice";
 import Modal from "./Modal";
@@ -104,7 +105,7 @@ export default function App() {
     [error, setError] = useState(""),
     [toast, setToast] = useState(""),
     [placeQuery, setPlaceQuery] = useState("");
-  const [view, setView] = useState(location.hash.slice(1) || "map"),
+  const [view, setView] = useState(() => currentView()),
     [selection, setSelected] = useState<Place | null>(null),
     [editor, setEditor] = useState<Visit | "new" | null>(null),
     [editorPlace, setEditorPlace] = useState<string>(),
@@ -238,10 +239,10 @@ export default function App() {
     history.replaceState(history.state, "", url);
   }, [loading, session.local, session.owner, pendingPhotoVisit, visits]);
   useEffect(() => {
-    const f = () => setView(location.hash.slice(1) || "map");
+    const f = () => setView(currentView(visits));
     window.addEventListener("popstate", f);
     return () => window.removeEventListener("popstate", f);
-  }, []);
+  }, [visits]);
   useEffect(() => {
     setCommand({ kind: "next", serial: Date.now() });
   }, [home?.version, activeHomeId]);
@@ -260,12 +261,21 @@ export default function App() {
       });
     }
   }, [view]);
+  const routeHref = (next: string) => {
+    if (session.owner) return `#${next}`;
+    const visit = next.startsWith("visit/")
+      ? visits.find((v) => v.id === next.slice(6))
+      : null;
+    return (
+      visit?.sharePath || `${location.pathname === "/" ? "" : "/"}#${next}`
+    );
+  };
   const navigate = (next: string) => {
     if (view === "timeline" && next.startsWith("visit/")) {
       timelineFocus.current = document.activeElement as HTMLElement;
       timelineScroll.current = window.scrollY;
     }
-    history.pushState({ from: view }, "", `#${next}`);
+    history.pushState({ from: view }, "", routeHref(next));
     setView(next);
     // Pages scroll with the window, so a new page starts at its top. Going
     // back to the timeline restores its position separately.
@@ -481,7 +491,7 @@ export default function App() {
       </div>
     );
   return (
-    <NavigationProvider value={navigate}>
+    <NavigationProvider value={navigate} href={routeHref}>
       <a
         className="skip"
         href="#main"

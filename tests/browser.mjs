@@ -365,7 +365,10 @@ try {
   );
   assert.equal(
     await page
-      .getByRole("button", { name: "Publish journal to here.now", exact: true })
+      .getByRole("button", {
+        name: "Publishing disabled in preview",
+        exact: true,
+      })
       .isDisabled(),
     true,
   );
