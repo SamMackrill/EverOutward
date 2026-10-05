@@ -8,9 +8,7 @@ import {
 } from "react";
 import {
   Map,
-  Route as RouteIcon,
   Clock3,
-  Compass,
   BookOpen,
   ArrowUpRight,
   ChevronRight,
@@ -41,8 +39,9 @@ import Modal from "./Modal";
 import VisitEditor from "./VisitEditor";
 import VisitDetail from "./VisitDetail";
 import RouteEditor from "./RouteEditor";
-import { PhotoCredit, Stars, WalkingEstimate } from "./shared";
-import { date, duration, miles, shortDate } from "./format";
+import PlaceHomeDistances from "./PlaceHomeDistances";
+import { PhotoCredit, Stars } from "./shared";
+import { date, shortDate } from "./format";
 import { enrichCatalogue } from "./catalogue";
 import * as api from "./api";
 import {
@@ -362,18 +361,6 @@ export default function App() {
     publicComplete,
     publicPending,
   ]);
-  const selectedQueueEntry = progress.ranked.find(
-    (p: Place) => p.id === selected?.id,
-  );
-  const selectedGeographicMetres =
-    home && selected
-      ? haversine(home, selected)
-      : selected && publicRange
-        ? haversine(publicRange.centre, selected)
-        : selectedQueueEntry?.geographicMetres;
-  const selectedGeographicApproximate =
-    !home &&
-    !!(publicRange?.approximate || selectedQueueEntry?.geographicApproximate);
   const mapRange: VisitRange | null =
     session.owner && home
       ? {
@@ -853,30 +840,8 @@ export default function App() {
                 </small>
               </span>
             </div>
-            {typeof selectedGeographicMetres === "number" && (
-              <div className="info-row">
-                <Compass size={18} />
-                <span>
-                  {selectedGeographicApproximate ? "≈" : ""}
-                  {miles(selectedGeographicMetres)} mi straight line from home
-                  <small>
-                    {selectedGeographicApproximate
-                      ? "Approximate public distance; order is saved from the exact home location."
-                      : "Straight-line distance determines the next-five order and discovery circle."}
-                  </small>
-                </span>
-              </div>
-            )}
-            {(home || routes.some((r) => r.placeId === selected.id)) && (
-              <div className="info-row">
-                <RouteIcon size={18} />
-                <span>
-                  {routes.find((r) => r.placeId === selected.id)
-                    ? `${miles(routes.find((r) => r.placeId === selected.id)!.metres)} mi by road · ${duration(routes.find((r) => r.placeId === selected.id)!.seconds)}`
-                    : "Driving distance and time not saved yet"}
-                  <small>Driving estimates are for planning the journey.</small>
-                </span>
-              </div>
+            {!visited.has(selected.id) && (
+              <PlaceHomeDistances place={selected} journeys={homeJourneys} />
             )}
             <div className="button-row">
               <a
@@ -896,10 +861,6 @@ export default function App() {
                 Official visitor information <ArrowUpRight size={16} />
               </a>
             </div>
-            <WalkingEstimate
-              route={routes.find((r) => r.placeId === selected.id)}
-              detail
-            />
             <p className="small muted">
               {selected.entrance
                 ? "Directions use the reviewed visitor entrance."
