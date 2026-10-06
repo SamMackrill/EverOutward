@@ -131,10 +131,11 @@ function DestinationCard({
           <button onClick={onSelect}>{place.name}</button>
         </h3>
         <DestinationDistances place={place} />
-        <p className="destination-description">
-          {place.description ||
-            `Discover this National Trust place in ${place.region}.`}
-        </p>
+        {(place.summary || place.description) && (
+          <p className="destination-description">
+            {place.summary || place.description}
+          </p>
+        )}
         <WalkingEstimate route={place} />
         <BoatNotice place={place} />
         <AccessNotice place={place} />
