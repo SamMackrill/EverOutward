@@ -6,6 +6,7 @@ import assert from "node:assert/strict";
 import express from "express";
 import { createStore } from "../server/store.mjs";
 import { currentHome, routeKey } from "../server/homes.mjs";
+import { placesForHome } from "../server/home-destinations.mjs";
 import { createApp } from "../server/app.mjs";
 
 const require = createRequire(import.meta.url);
@@ -13,6 +14,7 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE || "playwright");
 const catalogue = JSON.parse(await readFile("public/data/places.json", "utf8"));
 const store = createStore(":memory:");
 const home = { lat: 52, lng: 0, label: "Test home", version: "test-home" };
+const eligiblePlaces = placesForHome(catalogue.places, home);
 for (let i = 0; i < 45; i++) {
   const id = `fixture-${String(i).padStart(3, "0")}`;
   store.put("visits", id, {
@@ -86,7 +88,7 @@ try {
   await page.screenshot({ path: join(screenshots, "overview-map.png") });
   assert.match(
     await page.locator(".progress-strip").innerText(),
-    new RegExp(`45 of ${catalogue.places.length} places · 45 days out`),
+    new RegExp(`45 of ${eligiblePlaces.length} places · 45 days out`),
   );
   const wholeUk = page.getByRole("button", { name: "Whole UK", exact: true });
   assert.equal(await wholeUk.getAttribute("aria-pressed"), "false");
@@ -388,7 +390,7 @@ try {
   );
   assert.ok(
     (await driving.innerText()).includes(
-      `${catalogue.places.length} of ${catalogue.places.length}`,
+      `${eligiblePlaces.length} of ${eligiblePlaces.length}`,
     ),
   );
   await driving.screenshot({

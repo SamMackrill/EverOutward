@@ -1888,29 +1888,44 @@ select {
 }
 .place-home-distances {
   display: grid;
-  gap: 20px;
+  grid-template-columns: minmax(0, 1fr) max-content max-content;
+  column-gap: 16px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 13px;
 }
-.place-home-distance-heading {
-  display: flex;
-  align-items: baseline;
-  flex-wrap: wrap;
-  gap: 8px 16px;
-  margin-bottom: 12px;
+.place-home-distance {
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: subgrid;
+  align-items: center;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--line);
 }
-.place-home-distance-heading h3 {
+.place-home-name {
   display: flex;
   align-items: center;
   gap: 9px;
   min-width: 0;
-  margin: 0;
-  font-family: "DM Sans Variable", "Segoe UI", sans-serif;
-  font-size: 14px;
-  overflow-wrap: anywhere;
+  font-weight: 700;
+}
+.place-home-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .place-home-position {
   color: var(--green);
   font-size: 12px;
   font-weight: 700;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.place-home-road-distance {
+  white-space: nowrap;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
 }
 .lightbox-image {
   background: var(--wash);

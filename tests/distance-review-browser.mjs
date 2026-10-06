@@ -51,7 +51,7 @@ const app = createApp({
   }),
 });
 const a = currentHome(store),
-  b = { ...a, id: "second", label: "Home B" };
+  b = { ...a, id: "second", label: "Home B", lat: 52.025 };
 store.put("homes", b.id, b);
 store.put("visits", "boat-trip", {
   id: "boat-trip",
@@ -224,14 +224,49 @@ try {
     .getByLabel("Search National Trust places", { exact: true })
     .fill(target.name);
   await page.locator(".search-results").getByRole("button").first().click();
-  await page
-    .locator("dialog")
-    .getByText(/7.5 mi by road/)
+  const distances = page.locator("dialog .place-home-distance");
+  await distances
+    .first()
+    .getByText("≈ 7.5 mi by road", { exact: true })
     .waitFor();
-  await page
-    .locator("dialog")
-    .getByText(/approx. 1.1 mi walk/)
-    .waitFor();
+  assert.deepEqual(
+    await distances.locator(".place-home-label").allTextContents(),
+    ["Home B", "Home A"],
+    "homes are ordered by their saved visit number, not their stored order",
+  );
+  assert.deepEqual(
+    await distances.locator(".place-home-position").allTextContents(),
+    ["#1", "#8"],
+  );
+  assert.doesNotMatch(
+    await page.locator("dialog .place-home-distances").innerText(),
+    /straight line|walk| min|next to visit/,
+  );
+  await page.setViewportSize({ width: 390, height: 844 });
+  const layout = await distances.evaluateAll((rows) =>
+    rows.map((row) => {
+      const cells = [...row.children].map((cell) =>
+        cell.getBoundingClientRect(),
+      );
+      return {
+        height: row.getBoundingClientRect().height,
+        positionX: cells[1].x,
+        distanceX: cells[2].x,
+      };
+    }),
+  );
+  assert.ok(
+    layout.every((row) => row.height < 40),
+    "each home fits on one compact line on mobile",
+  );
+  assert.equal(layout[0].positionX, layout[1].positionX);
+  assert.equal(layout[0].distanceX, layout[1].distanceX);
+  assert.equal(
+    await page
+      .locator("dialog")
+      .evaluate((dialog) => dialog.scrollWidth > dialog.clientWidth),
+    false,
+  );
   await page
     .locator("dialog")
     .getByText("Continue on foot from the road.", { exact: true })
