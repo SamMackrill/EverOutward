@@ -129,3 +129,18 @@ test("saving and publishing retain capture times and photo identities while sort
     false,
   );
 });
+
+test("date recovery can read every exposed album photo while the importer keeps its 200-photo limit", () => {
+  const media = Array.from({ length: 220 }, (_, i) => [
+    `AF1Qphoto${i}`,
+    [`https://lh3.googleusercontent.com/pw/photo${i}`, 1200, 800],
+    Date.parse("2026-10-17T09:00:00Z") + i * 1000,
+  ]);
+  const html = `AF_initDataCallback({data:${JSON.stringify(media)}});`;
+  const url = "https://photos.google.com/share/test";
+  assert.equal(googleAlbumFromHtml(html, url).photos.length, 200);
+  const all = googleAlbumFromHtml(html, url, { limit: Infinity });
+  assert.equal(all.photos.length, 220);
+  assert.equal(all.totalPhotos, 220);
+  assert.equal(all.photos[219].sourceId, "AF1Qphoto219");
+});

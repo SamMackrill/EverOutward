@@ -10,7 +10,12 @@ import { sortPhotos, validTakenAt } from "./photo-dates.mjs";
 /** Recover missing dates only, matching the original photo identity, never album position. */
 export async function refreshPhotoDates(
   store,
-  { write = false, resolveAlbum = resolvePhotoAlbum, progress = () => {} } = {},
+  {
+    write = false,
+    resolveAlbum = (album) =>
+      resolvePhotoAlbum(album, fetch, { limit: Infinity }),
+    progress = () => {},
+  } = {},
 ) {
   const visits = store.list("visits");
   const albums = new Set(
