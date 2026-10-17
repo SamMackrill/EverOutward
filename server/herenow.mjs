@@ -22,13 +22,19 @@ export async function cloudRequest(path, options = {}) {
       "Content-Type": "application/json",
       ...options.headers,
     },
-    signal: AbortSignal.timeout(30000),
+    signal: options.signal ?? AbortSignal.timeout(30000),
   });
-  const data = await response.json();
-  if (!response.ok)
-    throw new Error(
+  const data = await response.json().catch((error) => {
+    if (response.ok) throw error;
+    return {};
+  });
+  if (!response.ok) {
+    const error = new Error(
       data.message || data.error || `here.now: ${response.status}`,
     );
+    error.status = response.status;
+    throw error;
+  }
   return data;
 }
 export async function siteState() {
