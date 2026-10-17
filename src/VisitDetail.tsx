@@ -27,6 +27,7 @@ import VisitCarousel from "./VisitCarousel";
 import { PhotoImage, Stars } from "./shared";
 import { date } from "./format";
 import { photoSource, providerFor } from "../server/photo-links.mjs";
+import { sortPhotos } from "../server/photo-dates.mjs";
 import { albumLink } from "../server/photo-albums.mjs";
 import { wazeLink } from "../server/domain.mjs";
 import * as api from "./api";
@@ -63,7 +64,7 @@ export default function VisitDetail({
     [shared, setShared] = useState("");
   const album = albumLink(visit.photos);
   // Previews that can't load are summarised once instead of as grey tiles.
-  const previewable = visit.photos.filter(
+  const previewable = sortPhotos(visit.photos).filter(
       (p) => photoSource(p) && !failed.has(p.id),
     ),
     unavailable = visit.photos.filter(

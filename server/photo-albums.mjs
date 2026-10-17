@@ -3,6 +3,7 @@ import {
   photoLinkIssue,
   providerFor,
 } from "./photo-links.mjs";
+import { sortPhotos } from "./photo-dates.mjs";
 
 export const MAX_VISIT_PHOTOS = 200;
 export function photoIdentity(value) {
@@ -107,6 +108,11 @@ export function googleAlbumFromHtml(html, albumUrl) {
             previewUrl: image.href.split("=")[0] + "=w1400-h1400",
             caption: "",
             kind: "shared",
+            ...(Number.isSafeInteger(item[2]) &&
+            item[2] >= -2208988800000 &&
+            item[2] <= 253402300799999
+              ? { takenAt: new Date(item[2]).toISOString() }
+              : {}),
           });
         }
       } catch {}
@@ -117,7 +123,7 @@ export function googleAlbumFromHtml(html, albumUrl) {
   return {
     albumUrl: album.href,
     totalPhotos: images.size,
-    photos: [...images.values()].slice(0, MAX_VISIT_PHOTOS),
+    photos: sortPhotos([...images.values()]).slice(0, MAX_VISIT_PHOTOS),
     message:
       "These are the photos Google exposes on this shared page. Review the selection before adding; very large albums may expose only part of their contents.",
   };

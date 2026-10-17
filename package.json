@@ -13,6 +13,7 @@
     "catalogue:import": "node scripts/import-catalogue.mjs",
     "photos:import": "node scripts/import-destination-photos.mjs",
     "photos:status": "node scripts/import-destination-photos.mjs --status",
+    "photos:dates": "node scripts/refresh-photo-dates.mjs",
     "photos:identities": "node scripts/fetch-photo-identities.mjs",
     "deploy": "node scripts/publish.mjs",
     "test:browser": "node tests/browser.mjs && node tests/photo-browser.mjs && node tests/carousel-browser.mjs && node tests/homes-browser.mjs && node tests/publish-browser.mjs && node tests/distance-review-browser.mjs && node tests/timeline-browser.mjs",
@@ -23,6 +24,7 @@
   },
   "dependencies": {
     "dotenv": "^17.2.0",
+    "exifr": "^7.1.3",
     "express": "^5.1.0",
     "leaflet": "^1.9.4",
     "leaflet.markercluster": "^1.5.3",

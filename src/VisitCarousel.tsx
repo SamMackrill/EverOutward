@@ -7,6 +7,7 @@ import {
 } from "react";
 import { ChevronLeft, ChevronRight, Pause, Play } from "lucide-react";
 import { photoSource } from "../server/photo-links.mjs";
+import { sortPhotos, validTakenAt } from "../server/photo-dates.mjs";
 import type { Photo } from "./types";
 
 const intervalKey = "eo-carousel-seconds";
@@ -36,7 +37,9 @@ export default function VisitCarousel({
   suspended: boolean;
   onOpen: (photo: Photo) => void;
 }) {
-  const [currentId, setCurrentId] = useState(coverId);
+  const [currentId, setCurrentId] = useState(
+    photos.some((p) => validTakenAt(p.takenAt)) ? null : coverId,
+  );
   const [failed, setFailed] = useState<Set<string>>(new Set());
   const [playing, setPlaying] = useState(
     () => !matchMedia("(prefers-reduced-motion: reduce)").matches,
@@ -51,7 +54,10 @@ export default function VisitCarousel({
   const wheelLastInput = useRef(0);
   const wheel = useRef<HTMLDivElement>(null);
   const available = useMemo(
-    () => photos.filter((p) => photoSource(p) && !failed.has(photoSource(p))),
+    () =>
+      sortPhotos(photos).filter(
+        (p) => photoSource(p) && !failed.has(photoSource(p)),
+      ),
     [photos, failed],
   );
   const count = available.length;

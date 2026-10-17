@@ -1,4 +1,5 @@
 import express from "express";
+import { sortPhotos, validTakenAt } from "./photo-dates.mjs";
 import { placeMatchesHome } from "./home-destinations.mjs";
 import { createAccessMonitor } from "./access-dates.mjs";
 import { z } from "zod";
@@ -63,6 +64,11 @@ const photo = z
     url: z.union([url, z.literal("")]),
     caption: z.string().trim().max(300),
     kind: z.enum(["image", "album", "shared"]),
+    takenAt: z
+      .string()
+      .max(45)
+      .refine(validTakenAt, "Enter a valid photo capture date and time.")
+      .optional(),
     previewUrl: z
       .union([
         url,
@@ -108,6 +114,7 @@ export const visitSchema = z
     photos: z
       .array(photo)
       .max(MAX_VISIT_PHOTOS)
+      .transform(sortPhotos)
       .refine(
         (p) => JSON.stringify(p).length <= 8_000_000,
         "The display photos exceed 8 MB. Use shared links or fewer display copies.",
@@ -340,6 +347,7 @@ export function createApp({
       placeOverrides: publicPlaceOverrides(store.list("placeCorrections")),
       visits: visits.map((visit) => ({
         ...visit,
+        photos: sortPhotos(visit.photos),
         shareUrl:
           visit.published &&
           publication?.visits?.[visit.id] &&

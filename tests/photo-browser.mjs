@@ -6,6 +6,7 @@ import { tmpdir } from "node:os";
 import express from "express";
 import { createApp } from "../server/app.mjs";
 import { createStore } from "../server/store.mjs";
+import { withCaptureExif } from "./helpers/photo-metadata.mjs";
 const catalogue = JSON.parse(await readFile("public/data/places.json", "utf8"));
 const store = createStore(":memory:");
 const app = createApp({
@@ -461,6 +462,99 @@ try {
   await page.goto(`${origin}/?publicTest=1#visit/${visit.id}`);
   await page.locator(".visit-detail h1").waitFor();
   assert.equal(await page.locator(".photo-gallery").count(), 0);
+  // Upload deliberately out of order, with conflicting file modification times.
+  await page.unroute("**/api/session");
+  await page.unroute("**/data/history.json");
+  await page.goto(origin);
+  await page
+    .getByRole("button", { name: "Record a visit", exact: true })
+    .click();
+  await page
+    .getByRole("combobox", { name: "National Trust place" })
+    .fill(catalogue.places[0].name);
+  await page
+    .getByRole("option")
+    .filter({ hasText: catalogue.places[0].name })
+    .first()
+    .click();
+  await page.locator('input[name="title"]').fill("Capture order");
+  const original = Buffer.from(image, "base64");
+  await page.locator('.photo-drop-zone input[type="file"]').setInputFiles([
+    {
+      name: "late.jpg",
+      mimeType: "image/jpeg",
+      buffer: withCaptureExif(original, "2026:10:17 12:00:00", "", ""),
+    },
+    {
+      name: "early.jpg",
+      mimeType: "image/jpeg",
+      buffer: withCaptureExif(original, "2026:10:17 09:00:00", "+01:00", "123"),
+    },
+    { name: "unknown.jpg", mimeType: "image/jpeg", buffer: original },
+  ]);
+  await page.getByText("3 photos added.", { exact: true }).waitFor();
+  const editors = page.locator(".photo-editor");
+  assert.equal(
+    await editors
+      .nth(0)
+      .getByLabel("Photo taken at", { exact: true })
+      .inputValue(),
+    "2026-10-17T09:00:00.123",
+  );
+  assert.equal(
+    await editors
+      .nth(1)
+      .getByLabel("Photo taken at", { exact: true })
+      .inputValue(),
+    "2026-10-17T12:00",
+  );
+  await editors.nth(0).getByLabel("Caption / image description").fill("early");
+  await editors.nth(1).getByLabel("Caption / image description").fill("late");
+  await editors
+    .nth(2)
+    .getByLabel("Caption / image description")
+    .fill("unknown");
+  await editors.nth(1).getByLabel("Visit cover", { exact: true }).check();
+  await page.getByRole("button", { name: "Save visit", exact: true }).click();
+  await page
+    .getByText("Visit saved to your local journal.", { exact: false })
+    .waitFor();
+  const orderedVisit = store
+    .list("visits")
+    .find((visit) => visit.title === "Capture order");
+  assert.deepEqual(
+    orderedVisit.photos.map((photo) => photo.caption),
+    ["early", "late", "unknown"],
+  );
+  assert.equal(orderedVisit.coverId, orderedVisit.photos[1].id);
+  await page.goto(`${origin}/#visit/${orderedVisit.id}`);
+  await page.locator(".carousel-slide.is-active img").waitFor();
+  assert.equal(
+    await page.locator(".carousel-slide.is-active img").getAttribute("alt"),
+    "early",
+  );
+  await page.getByRole("button", { name: "Edit visit", exact: true }).click();
+  await editors
+    .nth(2)
+    .getByLabel("Photo taken at", { exact: true })
+    .fill("2026-10-17T08:00");
+  await page.getByRole("button", { name: "Save visit", exact: true }).click();
+  await page.locator("dialog").waitFor({ state: "hidden" });
+  await page
+    .locator(".visit-detail h1")
+    .filter({ hasText: "Capture order" })
+    .waitFor();
+  assert.deepEqual(
+    store.get("visits", orderedVisit.id).photos.map((photo) => photo.caption),
+    ["unknown", "early", "late"],
+  );
+  await page.reload();
+  await page.locator(".carousel-slide.is-active img").waitFor();
+  assert.equal(
+    await page.locator(".carousel-slide.is-active img").getAttribute("alt"),
+    "unknown",
+  );
+  assert.deepEqual(errors, []);
   console.log(
     "PASS: local photo editing and deep links, story focus, guest album links, provider preview fallback, file/link drops, covers, album deduplication, large-album and file/link overflow warnings, confirmed remove all, keep/discard/save removal and cover reset, save/reopen, gallery and timeline, mobile layout.",
   );
