@@ -7,6 +7,7 @@ import { fileURLToPath } from "node:url";
 import { setTimeout as delay } from "node:timers/promises";
 import { createPublishJobs } from "../server/publish-jobs.mjs";
 import { cloudRequest, siteState } from "../server/herenow.mjs";
+import { finalizePublication } from "../server/publish-finalize.mjs";
 import { createStore } from "../server/store.mjs";
 import { migrateHomes, publicJournal } from "../server/homes.mjs";
 import { sortVisits } from "../server/domain.mjs";
@@ -270,23 +271,11 @@ export async function publishWebsite(progress = () => {}) {
   }
   assertJournalUnchanged(databasePath, snapshot.fingerprint);
   progress("Making the uploaded website live…");
-  let result;
-  try {
-    result = await cloudRequest(`/api/v1/publish/${response.slug}/finalize`, {
-      method: "POST",
-      body: JSON.stringify({ versionId: response.upload.versionId }),
-    });
-  } catch (error) {
-    const live = await cloudRequest(`/api/v1/publish/${response.slug}`).catch(
-      () => null,
-    );
-    if (live?.currentVersionId !== response.upload.versionId) throw error;
-    result = {
-      siteUrl: response.siteUrl,
-      currentVersionId: live.currentVersionId,
-      publishStatus: live.publishStatus || existing.publishStatus,
-    };
-  }
+  const result = await finalizePublication(response, {
+    baseVersionId: existing.versionId,
+    previousPublishStatus: existing.publishStatus,
+    progress,
+  });
 
   let pendingLocalChanges = false;
   try {
