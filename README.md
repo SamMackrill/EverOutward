@@ -59,6 +59,8 @@ A share page is not always an embeddable image. Google/iCloud links may provide 
 
 You can also drop multiple JPEG, PNG or WebP files into the drop area, or use its file picker. The app stores resized JPEG display copies (up to 1,400 pixels and 750 KB encoded per image) in the visit record, so they survive deployment. Original image files stay on your device/provider. Only published visits and their display copies are exported publicly; drafts remain local.
 
+The photo section shows how many of the 200 slots are in use. If an album, file selection or dropped links exceed the space remaining, a warning explains the limit and which items will be left out. Large Google albums show the full readable count and warn when only the first 200 previews are shown. Use **Remove all** and confirm **Remove all photos** to clear the visit's photos, collections and cover, then **Save visit** to apply. Cancelling and discarding the edit keeps the saved photos; originals in your photo library stay unchanged.
+
 ### Visit order
 
 The homepage leads with the nearest unvisited destination by straight-line distance, five numbered photo cards and a map framed around those places. Cards and map tooltips label straight-line and driving distances separately. Search is available behind the small **Find a place** button and never changes the challenge order. Corrected visitor entrances change directions and driving estimates; catalogue points remain the basis for geographic ranking and the circle.

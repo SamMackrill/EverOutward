@@ -182,17 +182,22 @@ try {
     { timeout: 5000 },
   );
   await page.setViewportSize({ width: 390, height: 844 });
+  let albumCount = 3;
+  let albumTotal = 3;
   await page.route("**/api/photo-links/album", (r) =>
     r.fulfill({
       json: {
         message: "Review the photos before adding.",
-        photos: [1, 2, 3].map((n) => ({
-          sourceId: `AF1Qtest${n}`,
-          url: `https://photos.google.com/share/test/photo/AF1Qtest${n}?key=example`,
-          kind: "shared",
-          caption: "",
-          previewUrl: `https://album-test.example/${n}.jpg`,
-        })),
+        totalPhotos: albumTotal,
+        photos: Array.from({ length: albumCount }, (_, i) => i + 1).map(
+          (n) => ({
+            sourceId: `AF1Qtest${n}`,
+            url: `https://photos.google.com/share/test/photo/AF1Qtest${n}?key=example`,
+            kind: "shared",
+            caption: "",
+            previewUrl: `https://album-test.example/${n}.jpg`,
+          }),
+        ),
       },
     }),
   );
@@ -308,7 +313,115 @@ try {
     false,
   );
   assert.deepEqual(errors, []);
+  // The importer warns about both server truncation and an existing visit's capacity.
+  albumCount = 200;
+  albumTotal = 250;
+  await album.getByRole("button", { name: "Load album", exact: true }).click();
+  await album.getByRole("alert").waitFor();
+  assert.match(await album.getByRole("alert").innerText(), /first 200/);
+  assert.match(await album.getByRole("alert").innerText(), /197 more/);
+  assert.match(await album.innerText(), /250 photos found/);
+  await album
+    .getByRole("button", { name: "Add selected photos (197)", exact: true })
+    .click();
+  assert.equal(await page.locator(".photo-editor").count(), 200);
+  assert.equal(
+    await page
+      .getByRole("button", { name: "Add photo link", exact: true })
+      .isDisabled(),
+    true,
+  );
+  await page.getByRole("button", { name: "Remove all", exact: true }).click();
+  await page.getByRole("button", { name: "Keep photos", exact: true }).click();
+  assert.equal(await page.locator(".photo-editor").count(), 200);
+  await page.getByRole("button", { name: "Remove all", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Remove all photos", exact: true })
+    .click();
+  assert.equal(await page.locator(".photo-editor").count(), 0);
+  assert.equal(store.list("visits")[0].photos.length, 3);
+  assert.equal(
+    await page.getByLabel("Google Photos album link").inputValue(),
+    "",
+  );
+  // Discarding the edit preserves the saved photos and cover.
   await page.getByRole("button", { name: "Cancel", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Discard changes", exact: true })
+    .click();
+  await page.getByRole("button", { name: "Add photos", exact: true }).click();
+  assert.equal(await page.locator(".photo-editor").count(), 3);
+  assert.equal(
+    await page.getByLabel("Visit cover", { exact: true }).nth(2).isChecked(),
+    true,
+  );
+  await page.getByRole("button", { name: "Remove all", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Remove all photos", exact: true })
+    .click();
+  // Dropped links warn before silently losing anything beyond the cap.
+  const manyLinks = await page.evaluateHandle(() => {
+    const transfer = new DataTransfer();
+    transfer.setData(
+      "text/uri-list",
+      Array.from(
+        { length: 201 },
+        (_, i) => `https://album-test.example/${i}.jpg`,
+      ).join("\n"),
+    );
+    return transfer;
+  });
+  await page
+    .locator(".photo-drop-zone")
+    .dispatchEvent("drop", { dataTransfer: manyLinks });
+  await manyLinks.dispose();
+  assert.equal(await page.locator(".photo-editor").count(), 200);
+  assert.match(
+    await page.locator(".photo-drop-zone").getByRole("alert").innerText(),
+    /1 will not be added/,
+  );
+  await page
+    .locator(".photo-editor")
+    .last()
+    .getByRole("button", { name: "Remove", exact: true })
+    .click();
+  // Device selections use the space remaining, rather than assuming an empty visit.
+  const manyFiles = await page.evaluateHandle(() => {
+    const canvas = document.createElement("canvas");
+    canvas.width = canvas.height = 1;
+    const bytes = Uint8Array.from(
+      atob(canvas.toDataURL("image/png").split(",")[1]),
+      (c) => c.charCodeAt(0),
+    );
+    const transfer = new DataTransfer();
+    for (let i = 0; i < 3; i++)
+      transfer.items.add(new File([bytes], `${i}.png`, { type: "image/png" }));
+    return transfer;
+  });
+  await page
+    .locator(".photo-drop-zone")
+    .dispatchEvent("drop", { dataTransfer: manyFiles });
+  await manyFiles.dispose();
+  await page.getByText("1 photo added.", { exact: true }).waitFor();
+  assert.equal(await page.locator(".photo-editor").count(), 200);
+  assert.match(
+    await page.locator(".photo-drop-zone").getByRole("alert").innerText(),
+    /2 will not be added/,
+  );
+  await page.getByRole("button", { name: "Remove all", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Remove all photos", exact: true })
+    .click();
+  await page.getByRole("button", { name: "Save visit", exact: true }).click();
+  await page
+    .getByText("Visit saved to your local journal.", { exact: false })
+    .waitFor();
+  assert.deepEqual(store.list("visits")[0].photos, []);
+  assert.equal(store.list("visits")[0].coverId, null);
+  await page.getByRole("button", { name: "Add photos", exact: true }).click();
+  assert.equal(await page.locator(".photo-editor").count(), 0);
+  await page.getByRole("button", { name: "Cancel", exact: true }).click();
+  assert.deepEqual(errors, []);
   await page.route("**/api/session", (route) =>
     route.fulfill({
       json: { local: false, owner: false, passwordConfigured: true },
@@ -349,7 +462,7 @@ try {
   await page.locator(".visit-detail h1").waitFor();
   assert.equal(await page.locator(".photo-gallery").count(), 0);
   console.log(
-    "PASS: local editing and photo deep links without login or cookies, story prompt opens the notes field, guests see a photo count and album link instead of Add photos, drop Google link, unavailable preview fallback, drop display photo onto link, select cover, drop standalone image, save/reopen, gallery and timeline render, provider link preserved, mobile layout.",
+    "PASS: local photo editing and deep links, story focus, guest album links, provider preview fallback, file/link drops, covers, album deduplication, large-album and file/link overflow warnings, confirmed remove all, keep/discard/save removal and cover reset, save/reopen, gallery and timeline, mobile layout.",
   );
 } finally {
   await browser.close();
