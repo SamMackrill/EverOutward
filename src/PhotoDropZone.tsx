@@ -2,7 +2,14 @@ import { useState } from "react";
 import { ImagePlus } from "lucide-react";
 import { displayPhoto } from "./VisitPhotoEditor";
 import { directPhoto, providerFor } from "../server/photo-links.mjs";
+import { MAX_VISIT_PHOTOS } from "../server/photo-albums.mjs";
 import type { Photo } from "./types";
+
+function limitWarning(count: number, remaining: number) {
+  return count > remaining
+    ? `You selected ${count} items, but this visit has room for only ${remaining} more (up to ${MAX_VISIT_PHOTOS} photos or collections). Only the first ${remaining} will be processed; ${count - remaining} will not be added.`
+    : "";
+}
 
 export default function PhotoDropZone({
   remaining,
@@ -16,8 +23,11 @@ export default function PhotoDropZone({
   const [dragging, setDragging] = useState(false),
     [message, setMessage] = useState("");
   const [working, setWorking] = useState(false);
+  const [warning, setWarning] = useState("");
   const addFiles = async (files: File[]) => {
     if (working) return;
+    setWarning(limitWarning(files.length, remaining));
+    setMessage("");
     setWorking(true);
     onBusy("drop", true);
     const added: Photo[] = [],
@@ -40,9 +50,6 @@ export default function PhotoDropZone({
       setMessage(
         [
           `${added.length} photo${added.length === 1 ? "" : "s"} added.`,
-          files.length > remaining
-            ? "Each visit can hold up to 200 photos or collections."
-            : "",
           ...errors,
         ]
           .filter(Boolean)
@@ -92,6 +99,7 @@ export default function PhotoDropZone({
           ),
         ];
         const added: Photo[] = [];
+        setWarning(limitWarning(links.length, remaining));
         for (const value of links.slice(0, remaining)) {
           try {
             const parsed = new URL(value);
@@ -141,6 +149,12 @@ export default function PhotoDropZone({
         Resized display copies are saved with the visit. You can also drop an
         image onto an existing link below.
       </span>
+      {(warning || remaining === 0) && (
+        <p className="form-error" role="alert">
+          {warning ||
+            `This visit has reached the limit of ${MAX_VISIT_PHOTOS} photos or collections. Remove photos before adding more.`}
+        </p>
+      )}
       {message && (
         <p className="small" role="status">
           {message}

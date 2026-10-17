@@ -79,6 +79,16 @@ test("album resolves short sharing links, rejects private links and unsafe redir
     /outside/,
   );
 });
+test("large albums report the full readable count while limiting returned previews", () => {
+  const photos = Array.from({ length: 250 }, (_, i) => media(`AF1Q${i}`));
+  const result = googleAlbumFromHtml(
+    `AF_initDataCallback({data:${JSON.stringify([photos, photos[0]])}});`,
+    "https://photos.google.com/share/large?key=access",
+  );
+  assert.equal(result.totalPhotos, 250);
+  assert.equal(result.photos.length, 200);
+  assert.equal(result.photos[199].sourceId, "AF1Q199");
+});
 test("visits accept an album selection but enforce count and total display-copy size", () => {
   const base = {
     placeId: "a",

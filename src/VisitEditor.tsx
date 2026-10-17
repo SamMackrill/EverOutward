@@ -5,7 +5,13 @@ import {
   useState,
   type FormEvent,
 } from "react";
-import { Check, Home as HomeIcon, ImagePlus, LoaderCircle } from "lucide-react";
+import {
+  Check,
+  Home as HomeIcon,
+  ImagePlus,
+  LoaderCircle,
+  Trash2,
+} from "lucide-react";
 import Modal from "./Modal";
 import { PeopleInput, PlacePicker, StarRating } from "./FormControls";
 import VisitPhotoEditor, { PhotoLibraries } from "./VisitPhotoEditor";
@@ -56,6 +62,8 @@ export default function VisitEditor({
     [coverId, setCoverId] = useState<string | null>(visit?.coverId || null),
     [error, setError] = useState(""),
     [busy, setBusy] = useState(false);
+  const [confirmRemoveAll, setConfirmRemoveAll] = useState(false);
+  const [photoReset, setPhotoReset] = useState(0);
   const photoSection = useRef<HTMLDivElement>(null),
     story = useRef<HTMLTextAreaElement>(null),
     form = useRef<HTMLFormElement>(null);
@@ -299,6 +307,54 @@ export default function VisitEditor({
               Add photo link
             </button>
           </div>
+          <div className="button-row">
+            <span className="small muted">
+              {photos.length} / {MAX_VISIT_PHOTOS} photos or collections
+            </span>
+            {photos.length > 0 && (
+              <button
+                className="text-button danger"
+                type="button"
+                disabled={busy || photoJobs.size > 0}
+                onClick={() => setConfirmRemoveAll(true)}
+              >
+                <Trash2 size={15} />
+                Remove all
+              </button>
+            )}
+          </div>
+          {confirmRemoveAll && photos.length > 0 && (
+            <div role="group" aria-label="Remove all photos confirmation">
+              <p>
+                Remove all {photos.length} photos and collections from this
+                visit? This also clears the visit cover. Save the visit to
+                apply. Originals in your photo library stay unchanged.
+              </p>
+              <div className="button-row">
+                <button
+                  className="button"
+                  type="button"
+                  autoFocus
+                  onClick={() => setConfirmRemoveAll(false)}
+                >
+                  Keep photos
+                </button>
+                <button
+                  className="button danger-fill"
+                  type="button"
+                  disabled={busy || photoJobs.size > 0}
+                  onClick={() => {
+                    setPhotos([]);
+                    setCoverId(null);
+                    setConfirmRemoveAll(false);
+                    setPhotoReset((current) => current + 1);
+                  }}
+                >
+                  Remove all photos
+                </button>
+              </div>
+            </div>
+          )}
           <p className="small muted">
             Open your photo library, copy a shared photo or collection link, and
             paste it below. Load its preview or choose a display photo, then
@@ -307,6 +363,7 @@ export default function VisitEditor({
           </p>
           <PhotoLibraries />
           <AlbumImport
+            key={`album-${photoReset}`}
             photos={photos}
             onBusy={photoBusy}
             onAdd={(added) =>
@@ -327,6 +384,7 @@ export default function VisitEditor({
             }
           />
           <PhotoDropZone
+            key={`drop-${photoReset}`}
             remaining={MAX_VISIT_PHOTOS - photos.length}
             onBusy={photoBusy}
             onAdd={(added) =>

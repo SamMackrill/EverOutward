@@ -116,6 +116,7 @@ export function googleAlbumFromHtml(html, albumUrl) {
   }
   return {
     albumUrl: album.href,
+    totalPhotos: images.size,
     photos: [...images.values()].slice(0, MAX_VISIT_PHOTOS),
     message:
       "These are the photos Google exposes on this shared page. Review the selection before adding; very large albums may expose only part of their contents.",

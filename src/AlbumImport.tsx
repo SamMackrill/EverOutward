@@ -16,6 +16,7 @@ export default function AlbumImport({
 }) {
   const [url, setUrl] = useState("");
   const [items, setItems] = useState<AlbumPhoto[]>([]);
+  const [totalPhotos, setTotalPhotos] = useState(0);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
@@ -31,11 +32,16 @@ export default function AlbumImport({
     setMessage("");
     setItems([]);
     try {
-      const result = await request<{ photos: AlbumPhoto[]; message: string }>(
-        "/api/photo-links/album",
-        { method: "POST", body: JSON.stringify({ url }) },
-      );
+      const result = await request<{
+        photos: AlbumPhoto[];
+        totalPhotos: number;
+        message: string;
+      }>("/api/photo-links/album", {
+        method: "POST",
+        body: JSON.stringify({ url }),
+      });
       setItems(result.photos);
+      setTotalPhotos(result.totalPhotos ?? result.photos.length);
       setSelected(
         new Set(
           result.photos
@@ -87,10 +93,21 @@ export default function AlbumImport({
       {items.length > 0 && (
         <>
           <p>
-            {items.length} photo{items.length === 1 ? "" : "s"} found ·{" "}
+            {totalPhotos} photo{totalPhotos === 1 ? "" : "s"} found ·{" "}
             {items.length - available.length} already added · {chosen.length}{" "}
             selected
           </p>
+          {(totalPhotos > items.length || available.length > remaining) && (
+            <p className="form-error" role="alert">
+              Each visit can hold up to {MAX_VISIT_PHOTOS} photos or
+              collections. This visit has {photos.length}; you can add up to{" "}
+              {remaining} more.{" "}
+              {totalPhotos > items.length &&
+                `Only the first ${items.length} album photos are shown. `}
+              Choose which photos to keep. Photos beyond the limit will not be
+              added.
+            </p>
+          )}
           <div className="button-row">
             <button
               type="button"
@@ -101,7 +118,9 @@ export default function AlbumImport({
                 )
               }
             >
-              Select all available
+              {available.length > remaining
+                ? `Select first ${remaining} available`
+                : "Select all available"}
             </button>
             <button
               type="button"
