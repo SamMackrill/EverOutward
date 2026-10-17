@@ -3,6 +3,7 @@ import {
   photoLinkIssue,
   providerFor,
 } from "./photo-links.mjs";
+import { sortPhotos } from "./photo-dates.mjs";
 
 export const MAX_VISIT_PHOTOS = 200;
 export function photoIdentity(value) {
@@ -70,7 +71,11 @@ export function albumLink(photos) {
   return null;
 }
 
-export function googleAlbumFromHtml(html, albumUrl) {
+export function googleAlbumFromHtml(
+  html,
+  albumUrl,
+  { limit = MAX_VISIT_PHOTOS } = {},
+) {
   const album = new URL(albumUrl);
   if (
     album.hostname !== "photos.google.com" ||
@@ -107,6 +112,11 @@ export function googleAlbumFromHtml(html, albumUrl) {
             previewUrl: image.href.split("=")[0] + "=w1400-h1400",
             caption: "",
             kind: "shared",
+            ...(Number.isSafeInteger(item[2]) &&
+            item[2] >= -2208988800000 &&
+            item[2] <= 253402300799999
+              ? { takenAt: new Date(item[2]).toISOString() }
+              : {}),
           });
         }
       } catch {}
@@ -117,13 +127,13 @@ export function googleAlbumFromHtml(html, albumUrl) {
   return {
     albumUrl: album.href,
     totalPhotos: images.size,
-    photos: [...images.values()].slice(0, MAX_VISIT_PHOTOS),
+    photos: sortPhotos([...images.values()]).slice(0, limit),
     message:
       "These are the photos Google exposes on this shared page. Review the selection before adding; very large albums may expose only part of their contents.",
   };
 }
 
-export async function resolvePhotoAlbum(value, fetcher = fetch) {
+export async function resolvePhotoAlbum(value, fetcher = fetch, options = {}) {
   if (providerFor(value)?.name !== "Google Photos" || photoLinkIssue(value))
     throw new Error(
       "Use a Google Photos album sharing link (Share → Create link).",
@@ -134,7 +144,7 @@ export async function resolvePhotoAlbum(value, fetcher = fetch) {
     url.pathname = url.pathname.split("/photo/")[0];
     page = await fetchSharedPhotoPage(url.href, fetcher);
   }
-  const result = googleAlbumFromHtml(page.html, page.url);
+  const result = googleAlbumFromHtml(page.html, page.url, options);
   if (!result.photos.length)
     throw new Error(
       "No photos could be read from this shared album. Check that link sharing is on, or drag the photos into this visit.",

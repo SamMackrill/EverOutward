@@ -31,6 +31,18 @@ const base = {
 };
 for (const [id, data] of Object.entries({
   wheel: base,
+  dated: {
+    ...base,
+    coverId: "landscape",
+    photos: photos.map((photo, i) => ({
+      ...photo,
+      takenAt: [
+        "2026-09-10T12:00:00",
+        "2026-09-10T09:00:00",
+        "2026-09-10T10:00:00",
+      ][i],
+    })),
+  },
   one: { ...base, photos: [photos[1]] },
   empty: { ...base, photos: [] },
   broken: {
@@ -170,7 +182,9 @@ try {
   await page.getByRole("link", { name: "Our timeline", exact: true }).click();
   assert.deepEqual(
     await page
-      .locator(".visit-card img")
+      .locator(".visit-card")
+      .filter({ hasNot: page.locator('a[href="#visit/dated"]') })
+      .locator("img")
       .evaluateAll((images) => images.map((img) => img.getAttribute("src"))),
     Array(3).fill("https://carousel.test/portrait.jpg"),
   );
@@ -256,6 +270,28 @@ try {
   await page.goto(`${origin}/#visit/wheel`);
   await interval.waitFor();
   assert.equal(await interval.inputValue(), "3");
+  await page.goto(`${origin}/#visit/dated`);
+  await current().waitFor();
+  assert.equal(await current().getAttribute("alt"), "portrait");
+  assert.deepEqual(
+    await page
+      .locator(".visit-photo-grid img")
+      .evaluateAll((images) => images.map((image) => image.alt)),
+    ["portrait", "garden", "landscape"],
+  );
+  await page.getByRole("button", { name: "Next photo", exact: true }).click();
+  assert.equal(await current().getAttribute("alt"), "garden");
+  await page.getByRole("button", { name: "Next photo", exact: true }).click();
+  assert.equal(await current().getAttribute("alt"), "landscape");
+  await page.getByRole("link", { name: "Our timeline", exact: true }).click();
+  assert.equal(
+    await page
+      .locator(".visit-card")
+      .filter({ has: page.locator('a[href="#visit/dated"]') })
+      .locator("img")
+      .getAttribute("src"),
+    "https://carousel.test/landscape.jpg",
+  );
   assert.deepEqual(errors, []);
   console.log(
     "PASS: portrait fit, cover-first carousel and timeline, autoplay, pause/play, arrows, mouse/trackpad/touch, mobile, reduced motion, missing photos; 1–20s intervals, refresh/visit persistence, select keyboard behaviour and denied-storage fallback.",

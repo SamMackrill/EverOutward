@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import { mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { photoSource } from "./photo-links.mjs";
+import { sortPhotos } from "./photo-dates.mjs";
 
 const escapeHtml = (value) =>
   String(value).replace(
@@ -73,7 +74,7 @@ export async function writeVisitPages({
     ).slice(0, 300);
     const cover =
       visit.photos.find((p) => p.id === visit.coverId && photoSource(p)) ||
-      visit.photos.find((p) => photoSource(p));
+      sortPhotos(visit.photos).find((p) => photoSource(p));
     let image =
       (cover && photoSource(cover)) || place?.image || "/icons/gate-1024.png";
     // Uploaded display copies need a real image URL; crawlers can't use data URIs.

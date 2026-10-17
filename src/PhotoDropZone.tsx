@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { ImagePlus } from "lucide-react";
-import { displayPhoto } from "./VisitPhotoEditor";
+import { preparePhoto } from "./VisitPhotoEditor";
 import { directPhoto, providerFor } from "../server/photo-links.mjs";
 import { MAX_VISIT_PHOTOS } from "../server/photo-albums.mjs";
 import type { Photo } from "./types";
@@ -40,7 +40,7 @@ export default function PhotoDropZone({
             url: "",
             kind: "image",
             caption: "",
-            previewUrl: await displayPhoto(file),
+            ...(await preparePhoto(file)),
           });
         } catch (error) {
           errors.push(`${file.name}: ${(error as Error).message}`);

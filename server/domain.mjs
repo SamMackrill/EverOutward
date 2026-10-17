@@ -1,5 +1,6 @@
 import { hasLimitedAccess } from "./access-rules.mjs";
 import { placesForHome } from "./home-destinations.mjs";
+import { sortPhotos } from "./photo-dates.mjs";
 
 export function haversine(a, b) {
   const rad = (value) => (value * Math.PI) / 180;
@@ -179,7 +180,7 @@ export function publicVisit(visit, homes = []) {
     notes,
     attendees,
     rating,
-    photos,
+    photos: sortPhotos(photos),
     coverId,
     published,
     createdAt,

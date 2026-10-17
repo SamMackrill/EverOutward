@@ -19,6 +19,7 @@ import PhotoDropZone from "./PhotoDropZone";
 import AlbumImport from "./AlbumImport";
 import { MAX_VISIT_PHOTOS, photoIdentity } from "../server/photo-albums.mjs";
 import { photoSource } from "../server/photo-links.mjs";
+import { sortPhotos } from "../server/photo-dates.mjs";
 import type { Home, Photo, Place, Visit } from "./types";
 
 /** Edits visit details and photos while protecting unsaved changes. */
@@ -144,7 +145,7 @@ export default function VisitEditor({
         ],
         rating: d.get("rating") ? Number(d.get("rating")) : null,
         published: d.get("published") === "on",
-        photos,
+        photos: sortPhotos(photos),
         coverId,
         updatedAt: visit?.updatedAt,
       });
@@ -393,7 +394,13 @@ export default function VisitEditor({
               )
             }
           />
-          {photos.map((photo, index) => (
+          <p className="small muted">
+            Photos appear earliest first by the date and time taken. Photos
+            without a known date follow in their existing order. Older display
+            copies may need their time set below or the original photo added
+            again.
+          </p>
+          {sortPhotos(photos).map((photo, index) => (
             <VisitPhotoEditor
               key={photo.id}
               photo={photo}

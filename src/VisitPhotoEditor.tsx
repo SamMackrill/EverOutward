@@ -10,6 +10,13 @@ import {
 } from "../server/photo-links.mjs";
 import type { Photo } from "./types";
 import SharedLinkInput from "./SharedLinkInput";
+import { photoTakenAt } from "../server/photo-dates.mjs";
+
+export async function preparePhoto(file: File) {
+  const previewUrl = await displayPhoto(file);
+  const takenAt = await photoTakenAt(await file.arrayBuffer());
+  return { previewUrl, takenAt };
+}
 
 export async function displayPhoto(file: File): Promise<string> {
   if (!["image/jpeg", "image/png", "image/webp"].includes(file.type))
@@ -97,9 +104,13 @@ export default function VisitPhotoEditor({
     const job = ++sequence.current;
     setBusy(true);
     try {
-      const previewUrl = await displayPhoto(file);
+      const prepared = await preparePhoto(file);
       if (job !== sequence.current) return;
-      onChange({ ...latest.current, previewUrl });
+      onChange({
+        ...latest.current,
+        ...prepared,
+        takenAt: prepared.takenAt || latest.current.takenAt,
+      });
       setBrokenSource("");
       setMessage(
         "Display photo ready. Its resized copy is saved with this visit and published when the visit is published.",
@@ -174,6 +185,7 @@ export default function VisitPhotoEditor({
             onChange({
               ...photo,
               url,
+              takenAt: url === photo.url ? photo.takenAt : undefined,
               kind:
                 photo.kind === "album"
                   ? "album"
@@ -260,25 +272,11 @@ export default function VisitPhotoEditor({
         <input
           type="file"
           accept="image/jpeg,image/png,image/webp"
-          onChange={async (e) => {
+          onChange={(e) => {
             const file = e.target.files?.[0];
             if (!file) return;
-            const job = ++sequence.current;
-            setBusy(true);
-            try {
-              const previewUrl = await displayPhoto(file);
-              if (job !== sequence.current) return;
-              onChange({ ...latest.current, previewUrl });
-              setBrokenSource("");
-              setMessage(
-                "Display photo ready. Its resized copy is saved with this visit and published when the visit is published.",
-              );
-            } catch (error) {
-              if (job === sequence.current)
-                setMessage((error as Error).message);
-            } finally {
-              if (job === sequence.current) setBusy(false);
-            }
+            void chooseFile(file);
+            e.target.value = "";
           }}
         />
       </label>
@@ -305,6 +303,36 @@ export default function VisitPhotoEditor({
         </label>
       </details>
       <label>
+        Photo taken at
+        <input
+          type="datetime-local"
+          aria-label="Photo taken at"
+          step="any"
+          value={
+            photo.takenAt
+              ?.replace(/(Z|[+-]\d{2}:\d{2})$/, "")
+              .replace(/(\.\d{3})\d+$/, "$1") || ""
+          }
+          onChange={(e) => {
+            const value = e.target.value;
+            const timezone =
+              photo.takenAt?.match(/(Z|[+-]\d{2}:\d{2})$/)?.[0] || "";
+            onChange({
+              ...photo,
+              takenAt: value
+                ? (value.length === 16 ? value + ":00" : value) + timezone
+                : undefined,
+            });
+          }}
+        />
+        <span className="small muted">
+          Set or correct the time to place this photo in the visit sequence.{" "}
+          {photo.takenAt?.match(/(Z|[+-]\d{2}:\d{2})$/)?.[0]
+            ? `Recorded time zone: ${photo.takenAt.endsWith("Z") ? "UTC" : photo.takenAt.slice(-6)}.`
+            : "Camera time; time zone not recorded."}
+        </span>
+      </label>
+      <label>
         Caption / image description
         <input
           value={photo.caption}
@@ -330,8 +358,8 @@ export default function VisitPhotoEditor({
       </div>
       {isCover && (
         <p className="small muted">
-          This opens the full visit’s photo carousel. The timeline uses the
-          first available photo.
+          The timeline uses this cover. The visit carousel follows the photo
+          sequence.
         </p>
       )}
       {!source && (

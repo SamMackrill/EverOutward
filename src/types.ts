@@ -41,6 +41,7 @@ export type Photo = {
   caption: string;
   kind: "image" | "album" | "shared";
   previewUrl?: string;
+  takenAt?: string;
 };
 export type Visit = {
   sharePath?: string;
