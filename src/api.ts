@@ -62,7 +62,7 @@ export async function state(): Promise<{
   unpublishedChanges?: number;
 }> {
   if (local) return request("/api/state");
-  const response = await fetch("/data/history.json", { cache: "no-store" });
+  const response = await fetch("/data/history.json", { cache: "no-cache" });
   if (!response.ok)
     throw new Error("The journal could not be loaded. Please retry.");
   const data = await response.json();

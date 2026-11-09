@@ -11,8 +11,8 @@ import BoatNotice from "./BoatNotice";
 import AccessNotice from "./AccessNotice";
 import { PhotoCredit, WalkingEstimate } from "./shared";
 import { duration, miles } from "./format";
-import { haversine, wazeLink } from "../server/domain.mjs";
-import type { Home, Place, Route } from "./types";
+import { wazeLink } from "../server/domain.mjs";
+import type { Place, Route } from "./types";
 
 export type Ranked = Place &
   Partial<Route> & {
@@ -199,14 +199,13 @@ export function NextGateCompact({
   );
 }
 
-/** The map view's side rail: the next five, routing notes and nearby places. */
+/** The map view's side rail: the next five and their routing notes. */
 export default function NextFive({
   progress,
   hasQueue,
   owner,
   hasPlaces,
-  nearby,
-  home,
+  homeLabel,
   onSelect,
   onNavigate,
 }: {
@@ -214,8 +213,7 @@ export default function NextFive({
   hasQueue: boolean;
   owner: boolean;
   hasPlaces: boolean;
-  nearby: Place[];
-  home: Home | null;
+  homeLabel?: string;
   onSelect: (place: Place) => void;
   onNavigate: (view: string) => void;
 }) {
@@ -224,7 +222,8 @@ export default function NextFive({
       <div className="sidebar-head">
         <h2>The next five</h2>
         <p>
-          Our next adventure begins with the nearest place we haven’t visited.
+          The nearest places we haven’t visited, in a straight line
+          {homeLabel ? ` from ${homeLabel}` : " from home"}.
         </p>
       </div>
       {progress.remainingCount === 0 && hasPlaces ? (
@@ -240,16 +239,12 @@ export default function NextFive({
         <>
           {progress.ranked.length > 0 ? (
             <>
-              <div
-                className={`route-status ${progress.complete ? "ready" : ""}`}
-              >
-                <Compass size={17} />
-                <span>
-                  {progress.complete
-                    ? "Ranked by straight-line distance"
-                    : "Set home to order nearby places"}
-                </span>
-              </div>
+              {!progress.complete && (
+                <div className="route-status">
+                  <Compass size={17} />
+                  <span>Set home to order nearby places</span>
+                </div>
+              )}
               <div className="next-list destination-list">
                 {progress.ranked.map((p, index) => (
                   <DestinationCard
@@ -325,28 +320,6 @@ export default function NextFive({
           </button>
         </div>
       )}
-      {owner && home && nearby.length > 0 && (
-        <div className="nearby">
-          <h3>Around your home</h3>
-          <p className="small muted">
-            Straight-line distances · same order as the next five
-          </p>
-          {nearby.map((p) => (
-            <button key={p.id} onClick={() => onSelect(p)}>
-              <span>{p.name}</span>
-              <span>{miles(haversine(home, p))} mi</span>
-            </button>
-          ))}
-        </div>
-      )}
-      <div className="sidebar-footer">
-        <img src="/icons/gate.svg" alt="" />
-        <p>
-          Collect days out.
-          <br />
-          Keep the little moments.
-        </p>
-      </div>
     </aside>
   );
 }

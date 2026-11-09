@@ -127,14 +127,7 @@ export default function VisitDetail({
           )}
         </div>
       </div>
-      <VisitCarousel
-        key={`${visit.id}:${visit.coverId}`}
-        photos={visit.photos}
-        coverId={visit.coverId}
-        suspended={!!selectedPhoto}
-        onOpen={setSelectedPhoto}
-      />
-      <div className="detail-copy">
+      <header className="detail-copy visit-heading">
         <p className="eyebrow">
           {date(visit.date)}
           {owner
@@ -153,6 +146,15 @@ export default function VisitDetail({
             <Stars value={visit.rating} />
           </p>
         )}
+      </header>
+      <VisitCarousel
+        key={`${visit.id}:${visit.coverId}`}
+        photos={visit.photos}
+        coverId={visit.coverId}
+        suspended={!!selectedPhoto}
+        onOpen={setSelectedPhoto}
+      />
+      <div className="detail-copy">
         <BoatNotice place={place} />
         <AccessNotice place={place} />
         {(!!visit.attendees?.length || origin || visit.published) && (

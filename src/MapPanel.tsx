@@ -5,6 +5,7 @@ import {
   Globe,
   Home as HomeIcon,
   Info,
+  Layers,
   Route as RouteIcon,
   Search,
   X,
@@ -25,7 +26,7 @@ export type MapCommand = {
   serial: number;
 };
 
-/** The map view: home switcher, place search, map, view controls and legend. */
+/** The map view: home switcher, place search, map, view controls, key and map detail. */
 export default function MapPanel({
   hidden,
   places,
@@ -70,7 +71,8 @@ export default function MapPanel({
   const [query, setQuery] = useState(""),
     [filter, setFilter] = useState("all"),
     [searching, setSearching] = useState(false),
-    [legendOpen, setLegendOpen] = useState(false);
+    [legendOpen, setLegendOpen] = useState(false),
+    [mapStyle, setMapStyle] = useState("streets");
   const toggle = useRef<HTMLButtonElement>(null);
   const filtered = useMemo(
     () =>
@@ -193,6 +195,7 @@ export default function MapPanel({
           activeHomeId={activeHomeId}
           range={range}
           theme={theme}
+          mapStyle={mapStyle}
           selectedId={selectedId}
           onSelect={onSelect}
           command={command}
@@ -218,6 +221,7 @@ export default function MapPanel({
         <button
           className="legend-toggle"
           aria-label="Map key"
+          title="Map key"
           aria-expanded={legendOpen}
           aria-controls="map-legend"
           onClick={() => setLegendOpen((open) => !open)}
@@ -235,7 +239,7 @@ export default function MapPanel({
           {places.some((p) => p.limitedAccess) && (
             <span>
               <i className="dot limited-access-dot" />
-              Special open days · circle can pass
+              Special open days only
             </span>
           )}
           <span>
@@ -256,8 +260,8 @@ export default function MapPanel({
             <span>
               <i className="range-swatch" />
               {range.approximate
-                ? "Current circle · approximate"
-                : "Current discovery circle"}
+                ? "Discovery circle · approximate"
+                : "Discovery circle"}
             </span>
           )}
           {homeJourneys.length > 1 && (
@@ -281,7 +285,7 @@ export default function MapPanel({
       </div>
       <div className="map-foot">
         <span>
-          {filtered.length} catalogue places ·{" "}
+          {filtered.length} places ·{" "}
           <a
             href="https://services-eu1.arcgis.com/NPIbx47lsIiu2pqz/ArcGIS/rest/services/National_Trust_Visitor_Properties_/FeatureServer/0"
             target="_blank"
@@ -290,8 +294,19 @@ export default function MapPanel({
             National Trust open data
           </a>
         </span>
+        <label className="map-style">
+          <Layers size={14} aria-hidden="true" />
+          <select
+            aria-label="Map detail"
+            value={mapStyle}
+            onChange={(e) => setMapStyle(e.target.value)}
+          >
+            <option value="streets">Street detail</option>
+            <option value="overview">Overview map</option>
+          </select>
+        </label>
         <button className="text-button" onClick={onBrowseList}>
-          Browse accessible place list <ChevronRight size={14} />
+          Browse places as a list <ChevronRight size={14} />
         </button>
       </div>
     </div>
