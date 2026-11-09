@@ -14,6 +14,9 @@ const coverPhoto = (v: Visit) =>
   v.photos.find((p) => p.id === v.coverId && photoSource(p)) ||
   sortPhotos(v.photos).find((p) => photoSource(p));
 
+/** How many names the person filter shows before "more". */
+const PEOPLE_START = 8;
+
 /** A timeline card image that falls back to the place's photo if the cover fails. */
 function Cover({ visit, place }: { visit: Visit; place?: Place }) {
   const photo = coverPhoto(visit);
@@ -48,6 +51,7 @@ export default function Timeline({
 }) {
   const [query, setQuery] = useState(""),
     [person, setPerson] = useState(""),
+    [allPeople, setAllPeople] = useState(false),
     [limit, setLimit] = useState(20);
   const placeById = useMemo(
     () => new globalThis.Map(places.map((p) => [p.id, p])),
@@ -103,6 +107,11 @@ export default function Timeline({
     return () => observer.disconnect();
   }, [hidden, shown.length, limit]);
   const filtered = !!(query || person);
+  // Regular companions lead; occasional guests wait behind a "more" chip.
+  const peopleShown =
+    allPeople || people.length <= PEOPLE_START + 1
+      ? people
+      : people.filter((name, i) => i < PEOPLE_START || name === person);
   return (
     <div className="timeline-view content-scroll" hidden={hidden}>
       <div className="section-heading">
@@ -125,7 +134,7 @@ export default function Timeline({
       </label>
       {people.length > 1 && (
         <div className="person-filter" role="group" aria-label="Who came">
-          {["", ...people].map((name) => (
+          {["", ...peopleShown].map((name) => (
             <button
               key={name || "everyone"}
               className="chip"
@@ -138,6 +147,15 @@ export default function Timeline({
               {name || "Everyone"}
             </button>
           ))}
+          {peopleShown.length < people.length && (
+            <button
+              className="chip chip-more"
+              aria-expanded="false"
+              onClick={() => setAllPeople(true)}
+            >
+              +{people.length - peopleShown.length} more
+            </button>
+          )}
         </div>
       )}
       {!shown.length ? (

@@ -1,4 +1,6 @@
 import {
+  lazy,
+  Suspense,
   useCallback,
   useEffect,
   useMemo,
@@ -28,7 +30,6 @@ import {
 import MapPanel, { type MapCommand } from "./MapPanel";
 import NextFive, { NextGateCompact } from "./NextFive";
 import JourneyBar from "./JourneyBar";
-import Workspace from "./Workspace";
 import { usePublish } from "./usePublish";
 import Timeline from "./Timeline";
 import Link, { NavigationProvider } from "./navigation";
@@ -36,9 +37,7 @@ import { currentView } from "./visitRoute";
 import BoatNotice from "./BoatNotice";
 import AccessNotice, { AccessAlerts, AccessDetail } from "./AccessNotice";
 import Modal from "./Modal";
-import VisitEditor from "./VisitEditor";
 import VisitDetail from "./VisitDetail";
-import RouteEditor from "./RouteEditor";
 import PlaceHomeDistances from "./PlaceHomeDistances";
 import { PhotoCredit, Stars } from "./shared";
 import { date, shortDate } from "./format";
@@ -46,7 +45,6 @@ import { enrichCatalogue } from "./catalogue";
 import { placesForHome } from "../server/home-destinations.mjs";
 import * as api from "./api";
 import {
-  haversine,
   outward,
   routeMatchesPlace,
   sortVisits,
@@ -63,6 +61,11 @@ import type {
   Visit,
   VisitRange,
 } from "./types";
+
+// Only the owner edits, so guests never download these screens.
+const Workspace = lazy(() => import("./Workspace"));
+const VisitEditor = lazy(() => import("./VisitEditor"));
+const RouteEditor = lazy(() => import("./RouteEditor"));
 
 const official = (p: Place) =>
   p.officialUrl ||
@@ -165,7 +168,7 @@ export default function App() {
   useEffect(() => {
     let alive = true;
     Promise.all([
-      fetch("/data/places.json", { cache: "no-store" }).then((r) => {
+      fetch("/data/places.json", { cache: "no-cache" }).then((r) => {
         if (!r.ok)
           throw new Error(
             "The places catalogue could not be loaded. Please refresh.",
@@ -387,16 +390,6 @@ export default function App() {
       ),
     [homePlaces, placeQuery],
   );
-  const nearby = useMemo(
-    () =>
-      home
-        ? [...homePlaces]
-            .filter((p) => !visited.has(p.id))
-            .sort((a, b) => haversine(home, a) - haversine(home, b))
-            .slice(0, 5)
-        : [],
-    [homePlaces, visited, home],
-  );
   const currentVisit = view.startsWith("visit/")
     ? visits.find((v) => v.id === view.slice(6))
     : null;
@@ -546,31 +539,17 @@ export default function App() {
           )}
         </nav>
         <div className="header-actions">
-          <div
-            className="theme-picker"
-            role="radiogroup"
-            aria-label="Colour theme"
-          >
-            {[
-              { value: "system", label: "System theme", Icon: Monitor },
-              { value: "light", label: "Light theme", Icon: Sun },
-              { value: "dark", label: "Dark theme", Icon: Moon },
-            ].map(({ value, label, Icon }) => (
-              <label className="theme-option" key={value} title={label}>
-                <input
-                  type="radio"
-                  name="colour-theme"
-                  value={value}
-                  aria-label={label}
-                  checked={themeChoice === value}
-                  onChange={() => setThemeChoice(value)}
-                />
-                <span>
-                  <Icon size={17} aria-hidden="true" />
-                </span>
-              </label>
-            ))}
-          </div>
+          {session.owner && (
+            <button
+              className="button primary record-button"
+              onClick={() => openEditor()}
+            >
+              <Plus size={18} aria-hidden="true" />
+              <span>
+                Record<span className="record-rest"> a visit</span>
+              </span>
+            </button>
+          )}
           {session.local &&
             !session.localOwner &&
             (session.owner ? (
@@ -587,7 +566,7 @@ export default function App() {
               </button>
             ) : (
               <button
-                className="button quiet"
+                className="button quiet sign-in-button"
                 onClick={() => setShowLogin(true)}
               >
                 <LogIn size={16} />
@@ -609,11 +588,9 @@ export default function App() {
           days: visits.length,
           range: mapRange,
         }}
-        owner={session.owner}
         publishing={
           session.owner ? { changes: unpublished, publisher } : undefined
         }
-        onRecord={() => openEditor()}
         onNextGate={() => selectOnMap(progress.ranked[0])}
       />
       {error && (
@@ -761,17 +738,19 @@ export default function App() {
             ))}
           {view === "settings" &&
             (session.owner ? (
-              <Workspace
-                visits={visits}
-                home={home}
-                homes={homes}
-                homeJourneys={homeJourneys}
-                places={places}
-                changes={unpublished}
-                publisher={publisher}
-                onRefresh={reload}
-                notify={setToast}
-              />
+              <Suspense fallback={<PageLoading />}>
+                <Workspace
+                  visits={visits}
+                  home={home}
+                  homes={homes}
+                  homeJourneys={homeJourneys}
+                  places={places}
+                  changes={unpublished}
+                  publisher={publisher}
+                  onRefresh={reload}
+                  notify={setToast}
+                />
+              </Suspense>
             ) : (
               <div className="empty-state">
                 <h1 className="view-title">Owner workspace</h1>
@@ -791,16 +770,42 @@ export default function App() {
             hasQueue={publicQueue.length > 0}
             owner={session.owner}
             hasPlaces={places.length > 0}
-            nearby={nearby}
-            home={home}
+            homeLabel={activeJourney?.label || home?.label}
             onSelect={selectOnMap}
             onNavigate={navigate}
           />
         )}
       </main>
       <footer className="site-footer">
-        <span>Ever Outward: The Next Gate</span>
+        <span className="footer-motto">
+          Collect days out. Keep the little moments.
+        </span>
         <span>Independent family journal · National Trust data: CC BY 4.0</span>
+        <div
+          className="theme-picker"
+          role="radiogroup"
+          aria-label="Colour theme"
+        >
+          {[
+            { value: "system", label: "System theme", Icon: Monitor },
+            { value: "light", label: "Light theme", Icon: Sun },
+            { value: "dark", label: "Dark theme", Icon: Moon },
+          ].map(({ value, label, Icon }) => (
+            <label className="theme-option" key={value} title={label}>
+              <input
+                type="radio"
+                name="colour-theme"
+                value={value}
+                aria-label={label}
+                checked={themeChoice === value}
+                onChange={() => setThemeChoice(value)}
+              />
+              <span>
+                <Icon size={17} aria-hidden="true" />
+              </span>
+            </label>
+          ))}
+        </div>
       </footer>
       {selected && (
         <Modal title={selected.name} onClose={() => setSelected(null)}>
@@ -934,39 +939,43 @@ export default function App() {
         />
       )}
       {editor && (
-        <VisitEditor
-          visit={editor === "new" ? null : editor}
-          defaultPlace={editorPlace}
-          suggestions={editorSuggestions}
-          homes={homes}
-          currentHome={home}
-          focus={editorFocus}
-          places={places}
-          onClose={() => {
-            setEditor(null);
-            setEditorFocus(undefined);
-          }}
-          onSave={saveVisit}
-        />
+        <Suspense fallback={null}>
+          <VisitEditor
+            visit={editor === "new" ? null : editor}
+            defaultPlace={editorPlace}
+            suggestions={editorSuggestions}
+            homes={homes}
+            currentHome={home}
+            focus={editorFocus}
+            places={places}
+            onClose={() => {
+              setEditor(null);
+              setEditorFocus(undefined);
+            }}
+            onSave={saveVisit}
+          />
+        </Suspense>
       )}
       {routePlace && (
-        <RouteEditor
-          place={routePlace}
-          onClose={() => setRoutePlace(null)}
-          onSave={async (metres, seconds) => {
-            await api.request("/api/routes", {
-              method: "PUT",
-              body: JSON.stringify({
-                routes: [{ placeId: routePlace.id, metres, seconds }],
-                homeId: home?.id,
-                homeVersion: home?.version,
-              }),
-            });
-            await reload();
-            setRoutePlace(null);
-            setToast("Driving distance saved. Publishing has been queued.");
-          }}
-        />
+        <Suspense fallback={null}>
+          <RouteEditor
+            place={routePlace}
+            onClose={() => setRoutePlace(null)}
+            onSave={async (metres, seconds) => {
+              await api.request("/api/routes", {
+                method: "PUT",
+                body: JSON.stringify({
+                  routes: [{ placeId: routePlace.id, metres, seconds }],
+                  homeId: home?.id,
+                  homeVersion: home?.version,
+                }),
+              });
+              await reload();
+              setRoutePlace(null);
+              setToast("Driving distance saved. Publishing has been queued.");
+            }}
+          />
+        </Suspense>
       )}
       {toast && (
         <div role="status" className="toast">
@@ -975,6 +984,16 @@ export default function App() {
         </div>
       )}
     </NavigationProvider>
+  );
+}
+
+/** Shown briefly while an owner-only screen downloads. */
+function PageLoading() {
+  return (
+    <div className="empty-state" role="status">
+      <LoaderCircle className="spin" />
+      <p>Opening…</p>
+    </div>
   );
 }
 

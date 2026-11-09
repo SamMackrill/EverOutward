@@ -316,13 +316,7 @@ export default function VisitCarousel({
         </label>
         <p className="carousel-counter" aria-live={rotating ? "off" : "polite"}>
           {index + 1} / {count}
-          <span>
-            {count > 1
-              ? playing
-                ? `A new photo every ${seconds} second${seconds === 1 ? "" : "s"}`
-                : "Slideshow paused"
-              : "One photo from this visit"}
-          </span>
+          {count > 1 && !playing && <span>Paused</span>}
         </p>
       </div>
       {current.caption && <p className="carousel-caption">{current.caption}</p>}

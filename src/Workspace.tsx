@@ -5,7 +5,6 @@ import {
   Globe,
   LoaderCircle,
   LockKeyhole,
-  Settings,
 } from "lucide-react";
 import HomeLocations from "./HomeLocations";
 import DistanceReview from "./DistanceReview";
@@ -116,7 +115,6 @@ export default function Workspace({
           <p className="eyebrow">Local owner workspace</p>
           <h1 className="view-title">A home for your adventures</h1>
         </div>
-        <Settings size={26} />
       </div>
       <section className="settings-section publish-section">
         <div>

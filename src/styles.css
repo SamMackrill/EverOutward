@@ -414,7 +414,7 @@ small,
   top: 15px;
 }
 .site-header {
-  height: 91px;
+  height: 72px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -431,19 +431,20 @@ small,
   color: var(--ink);
 }
 .brand > img {
-  width: 57px;
-  height: 57px;
+  width: 46px;
+  height: 46px;
 }
 .brand > span {
   display: grid;
-  gap: 4px;
+  gap: 2px;
 }
 .brand strong {
-  font-size: 24px;
-  letter-spacing: -0.7px;
+  font-size: 22px;
+  line-height: 1.15;
+  letter-spacing: -0.6px;
 }
 .brand small {
-  font-size: 12px;
+  font-size: 11px;
   letter-spacing: 0.26em;
   color: var(--green);
   font-weight: 700;
@@ -458,11 +459,14 @@ small,
   display: flex;
   align-items: center;
   gap: 9px;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 600;
   padding: 0 16px;
   border-bottom: 3px solid transparent;
   color: var(--muted);
+}
+.site-header nav a:hover {
+  color: var(--ink);
 }
 .site-header nav a.active {
   border-color: var(--green);
@@ -473,14 +477,15 @@ small,
   align-items: center;
   gap: 12px;
 }
+/* A set-once control: it lives in the footer, out of the way. */
 .theme-picker {
   display: flex;
   flex-shrink: 0;
   gap: 2px;
-  padding: 3px;
+  padding: 2px;
   border: 1px solid var(--line);
-  border-radius: 9px;
-  background: var(--wash);
+  border-radius: 8px;
+  background: var(--paper);
 }
 .theme-option {
   position: relative;
@@ -498,13 +503,13 @@ small,
 .theme-option span {
   display: grid;
   place-items: center;
-  width: 32px;
-  height: 32px;
+  width: 30px;
+  height: 28px;
   border-radius: 5px;
   color: var(--muted);
 }
 .theme-option:hover span {
-  background: var(--paper);
+  background: var(--wash);
   color: var(--ink);
 }
 .theme-option input:checked + span {
@@ -524,12 +529,15 @@ small,
   padding: 11px 17px;
   background: var(--paper);
   color: var(--ink);
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 600;
-  border-radius: 5px;
+  border-radius: 6px;
   text-decoration: none;
   line-height: 1.4;
   min-height: 40px;
+  transition:
+    background-color 120ms ease,
+    border-color 120ms ease;
 }
 .button:hover {
   border-color: var(--green);
@@ -551,7 +559,7 @@ small,
   display: inline-flex;
   gap: 7px;
   align-items: center;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 600;
   color: var(--green);
   padding: 6px 0;
@@ -577,8 +585,8 @@ small,
   flex-wrap: wrap;
   justify-content: space-between;
   align-items: center;
-  gap: 16px 32px;
-  padding: 24px 38px 22px;
+  gap: 14px 32px;
+  padding: 20px 38px 18px;
 }
 .journey-title {
   display: grid;
@@ -587,7 +595,7 @@ small,
   min-width: 0;
 }
 .journey-bar-slim {
-  padding-block: 16px;
+  padding-block: 14px;
 }
 /* Pages share the content column below the hero. */
 .journey-bar.journey-bar-slim {
@@ -666,9 +674,9 @@ small,
   display: grid;
   grid-template-columns: minmax(0, 1fr) 334px;
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: 10px;
   overflow: hidden;
-  height: calc(100vh - 258px);
+  flex: 1 1 0;
   min-height: 580px;
   background: var(--paper);
   box-shadow: var(--shadow);
@@ -777,26 +785,34 @@ select {
   color: var(--paper);
   font-weight: 600;
 }
+/* The key stays out of the way until asked for, so it never covers markers. */
 .map-legend {
   position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
-  bottom: 26px;
+  right: 12px;
+  bottom: 74px;
   background: var(--paper);
   border: 1px solid var(--line);
-  border-radius: 5px;
+  border-radius: 8px;
   z-index: 450;
-  padding: 9px 15px;
-  display: flex;
-  gap: 17px;
-  white-space: nowrap;
+  padding: 12px 15px;
+  display: none;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 9px;
+  max-width: calc(100% - 24px);
   font-size: 12px;
-  box-shadow: 0 2px 8px #0001;
+  box-shadow: 0 6px 20px #0002;
+}
+.map-legend.open {
+  display: flex;
 }
 .map-legend span {
   display: flex;
-  gap: 6px;
+  gap: 9px;
   align-items: center;
+}
+.map-legend i {
+  flex-shrink: 0;
 }
 .dot {
   width: 8px;
@@ -951,13 +967,13 @@ select {
 }
 .sidebar-head {
   display: grid;
-  gap: 9px;
+  gap: 5px;
 }
 .sidebar-head h2 {
-  font-size: 27px;
+  font-size: 25px;
 }
 .sidebar-head p:last-child {
-  font-size: 12px;
+  font-size: 13px;
   color: var(--muted);
 }
 .route-setup,
@@ -1032,55 +1048,21 @@ select {
   background: var(--green);
   color: var(--paper);
 }
-.nearby {
-  display: grid;
-  gap: 5px;
-}
-.nearby h3 {
-  font-size: 13px;
-}
-.nearby > p {
-  font-size: 12px;
-}
-.nearby button {
-  display: flex;
-  justify-content: space-between;
-  gap: 10px;
-  font-size: 12px;
-  border-bottom: 1px solid var(--line);
-  padding: 11px 0;
-  text-align: left;
-}
-.nearby button span:last-child {
-  white-space: nowrap;
-  color: var(--muted);
-  font-size: 12px;
-}
-.sidebar-footer {
-  display: flex;
-  gap: 10px;
-  align-items: center;
-  margin-top: auto;
-  padding-top: 6px;
-}
-.sidebar-footer img {
-  width: 40px;
-  opacity: 0.8;
-}
-.sidebar-footer p {
-  font-family: "Lora Variable", serif;
-  font-style: italic;
-  font-size: 12px;
-  color: var(--muted);
-  line-height: 1.6;
-}
 .site-footer {
   display: flex;
-  justify-content: space-between;
-  gap: 15px;
-  padding: 16px 28px 20px;
+  align-items: center;
+  gap: 8px 22px;
+  flex-wrap: wrap;
+  margin-top: auto;
+  padding: 14px 28px 18px;
   font-size: 12px;
   color: var(--muted);
+}
+.footer-motto {
+  margin-right: auto;
+  font-family: "Lora Variable", Georgia, serif;
+  font-style: italic;
+  font-size: 13px;
 }
 .content-scroll {
   height: 100%;
@@ -1386,8 +1368,8 @@ select {
   height: 44px;
 }
 .carousel-counter {
-  display: grid;
-  gap: 2px;
+  display: flex;
+  gap: 8px;
   margin: 0;
   font-size: 12px;
   font-variant-numeric: tabular-nums;
@@ -2061,16 +2043,13 @@ select {
   }
   .site-header nav a {
     padding-inline: 10px;
-    font-size: 12px;
+    font-size: 13px;
   }
   .brand strong {
     font-size: 21px;
   }
-  .brand img {
-    width: 46px;
-  }
   .journey-bar {
-    padding: 24px;
+    padding: 18px 24px 16px;
   }
   .journey-meta {
     gap: 15px;
@@ -2105,25 +2084,20 @@ select {
   .visit-card h3 {
     font-size: 21px;
   }
-  .map-legend {
-    gap: 10px;
-    padding: 8px;
-  }
 }
 @media (max-width: 760px) {
   .site-header {
     height: auto;
-    min-height: 80px;
-    padding: 14px 18px;
-    flex-wrap: wrap;
+    min-height: 64px;
+    padding: 10px 16px;
     gap: 12px;
   }
   .brand strong {
-    font-size: 21px;
+    font-size: 20px;
   }
   .brand img {
-    width: 43px;
-    height: 43px;
+    width: 40px;
+    height: 40px;
   }
   /* Main navigation becomes a bottom tab bar within thumb reach. */
   body {
@@ -2154,16 +2128,26 @@ select {
   .header-actions {
     gap: 5px;
   }
-  .header-actions .button {
+  .header-actions .sign-in-button {
     font-size: 0;
     min-height: 35px;
     padding: 8px;
   }
+  .header-actions .record-button {
+    padding-inline: 13px;
+  }
   .journey-bar {
-    padding: 23px 18px;
+    padding: 18px 16px 16px;
     align-items: start;
     flex-direction: column;
-    gap: 16px;
+    gap: 12px;
+  }
+  /* The Map tab is one tap away, so the next-gate shortcut gives way here. */
+  .next-gate-chip {
+    display: none;
+  }
+  .journey-meta:not(:has(.publish-pill)) {
+    display: none;
   }
   .journey-bar {
     align-items: stretch;
@@ -2176,7 +2160,7 @@ select {
     max-width: none;
   }
   .journey-bar h1 {
-    font-size: 28px;
+    font-size: 27px;
   }
   .journey-meta {
     justify-content: space-between;
@@ -2186,6 +2170,7 @@ select {
   .workspace {
     display: flex;
     flex-direction: column;
+    flex: none;
     height: auto;
     min-height: 0;
     margin: 0 10px;
@@ -2217,12 +2202,6 @@ select {
   .map-view-controls button {
     padding: 8px;
   }
-  .map-legend {
-    bottom: 30px;
-    gap: 10px;
-    width: max-content;
-    max-width: 95%;
-  }
   .map-foot {
     padding: 10px;
   }
@@ -2231,9 +2210,6 @@ select {
     border-top: 1px solid var(--line);
     padding: 24px;
     overflow: visible;
-  }
-  .sidebar-footer {
-    display: none;
   }
   .content-scroll {
     height: auto;
@@ -2294,7 +2270,8 @@ select {
   .site-footer {
     padding: 18px;
     flex-direction: column;
-    gap: 6px;
+    align-items: flex-start;
+    gap: 10px;
   }
   .modal {
     padding: 20px;
@@ -2400,15 +2377,21 @@ select {
   background: #172e32;
 }
 .map-style {
-  position: absolute;
-  right: 16px;
-  top: 16px;
-  z-index: 450;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
 }
 .map-style select {
   font-size: 12px;
-  padding: 8px 10px;
-  box-shadow: 0 2px 8px #0001;
+  padding: 5px 6px;
+  border-color: transparent;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+}
+.map-style select:hover {
+  border-color: var(--line);
+  color: var(--ink);
 }
 .settlement-label {
   font:
@@ -2459,13 +2442,6 @@ select {
   border: 0;
 }
 @media (max-width: 760px) {
-  .map-style {
-    top: 57px;
-    right: 10px;
-  }
-  .map-style select {
-    padding: 7px;
-  }
   .map-error {
     top: 99px;
     max-width: calc(100% - 30px);
@@ -2959,7 +2935,23 @@ select {
   font-weight: 600;
 }
 .legend-toggle {
-  display: none;
+  position: absolute;
+  right: 12px;
+  bottom: 30px;
+  z-index: 460;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: var(--paper);
+  color: var(--ink);
+  box-shadow: 0 2px 8px #0002;
+}
+.legend-toggle:hover {
+  border-color: var(--green);
+  color: var(--green);
 }
 .current-dot {
   display: inline-block;
@@ -3001,6 +2993,7 @@ select {
 /* Timeline, visit, list and workspace pages scroll with the window. */
 .workspace-page {
   grid-template-columns: minmax(0, 1fr);
+  flex: none;
   height: auto;
   min-height: 0;
   margin-inline: max(24px, calc((100% - 1100px) / 2));
@@ -3017,7 +3010,7 @@ select {
   .journey-bar.journey-bar-slim {
     flex-direction: row;
     flex-wrap: wrap;
-    padding: 14px 18px;
+    padding: 12px 16px;
   }
   .journey-bar-slim .journey-meta {
     width: auto;
@@ -3060,34 +3053,9 @@ select {
   .compact-toolbar .home-switcher > span {
     display: none;
   }
-  .legend-toggle {
-    position: absolute;
-    right: 10px;
-    bottom: 34px;
-    z-index: 460;
-    display: grid;
-    place-items: center;
-    width: 36px;
-    height: 36px;
-    border: 1px solid var(--line);
-    border-radius: 50%;
-    background: var(--paper);
-    color: var(--ink);
-    box-shadow: 0 2px 8px #0002;
-  }
+  .legend-toggle,
   .map-legend {
-    display: none;
-    left: auto;
     right: 10px;
-    bottom: 78px;
-    transform: none;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 8px;
-    max-width: calc(100% - 20px);
-  }
-  .map-legend.open {
-    display: flex;
   }
   .map-view-controls {
     left: 10px;
@@ -3350,4 +3318,93 @@ button.publish-pill:hover {
 }
 .remove-home {
   margin-left: auto;
+}
+
+/* The app fills the window: the map view takes whatever height the header and
+   notices leave, and short pages keep the footer at the bottom. */
+#root {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+#root > * {
+  flex-shrink: 0;
+}
+@media (min-width: 761px) {
+  #root:has(> .workspace-map) {
+    height: 100vh;
+    height: 100dvh;
+  }
+}
+.record-button {
+  white-space: nowrap;
+}
+.visit-heading {
+  justify-items: center;
+  gap: 10px;
+  margin-bottom: 24px;
+  text-align: center;
+}
+.visit-heading .location-line {
+  justify-content: center;
+  flex-wrap: wrap;
+  font-size: 13px;
+}
+.chip-more {
+  border-style: dashed;
+  color: var(--muted);
+}
+.destination-photo img {
+  transition: transform 300ms ease;
+}
+.destination-photo:hover img {
+  transform: scale(1.04);
+}
+.destination-description,
+.first-destination .destination-description {
+  font-size: 13px;
+}
+.map-foot {
+  flex-wrap: wrap;
+}
+@media (max-width: 760px) {
+  /* Four labels fit one row without their icons. */
+  .map-view-controls button svg {
+    display: none;
+  }
+  .map-view-controls button {
+    padding: 8px 9px;
+  }
+  .carousel-wheel {
+    height: clamp(240px, 70vw, 540px);
+  }
+  .carousel-slide {
+    top: 12px;
+    bottom: 12px;
+    width: 84%;
+  }
+  .visit-heading {
+    margin-bottom: 18px;
+  }
+  /* Text smaller than 16px makes iOS zoom the page when a field is focused. */
+  input:not([type="checkbox"], [type="radio"], [type="color"], [type="file"]),
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+}
+@media (max-width: 480px) {
+  /* "Record" alone fits beside the name; screen readers still get the full label. */
+  .record-rest {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+  }
+}
+.home-location-card .button {
+  font-size: 12px;
 }

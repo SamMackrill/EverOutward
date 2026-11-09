@@ -55,6 +55,10 @@ const browser = await chromium.launch();
 const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
 const errors = [];
 page.on("pageerror", (e) => errors.push(e.message));
+const basemapRequests = [];
+page.on("request", (r) => {
+  if (r.url().endsWith("/data/basemap.json")) basemapRequests.push(r.url());
+});
 // Avoid repeatedly downloading map tiles while exercising journal controls.
 await page.route("**/tile.openstreetmap.org/**", (r) => r.abort());
 await page.route("https://example.org/test-photo.png", (r) =>
@@ -89,6 +93,21 @@ try {
   assert.match(
     await page.locator(".progress-strip").innerText(),
     new RegExp(`45 of ${eligiblePlaces.length} places · 45 days out`),
+  );
+  // The outline map is only downloaded once street tiles fail or it is chosen.
+  assert.equal(basemapRequests.length, 1);
+  // The key opens on request at every width and never covers the map by default.
+  await page.locator(".map-legend").waitFor({ state: "hidden" });
+  await page.getByRole("button", { name: "Map key", exact: true }).click();
+  await page.locator(".map-legend").waitFor({ state: "visible" });
+  await page.getByRole("button", { name: "Map key", exact: true }).click();
+  await page.locator(".map-legend").waitFor({ state: "hidden" });
+  // Set-once controls stay out of the header; map detail sits under the map.
+  assert.equal(await page.locator(".site-header .theme-picker").count(), 0);
+  assert.equal(await page.locator(".site-footer .theme-picker").count(), 1);
+  assert.equal(
+    await page.locator(".map-foot").getByLabel("Map detail").count(),
+    1,
   );
   const wholeUk = page.getByRole("button", { name: "Whole UK", exact: true });
   assert.equal(await wholeUk.getAttribute("aria-pressed"), "false");
@@ -170,6 +189,14 @@ try {
   await page
     .getByRole("button", { name: "Record a visit", exact: true })
     .waitFor();
+  // One Record button, in the header, on every page.
+  assert.equal(
+    await page
+      .locator(".site-header")
+      .getByRole("button", { name: "Record a visit", exact: true })
+      .count(),
+    1,
+  );
   await page.getByRole("link", { name: "Map", exact: true }).click();
   await page.getByRole("button", { name: "Find a place", exact: true }).click();
   await page.keyboard.type(catalogue.places[0].name);
@@ -318,6 +345,11 @@ try {
     }),
     ["fixed", 844],
   );
+  // The narrow header shortens the label but keeps its accessible name.
+  await page
+    .locator(".site-header")
+    .getByRole("button", { name: "Record a visit", exact: true })
+    .waitFor();
   await tabs.getByRole("link", { name: "Map", exact: true }).click();
   await page.locator(".map-legend").waitFor({ state: "hidden" });
   await page.getByRole("button", { name: "Map key", exact: true }).click();
@@ -402,7 +434,7 @@ try {
   });
   assert.deepEqual(errors, []);
   console.log(
-    "PASS: bundled map, blocked-tile fallback, progress strip, pressed map view and dismissible notice, place visit count and Record a visit here, mobile tab bar and map key, place search focus and stable toolbar, unsaved-edit guard on Esc and backdrop, 45-entry infinite history, back position, visit/photo guest comments, owner signup, draft save, theme persistence, mobile overflow, all-distance calculation busy state and saved totals after reload, no browser exceptions.",
+    "PASS: bundled map loaded on demand, blocked-tile fallback, map key on request, footer theme picker, header Record button, progress strip, pressed map view and dismissible notice, place visit count and Record a visit here, mobile tab bar and map key, place search focus and stable toolbar, unsaved-edit guard on Esc and backdrop, 45-entry infinite history, back position, visit/photo guest comments, owner signup, draft save, theme persistence, mobile overflow, all-distance calculation busy state and saved totals after reload, no browser exceptions.",
   );
 } finally {
   await browser.close();

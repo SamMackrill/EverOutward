@@ -49,6 +49,8 @@ type Props = {
   activeHomeId: string | null;
   range: VisitRange | null;
   theme: string;
+  /** "streets" for OpenStreetMap tiles, "overview" for the bundled outline map. */
+  mapStyle: string;
   selectedId?: string;
   onSelect: (p: Place) => void;
   command: {
@@ -69,6 +71,7 @@ export default function MapView({
   activeHomeId,
   range,
   theme,
+  mapStyle,
   selectedId,
   onSelect,
   command,
@@ -77,8 +80,10 @@ export default function MapView({
   const [tileFailed, setTileFailed] = useState(false);
   const [dismissed, setDismissed] = useState<string[]>([]);
   const [basemap, setBasemap] = useState<Basemap | null>(null),
-    [baseFailed, setBaseFailed] = useState(false),
-    [mapStyle, setMapStyle] = useState("streets");
+    [baseFailed, setBaseFailed] = useState(false);
+  // The outline map is a large download that street tiles normally cover, so
+  // it is fetched only when chosen or when the tiles cannot load.
+  const needsBasemap = mapStyle !== "streets" || tileFailed;
   const div = useRef<HTMLDivElement>(null),
     map = useRef<L.Map | null>(null),
     layers = useRef<L.LayerGroup | null>(null),
@@ -95,10 +100,12 @@ export default function MapView({
       maxZoom: 19,
       zoomSnap: 0.25,
     }).setView([54.3, -3.3], 6);
-    L.control.zoom({ position: "bottomleft" }).addTo(m);
+    // Bottom-left stacks upwards: the scale sits under the zoom buttons, which
+    // leaves the bottom-right corner to the map key.
     L.control
-      .scale({ imperial: true, metric: false, position: "bottomright" })
+      .scale({ imperial: true, metric: false, position: "bottomleft" })
       .addTo(m);
+    L.control.zoom({ position: "bottomleft" }).addTo(m);
     map.current = m;
     m.createPane("baseLand").style.zIndex = "190";
     m.createPane("baseLabels").style.zIndex = "210";
@@ -116,23 +123,24 @@ export default function MapView({
       map.current = null;
     };
   }, []);
+  const basemapRequested = useRef(false);
   useEffect(() => {
-    let alive = true;
+    // One download serves every later switch between the two map styles.
+    if (!needsBasemap || basemapRequested.current) return;
+    basemapRequested.current = true;
+    setBaseFailed(false);
     fetch("/data/basemap.json")
       .then((r) => {
         if (!r.ok) throw new Error("Basemap unavailable");
         return r.json();
       })
-      .then((data) => {
-        if (alive) setBasemap(data);
-      })
+      .then(setBasemap)
       .catch(() => {
-        if (alive) setBaseFailed(true);
+        // Allow another attempt the next time the outline map is needed.
+        basemapRequested.current = false;
+        setBaseFailed(true);
       });
-    return () => {
-      alive = false;
-    };
-  }, []);
+  }, [needsBasemap]);
   useEffect(() => {
     const m = map.current,
       l = baseLayers.current;
@@ -596,17 +604,6 @@ export default function MapView({
         className="map-canvas"
         aria-label="Interactive map of National Trust destinations. Use the places list for an accessible alternative."
       />
-      <label className="map-style">
-        <span className="visually-hidden">Map detail</span>
-        <select
-          aria-label="Map detail"
-          value={mapStyle}
-          onChange={(e) => setMapStyle(e.target.value)}
-        >
-          <option value="overview">Overview map</option>
-          <option value="streets">Street detail</option>
-        </select>
-      </label>
       {[
         baseFailed && {
           id: "base",

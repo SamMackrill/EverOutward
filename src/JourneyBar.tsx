@@ -4,7 +4,6 @@ import {
   Globe,
   LoaderCircle,
   LockKeyhole,
-  Plus,
   TriangleAlert,
 } from "lucide-react";
 import type { Publisher } from "./usePublish";
@@ -64,47 +63,37 @@ export default function JourneyBar({
   title,
   nextGate,
   progress,
-  owner,
   publishing,
-  onRecord,
   onNextGate,
 }: {
   // Only the map view has a hero title; other views title their own content.
   title?: string;
   nextGate?: Place;
   progress: Parameters<typeof ProgressStrip>[0];
-  owner: boolean;
   publishing?: { changes: number; publisher: Publisher };
-  onRecord: () => void;
   onNextGate: () => void;
 }) {
   return (
     <div className={`journey-bar ${title ? "" : "journey-bar-slim"}`}>
       {title && (
         <div className="journey-title">
-          <span className="eyebrow">
-            Your next gate · nearest unvisited in a straight line
-          </span>
+          <span className="eyebrow">Your next gate</span>
           <h1>{title}</h1>
         </div>
       )}
       <ProgressStrip {...progress} />
-      <div className="journey-meta">
-        {!title && nextGate && (
-          <button className="next-gate-chip" onClick={onNextGate}>
-            <span className="eyebrow">Next gate</span>
-            <span>{nextGate.name}</span>
-            <ChevronRight size={15} />
-          </button>
-        )}
-        {publishing && <PublishPill {...publishing} />}
-        {owner && (
-          <button className="button primary" onClick={onRecord}>
-            <Plus size={18} />
-            Record a visit
-          </button>
-        )}
-      </div>
+      {((!title && nextGate) || publishing) && (
+        <div className="journey-meta">
+          {!title && nextGate && (
+            <button className="next-gate-chip" onClick={onNextGate}>
+              <span className="eyebrow">Next gate</span>
+              <span>{nextGate.name}</span>
+              <ChevronRight size={15} />
+            </button>
+          )}
+          {publishing && <PublishPill {...publishing} />}
+        </div>
+      )}
     </div>
   );
 }
